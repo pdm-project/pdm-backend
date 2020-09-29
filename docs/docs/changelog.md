@@ -1,3 +1,0 @@
-# Change Log
-
-{!../../CHANGELOG.md!}

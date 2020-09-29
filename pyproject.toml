@@ -1,14 +1,14 @@
 [tool.pdm]
-name = "pdm"
-version = {from = "pdm/__init__.py"}
-description = "Python Development Master"
-author = "frostming <mianghong@gmail.com>"
+name = "pdm-pep517"
+version = "0.0.0"
+description = "PEP 517 support"
+author = "Frost Ming <mianghong@gmail.com>"
 license = "MIT"
 python_requires = ">=3.7"
 readme = "README.md"
 homepage = "https://pdm.fming.dev"
 
-keywords = ["packaging", "dependency", "workflow"]
+keywords = ["packaging", "PEP 517", "build"]
 
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -20,20 +20,9 @@ classifiers = [
 ]
 
 [tool.pdm.project_urls]
-Repository = "https://github.com/frostming/pdm"
-Documentation = "https://pdm.fming.dev"
+Repository = "https://github.com/frostming/pdm-pep517"
 
 [tool.pdm.dependencies]
-appdirs = "*"
-click = "*"
-distlib = "*"
-pip = ">=20.1"
-pip_shims = "*"
-pythonfinder = "*"
-tomlkit = "*"
-halo = "<1.0.0,>=0.0.28"
-python-cfonts = "*"
-resolvelib = "<1.0.0,>=0.3.0"
 
 [tool.pdm.dev-dependencies]
 pytest = "*"
@@ -42,16 +31,11 @@ pytest-mock = "*"
 towncrier = "<20.0.0,>=19.2.0"
 pytest-xdist = "<2.0.0,>=1.31.0"
 
-[tool.pdm.doc-dependencies]
-mkdocs = "<2.0.0,>=1.1"
-mkdocs-material = "<5.0.0,>=4.6.3"
-markdown-include = "<1.0.0,>=0.5.1"
-
 [tool.pdm.cli]
 pdm = "pdm.core:main"
 
 [tool.intreehooks]
-build-backend = "pdm.builders.api"
+build-backend = "pdm.pep517.api"
 
 [tool.black]
 line-length = 88
