@@ -1,13 +1,13 @@
 [tool.pdm]
 name = "pdm-pep517"
-version = "0.0.0"
+version = "0.1.0"
 description = "PEP 517 support"
 author = "Frost Ming <mianghong@gmail.com>"
 license = "MIT"
 python_requires = ">=3.7"
 readme = "README.md"
 homepage = "https://pdm.fming.dev"
-
+includes = ["pdm"]
 keywords = ["packaging", "PEP 517", "build"]
 
 classifiers = [

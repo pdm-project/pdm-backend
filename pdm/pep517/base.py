@@ -165,7 +165,7 @@ class Builder:
             if not path_base or path_base == ".":
                 # the path is top level itself
                 path_base = path
-            print(path_base, self.package_dir, _find_top_packages(path_base))
+
             if (
                 not os.path.isfile(os.path.join(path_base, "__init__.py"))
                 and _find_top_packages(path_base)

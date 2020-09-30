@@ -18,10 +18,16 @@ jobs:
           architecture: "x64"
       - name: Build artifacts
         run: |
-          pip install -U wheel
-          pip wheel -w dist/ .
+          python make_release.py
         env:
           PYTHONPATH: "__pypackages__/3.8/lib"
+
+      - name: Test build
+        run: |
+          pip install dist/*.whl
+          pip uninstall -y pdm-pep517
+          pip install dist/*.tar.gz
+          pip uninstall -y pdm-pep517
       - name: Upload to Pypi
         run: |
           pip install twine

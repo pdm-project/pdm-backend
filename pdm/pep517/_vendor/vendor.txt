@@ -1,2 +1,4 @@
 packaging==20.4
 toml==0.10.1
+pyparsing==2.4.7
+six==1.15.0
