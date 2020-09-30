@@ -5,19 +5,18 @@ import os
 import shutil
 import stat
 import subprocess
+import sys
 import tempfile
 import zipfile
 from base64 import urlsafe_b64encode
 from io import StringIO
-from typing import List, Tuple
+from pathlib import Path
+from typing import List, Tuple, Union
 
-from pip_shims import shims
-from pkg_resources import safe_version, to_filename
-
-from pdm.builders.base import Builder
-from pdm.exceptions import WheelBuildError
-from pdm.iostream import stream
-from pdm.utils import cached_property, get_abi_tag, get_platform
+from ._vendor.packaging.markers import default_environment
+from ._vendor.packaging.specifiers import SpecifierSet
+from .base import Builder, BuildError
+from .utils import get_abi_tag, get_platform, safe_version, to_filename
 
 WHEEL_FILE_FORMAT = """\
 Wheel-Version: 1.0
@@ -28,39 +27,15 @@ Tag: {tag}
 
 
 class WheelBuilder(Builder):
-    def __init__(self, ireq: shims.InstallRequirement):
+    def __init__(self, location: Union[str, Path]) -> None:
+        super().__init__(location)
         self._records = []  # type: List[Tuple[str, str, str]]
-        super().__init__(ireq)
 
     def build(self, build_dir: str, **kwargs) -> str:
-        if not self.project.is_pdm:
-            return self._build_other(build_dir, **kwargs)
-        return self._build_pdm(build_dir, **kwargs)
-
-    def _build_wheel(self, build_dir, **kwargs):
-        return shims.build_one(self.ireq, build_dir, [], [])
-
-    def _build_other(self, build_dir: str, **kwargs) -> str:
-        if not self.ireq.req.name:
-            # Name is not available for a tarball distribution. Get the package name
-            # from package's egg info.
-            # `prepare_metadata()` won't work if there is a `req` attribute.
-            req = self.ireq.req
-            self.ireq.req = None
-            self.ireq.prepare_metadata()
-            req.name = self.ireq.metadata["Name"]
-            self.ireq.req = req
-
-        wheel_path = self._build_wheel(build_dir, **kwargs)
-        if not wheel_path or not os.path.exists(wheel_path):
-            raise WheelBuildError(str(self.ireq))
-        return wheel_path
-
-    def _build_pdm(self, build_dir: str, **kwargs) -> str:
         if not os.path.exists(build_dir):
             os.makedirs(build_dir, exist_ok=True)
 
-        stream.echo("- Building {}...".format(stream.cyan("wheel")))
+        self.logger.info("Building wheel...")
         self._records.clear()
         fd, temp_path = tempfile.mkstemp(suffix=".whl")
         os.close(fd)
@@ -77,7 +52,7 @@ class WheelBuilder(Builder):
             os.unlink(target)
         shutil.move(temp_path, target)
 
-        stream.echo("- Built {}".format(stream.cyan(os.path.basename(target))))
+        self.logger.info(f"Built wheel: {self.wheel_filename}")
         return target
 
     @property
@@ -86,10 +61,10 @@ class WheelBuilder(Builder):
         version = to_filename(safe_version(self.meta.version))
         return f"{name}-{version}-{self.tag}.whl"
 
-    @cached_property
+    @property
     def tag(self) -> str:
         if self.meta.build:
-            info = self.project.environment.marker_environment
+            info = default_environment()
             platform = get_platform()
             implementation = info["implementation_name"]
             impl_name = (
@@ -115,7 +90,9 @@ class WheelBuilder(Builder):
             tag = (impl, abi_tag, platform)
         else:
             platform = "any"
-            if self.project.python_requires.supports_py2():
+            if self.meta.python_requires and SpecifierSet(
+                self.meta.python_requires
+            ).contains("2.7"):
                 impl = "py2.py3"
             else:
                 impl = "py3"
@@ -170,25 +147,25 @@ class WheelBuilder(Builder):
         hash_digest = urlsafe_b64encode(hashsum.digest()).decode("ascii").rstrip("=")
 
         wheel.writestr(zi, b, compress_type=zipfile.ZIP_DEFLATED)
-        stream.echo(f" - Adding: {rel_path}", verbosity=stream.DETAIL)
+        self.logger.debug(f" - Adding {rel_path}")
         self._records.append((rel_path, hash_digest, str(len(b))))
 
     def _build(self, wheel):
         if not self.meta.build:
             return
-        self.ensure_setup_py()
-        setup_py = self.ireq.setup_py_path
+        setup_py = self.ensure_setup_py()
         build_args = [
-            self.project.environment.python_executable,
+            sys.executable,
             setup_py,
             "build",
             "-b",
             str(self.project.root / "build"),
         ]
-        subprocess.run(
-            build_args, capture_output=stream.verbosity >= stream.DETAIL, check=True
-        )
-        build_dir = self.project.root / "build"
+        proc = subprocess.run(build_args, capture_output=True)
+        self.logger.debug(proc.stdout)
+        if proc.returncode:
+            raise BuildError(f"Error occurs when running {build_args}:\n{proc.stderr}")
+        build_dir = self.location / "build"
         lib_dir = next(build_dir.glob("lib.*"), None)
         if not lib_dir:
             return
@@ -218,7 +195,7 @@ class WheelBuilder(Builder):
         if os.sep != "/":
             # We always want to have /-separated paths in the zip file and in RECORD
             rel_path = rel_path.replace(os.sep, "/")
-        stream.echo(f" - Adding: {rel_path}", verbosity=stream.DETAIL)
+        self.logger.debug(f" - Adding {rel_path}")
         zinfo = zipfile.ZipInfo(rel_path)
 
         # Normalize permission bits to either 755 (executable) or 644

@@ -1,19 +1,13 @@
-from __future__ import annotations
-
 import atexit
 import glob
+import logging
 import os
 import textwrap
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Iterator, List
+from typing import Dict, Iterator, List, Tuple, Union
 
-from pip._vendor.pkg_resources import normalize_path
-
-from pdm.exceptions import ProjectError
-from pdm.project import Project
-
-if TYPE_CHECKING:
-    from pip_shims import shims
+from .metadata import Metadata
+from .utils import normalize_path
 
 OPEN_README = """import codecs
 
@@ -54,11 +48,17 @@ License: {license}
 """
 
 
-def _match_path(path, pattern):
+class BuildError(RuntimeError):
+    pass
+
+
+def _match_path(path: str, pattern: str) -> bool:
     return normalize_path(path) == normalize_path(pattern)
 
 
-def _merge_globs(include_globs, excludes_globs):
+def _merge_globs(
+    include_globs: Dict[str, str], excludes_globs: Dict[str, str]
+) -> Tuple[List[str], List[str]]:
     includes, excludes = [], []
     for path, key in include_globs.items():
         # The longer glob pattern wins
@@ -72,9 +72,10 @@ def _merge_globs(include_globs, excludes_globs):
     return includes, excludes
 
 
-def _find_top_packages(root) -> List[str]:
+def _find_top_packages(root: str) -> List[str]:
     result = []
     for path in os.listdir(root):
+        path = os.path.join(root, path)
         if (
             os.path.isdir(path)
             and os.path.exists(os.path.join(path, "__init__.py"))
@@ -84,7 +85,7 @@ def _find_top_packages(root) -> List[str]:
     return result
 
 
-def _format_list(data: List[str], indent=4) -> str:
+def _format_list(data: List[str], indent: int = 4) -> str:
     result = ["["]
     for row in data:
         result.append(" " * indent + repr(row) + ",")
@@ -92,7 +93,7 @@ def _format_list(data: List[str], indent=4) -> str:
     return "\n".join(result)
 
 
-def _format_dict_list(data: Dict[str, List[str]], indent=4) -> str:
+def _format_dict_list(data: Dict[str, List[str]], indent: int = 4) -> str:
     result = ["{"]
     for key, value in data.items():
         result.append(
@@ -106,24 +107,21 @@ class Builder:
     """Base class for building and distributing a package from given path."""
 
     DEFAULT_EXCLUDES = ["ez_setup", "*__pycache__", "tests", "tests.*"]
+    logger = logging.getLogger("pdm.pep517")
 
-    def __init__(self, ireq: shims.InstallRequirement) -> None:
-        self.ireq = ireq
-        self.project = Project(ireq.unpacked_source_directory)
+    def __init__(self, location: Union[str, Path]) -> None:
         self._old_cwd = None
         self.package_dir = None
+        self.location = Path(location).absolute()
+        self.meta = Metadata(self.location / "pyproject.toml")
 
     def __enter__(self) -> "Builder":
         self._old_cwd = os.getcwd()
-        os.chdir(self.ireq.unpacked_source_directory)
+        os.chdir(self.location)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         os.chdir(self._old_cwd)
-
-    @property
-    def meta(self):
-        return self.project.meta
 
     def build(self, build_dir: str, **kwargs) -> str:
         raise NotImplementedError
@@ -162,12 +160,12 @@ class Builder:
         excludes_globs = {path: key for key in excludes for path in glob.glob(key)}
 
         includes, excludes = _merge_globs(include_globs, excludes_globs)
-
         for path in find_froms:
             path_base = os.path.dirname(path)
             if not path_base or path_base == ".":
                 # the path is top level itself
                 path_base = path
+            print(path_base, self.package_dir, _find_top_packages(path_base))
             if (
                 not os.path.isfile(os.path.join(path_base, "__init__.py"))
                 and _find_top_packages(path_base)
@@ -206,7 +204,7 @@ class Builder:
         if self.meta.readme and os.path.isfile(self.meta.readme):
             yield self.meta.readme
 
-        if self.project.pyproject_file.exists():
+        if self.meta.filepath.exists():
             yield "pyproject.toml"
 
     def find_files_to_add(self, include_build: bool = False) -> List[Path]:
@@ -359,27 +357,20 @@ class Builder:
 
         return content
 
-    def ensure_setup_py(self, clean: bool = True) -> None:
+    def ensure_setup_py(self, clean: bool = True) -> Path:
         """Ensures the requirement has a setup.py ready."""
         # XXX: Currently only handle PDM project, and do nothing if not.
 
-        if not self.ireq.source_dir or os.path.isfile(self.ireq.setup_py_path):
-            return
+        setup_py_path = self.location.joinpath("setup.py")
+        if setup_py_path.is_file():
+            return setup_py_path
 
-        setup_py_path = self.ireq.setup_py_path
-        if not self.project.is_pdm:
-            raise ProjectError(
-                "General PEP 517 editable build is not supported "
-                "except for PDM proects."
-            )
-        setup_py_content = self.format_setup_py()
-
-        with open(setup_py_path, "w", encoding="utf-8") as fp:
-            fp.write(setup_py_content)
+        setup_py_path.write_text(self.format_setup_py())
 
         # Clean this temp file when process exits
         def cleanup():
-            os.unlink(setup_py_path)
+            setup_py_path.unlink()
 
         if clean:
             atexit.register(cleanup)
+        return setup_py_path

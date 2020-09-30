@@ -7,25 +7,11 @@ on:
       - master
 
 jobs:
-  Linting:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.7
-        uses: actions/setup-python@v1
-        with:
-          python-version: 3.7
-      - name: Linting
-        run: |
-          pip install pre-commit
-          pre-commit run --all-files
   Testing:
-    needs: Linting
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.7, 3.8]
+        python-version: [3.6, 3.7, 3.8]
         os: [ubuntu-latest, macOS-latest, windows-latest]
 
     steps:

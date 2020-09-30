@@ -3,10 +3,8 @@ import tarfile
 import tempfile
 from copy import copy
 
-from pkg_resources import safe_version, to_filename
-
-from pdm.builders.base import Builder
-from pdm.iostream import stream
+from .base import Builder
+from .utils import safe_version, to_filename
 
 
 def normalize_file_permissions(st_mode):
@@ -51,7 +49,7 @@ class SdistBuilder(Builder):
         if not os.path.exists(build_dir):
             os.makedirs(build_dir, exist_ok=True)
 
-        stream.echo("- Building {}...".format(stream.cyan("sdist")))
+        self.logger.info("Building sdist...")
         version = to_filename(safe_version(self.meta.version))
 
         target = os.path.join(
@@ -70,7 +68,7 @@ class SdistBuilder(Builder):
                     arcname=os.path.join(tar_dir, str(relpath)),
                     recursive=False,
                 )
-                stream.echo(f" - Adding: {relpath}", verbosity=stream.DETAIL)
+                self.logger.debug(f" - Adding {relpath}")
 
             fd, temp_name = tempfile.mkstemp(prefix="pkg-info")
             pkg_info = self.format_pkginfo(False).encode("utf-8")
@@ -79,10 +77,10 @@ class SdistBuilder(Builder):
             tar.add(
                 temp_name, arcname=os.path.join(tar_dir, "PKG-INFO"), recursive=False
             )
-            stream.echo(" - Adding: PKG-INFO", verbosity=stream.DETAIL)
+            self.logger.debug(" - Adding PKG-INFO")
         finally:
             tar.close()
 
-        stream.echo("- Built {}".format(stream.cyan(os.path.basename(target))))
+        self.logger.info(f"Built sdist: {os.path.basename(target)}")
 
         return target

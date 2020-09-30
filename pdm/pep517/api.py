@@ -3,8 +3,8 @@ PEP-517 compliant buildsystem API
 """
 from pathlib import Path
 
-from pdm.builders import SdistBuilder, WheelBuilder
-from pdm.models.requirements import parse_requirement
+from .sdist import SdistBuilder
+from .wheel import WheelBuilder
 
 
 def get_requires_for_build_wheel(config_settings=None):
@@ -24,9 +24,7 @@ get_requires_for_build_sdist = get_requires_for_build_wheel
 
 
 def prepare_metadata_for_build_wheel(metadata_directory, config_settings=None):
-    ireq = parse_requirement(".").as_ireq()
-    ireq.source_dir = "."
-    builder = WheelBuilder(ireq)
+    builder = WheelBuilder(Path.cwd())
 
     dist_info = Path(metadata_directory, builder.dist_info_name)
     dist_info.mkdir(exist_ok=True)
@@ -46,15 +44,11 @@ def prepare_metadata_for_build_wheel(metadata_directory, config_settings=None):
 
 def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
     """Builds a wheel, places it in wheel_directory"""
-    ireq = parse_requirement(".").as_ireq()
-    ireq.source_dir = "."
-    with WheelBuilder(ireq) as builder:
+    with WheelBuilder(Path.cwd()) as builder:
         return Path(builder.build(wheel_directory)).name
 
 
 def build_sdist(sdist_directory, config_settings=None):
     """Builds an sdist, places it in sdist_directory"""
-    ireq = parse_requirement(".").as_ireq()
-    ireq.source_dir = "."
-    with SdistBuilder(ireq) as builder:
+    with SdistBuilder(Path.cwd()) as builder:
         return Path(builder.build(sdist_directory)).name

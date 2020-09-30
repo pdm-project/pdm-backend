@@ -30,15 +30,48 @@ pytest-cov = "*"
 pytest-mock = "*"
 towncrier = "<20.0.0,>=19.2.0"
 pytest-xdist = "<2.0.0,>=1.31.0"
-
-[tool.pdm.cli]
-pdm = "pdm.core:main"
+vendoring = {version="*", marker="python_full_version~='3.8.0'"}
 
 [tool.intreehooks]
 build-backend = "pdm.pep517.api"
 
 [tool.black]
 line-length = 88
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.mypy_cache
+  | build
+  | dist
+  | __pypackages__
+  | pdm/pep517/_vendor/*
+)/
+'''
+
+[tool.vendoring]
+destination = "pdm/pep517/_vendor/"
+requirements = "pdm/pep517/_vendor/vendor.txt"
+namespace = ""
+
+protected-files = ["__init__.py", "README.md", "vendor.txt"]
+patches-dir = "vendors/patches"
+
+[tool.vendoring.transformations]
+substitute = []
+drop = [
+    "bin/",
+    "*.so",
+    "typing.*",
+    "*/tests/"
+]
+
+[tool.vendoring.typing-stubs]
+
+[tool.vendoring.license.directories]
+
+[tool.vendoring.license.fallback-urls]
 
 [tool.towncrier]
 package = "pdm"
