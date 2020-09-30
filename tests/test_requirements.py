@@ -1,8 +1,8 @@
 import os
-from pdm.pep517.requirements import Requirement
 
 import pytest
 
+from pdm.pep517.requirements import Requirement
 from tests import FIXTURES
 
 FILE_PREFIX = "file:///" if os.name == "nt" else "file://"

@@ -1,8 +1,8 @@
 import contextlib
-from pdm.pep517 import api, utils
 import tarfile
 import zipfile
 
+from pdm.pep517 import api, utils
 from tests import FIXTURES
 
 

@@ -1,14 +1,14 @@
-from contextlib import contextmanager
-from fnmatch import fnmatchcase
+import distutils
 import os
 import re
-import distutils
 import sys
-import warnings
-from sysconfig import get_config_var
-from typing import Iterable, Optional, Sequence, List
 import urllib.parse as urllib_parse
 import urllib.request as urllib_request
+import warnings
+from contextlib import contextmanager
+from fnmatch import fnmatchcase
+from sysconfig import get_config_var
+from typing import Iterable, List, Optional, Sequence
 
 from ._vendor import packaging
 

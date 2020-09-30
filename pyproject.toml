@@ -46,7 +46,7 @@ exclude = '''
   | build
   | dist
   | __pypackages__
-  | pdm/pep517/_vendor/*
+  | pdm/pep517/_vendor
 )/
 '''
 
