@@ -37,7 +37,6 @@ build-backend = "pdm.pep517.api"
 
 [tool.black]
 line-length = 88
-include = '\.pyi?$'
 exclude = '''
 /(
     \.eggs

@@ -16,8 +16,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-        with:
-          lfs: true
+      - name: Install PDM
+        run: pip install -U wheel pdm
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v1
         with:
@@ -35,10 +35,7 @@ jobs:
           path: __pypackages__
           # Look to see if there is a cache hit for the corresponding requirements file
           key: ${{ runner.os }}-packages-${{ env.PY }}-${{ hashFiles('pdm.lock') }}
-      - name: Install PDM
-        run: pip install -U wheel pdm
+      - name: Install Dependencies
+        run: pdm sync -d
       - name: Run Tests
-        shell: bash
-        env:
-          PYTHONPATH: "__pypackages__/${{ matrix.python-version }}/lib"
         run: pdm run pytest -n auto tests
