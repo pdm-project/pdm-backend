@@ -11,7 +11,7 @@ def test_parse_module():
     assert metadata.author == "frostming"
     assert metadata.author_email == "mianghong@gmail.com"
     paths = metadata.convert_package_paths()
-    assert paths["py_modules"] == ["bar_module", "foo_module"]
+    assert sorted(paths["py_modules"]) == ["bar_module", "foo_module"]
     assert paths["packages"] == []
     assert paths["package_dir"] == {}
 
