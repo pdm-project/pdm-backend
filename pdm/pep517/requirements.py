@@ -65,7 +65,9 @@ class Requirement:
             if vcs in kwargs:
                 repo = kwargs.pop(vcs)  # type: str
                 branch_or_tag = kwargs.pop("branch", kwargs.pop("tag", ""))
-                url = cls._build_vcs_url(vcs, repo, kwargs.pop("ref"), branch_or_tag)
+                url = cls._build_vcs_url(
+                    vcs, repo, kwargs.pop("ref", ""), branch_or_tag
+                )
                 kwargs.update(url=url, vcs=vcs)
                 break
         if "path" in kwargs and "url" not in kwargs:
@@ -84,8 +86,14 @@ class Requirement:
     def _build_vcs_url(
         vcs: str,
         repo: str,
-        ref: str,
+        ref: str = "",
         branch_or_tag: str = "",
     ) -> str:
-        ref_part = f"@{branch_or_tag}#{ref}" if branch_or_tag else f"@{ref}"
+        ref_part = (
+            f"@{branch_or_tag}#{ref}"
+            if ref and branch_or_tag
+            else ""
+            if not ref and not branch_or_tag
+            else f"@{branch_or_tag or ref}"
+        )
         return f"{vcs}+{repo}{ref_part}"

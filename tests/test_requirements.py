@@ -86,6 +86,16 @@ REQUIREMENTS = [
             },
         ),
     ),
+    (
+        "pip @ git+https://github.com/pypa/pip.git@master",
+        (
+            "pip",
+            {
+                "git": "https://github.com/pypa/pip.git",
+                "branch": "master",
+            },
+        ),
+    ),
 ]
 
 
