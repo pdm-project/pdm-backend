@@ -119,7 +119,7 @@ class Builder:
     def meta(self) -> Metadata:
         if not self._meta:
             self._meta = Metadata(self.location / "pyproject.toml")
-        return self._metas
+        return self._meta
 
     def __enter__(self) -> "Builder":
         self._old_cwd = os.getcwd()
