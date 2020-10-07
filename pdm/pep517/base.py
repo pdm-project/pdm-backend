@@ -113,7 +113,13 @@ class Builder:
         self._old_cwd = None
         self.package_dir = None
         self.location = Path(location).absolute()
-        self.meta = Metadata(self.location / "pyproject.toml")
+        self._meta = None
+
+    @property
+    def meta(self) -> Metadata:
+        if not self._meta:
+            self._meta = Metadata(self.location / "pyproject.toml")
+        return self._metas
 
     def __enter__(self) -> "Builder":
         self._old_cwd = os.getcwd()
