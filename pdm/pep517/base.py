@@ -1,6 +1,5 @@
 import atexit
 import glob
-import logging
 import os
 import textwrap
 from pathlib import Path
@@ -107,7 +106,6 @@ class Builder:
     """Base class for building and distributing a package from given path."""
 
     DEFAULT_EXCLUDES = ["ez_setup", "*__pycache__", "tests", "tests.*"]
-    logger = logging.getLogger("pdm.pep517")
 
     def __init__(self, location: Union[str, Path]) -> None:
         self._old_cwd = None

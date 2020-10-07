@@ -35,7 +35,6 @@ class WheelBuilder(Builder):
         if not os.path.exists(build_dir):
             os.makedirs(build_dir, exist_ok=True)
 
-        self.logger.info("Building wheel...")
         self._records.clear()
         fd, temp_path = tempfile.mkstemp(suffix=".whl")
         os.close(fd)
@@ -52,7 +51,6 @@ class WheelBuilder(Builder):
             os.unlink(target)
         shutil.move(temp_path, target)
 
-        self.logger.info(f"Built wheel: {self.wheel_filename}")
         return target
 
     @property
@@ -147,7 +145,7 @@ class WheelBuilder(Builder):
         hash_digest = urlsafe_b64encode(hashsum.digest()).decode("ascii").rstrip("=")
 
         wheel.writestr(zi, b, compress_type=zipfile.ZIP_DEFLATED)
-        self.logger.debug(f" - Adding {rel_path}")
+        print(f" - Adding {rel_path}")
         self._records.append((rel_path, hash_digest, str(len(b))))
 
     def _build(self, wheel):
@@ -162,7 +160,7 @@ class WheelBuilder(Builder):
             str(self.project.root / "build"),
         ]
         proc = subprocess.run(build_args, capture_output=True)
-        self.logger.debug(proc.stdout)
+        print(proc.stdout)
         if proc.returncode:
             raise BuildError(f"Error occurs when running {build_args}:\n{proc.stderr}")
         build_dir = self.location / "build"
@@ -195,7 +193,7 @@ class WheelBuilder(Builder):
         if os.sep != "/":
             # We always want to have /-separated paths in the zip file and in RECORD
             rel_path = rel_path.replace(os.sep, "/")
-        self.logger.debug(f" - Adding {rel_path}")
+        print(f" - Adding {rel_path}")
         zinfo = zipfile.ZipInfo(rel_path)
 
         # Normalize permission bits to either 755 (executable) or 644

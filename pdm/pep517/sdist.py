@@ -49,7 +49,6 @@ class SdistBuilder(Builder):
         if not os.path.exists(build_dir):
             os.makedirs(build_dir, exist_ok=True)
 
-        self.logger.info("Building sdist...")
         version = to_filename(safe_version(self.meta.version))
 
         target = os.path.join(
@@ -68,7 +67,7 @@ class SdistBuilder(Builder):
                     arcname=os.path.join(tar_dir, str(relpath)),
                     recursive=False,
                 )
-                self.logger.debug(f" - Adding {relpath}")
+                print(f" - Adding {relpath}")
 
             fd, temp_name = tempfile.mkstemp(prefix="pkg-info")
             pkg_info = self.format_pkginfo(False).encode("utf-8")
@@ -77,10 +76,8 @@ class SdistBuilder(Builder):
             tar.add(
                 temp_name, arcname=os.path.join(tar_dir, "PKG-INFO"), recursive=False
             )
-            self.logger.debug(" - Adding PKG-INFO")
+            print(" - Adding PKG-INFO")
         finally:
             tar.close()
-
-        self.logger.info(f"Built sdist: {os.path.basename(target)}")
 
         return target

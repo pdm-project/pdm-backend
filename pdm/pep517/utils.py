@@ -8,7 +8,7 @@ import warnings
 from contextlib import contextmanager
 from fnmatch import fnmatchcase
 from sysconfig import get_config_var
-from typing import Iterable, List, Optional, Sequence
+from typing import Iterable, Optional
 
 from ._vendor import packaging
 
@@ -105,42 +105,6 @@ def path_to_url(path: str) -> str:
     path = os.path.normpath(os.path.abspath(path))
     url = urllib_parse.urljoin("file:", urllib_request.pathname2url(path))
     return url
-
-
-_SETUPTOOLS_SHIM = (
-    "import sys, setuptools, tokenize; sys.argv[0] = {0!r}; __file__={0!r};"
-    "f=getattr(tokenize, 'open', open)(__file__);"
-    "code=f.read().replace('\\r\\n', '\\n');"
-    "f.close();"
-    "exec(compile(code, __file__, 'exec'))"
-)
-
-
-def make_setuptools_shim_args(
-    setup_py_path,  # type: str
-    global_options=None,  # type: Sequence[str]
-    no_user_config=False,  # type: bool
-    unbuffered_output=False,  # type: bool
-):
-    # type: (...) -> List[str]
-    """
-    Get setuptools command arguments with shim wrapped setup file invocation.
-
-    :param setup_py_path: The path to setup.py to be wrapped.
-    :param global_options: Additional global options.
-    :param no_user_config: If True, disables personal user configuration.
-    :param unbuffered_output: If True, adds the unbuffered switch to the
-     argument list.
-    """
-    args = [sys.executable]
-    if unbuffered_output:
-        args += ["-u"]
-    args += ["-c", _SETUPTOOLS_SHIM.format(setup_py_path)]
-    if global_options:
-        args += global_options
-    if no_user_config:
-        args += ["--no-user-cfg"]
-    return args
 
 
 def get_platform() -> str:
