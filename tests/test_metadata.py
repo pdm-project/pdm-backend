@@ -1,3 +1,6 @@
+import subprocess
+from datetime import datetime
+
 import pytest
 
 from pdm.pep517.metadata import Metadata
@@ -55,3 +58,14 @@ def test_parse_package_with_extras():
         "be": ["idna; extra == 'be'"],
         "all": ["idna; extra == 'all'", "chardet; extra == 'all'"],
     }
+
+
+def test_project_version_use_scm(project_with_scm):
+    metadata = Metadata(project_with_scm / "pyproject.toml")
+    assert metadata.version == "0.1.0"
+    project_with_scm.joinpath("test.txt").write_text("hello\n")
+    subprocess.check_call(["git", "add", "test.txt"])
+    date = datetime.utcnow().strftime("%Y%m%d")
+    assert metadata.version == f"0.1.0+d{date}"
+    subprocess.check_call(["git", "commit", "-m", "add test.txt"])
+    assert "0.1.1.dev1+g" in metadata.version

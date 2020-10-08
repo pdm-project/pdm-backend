@@ -1,9 +1,10 @@
 import glob
 import os
-from pdm.pep517.scm import get_version_from_scm
 import re
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Tuple, Union
+
+from pdm.pep517.scm import get_version_from_scm
 
 from ._vendor import toml
 from .requirements import Requirement
@@ -73,7 +74,7 @@ class Metadata:
                     r"^__version__\s*=\s*[\"'](.+?)[\"']\s*$", fp.read(), re.M
                 )[0]
         elif value.get("use_scm", False):
-            version = get_version_from_scm(self.filepath.parent())
+            version = get_version_from_scm(self.filepath.parent)
         else:
             version = None
         return version
