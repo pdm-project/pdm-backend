@@ -1,6 +1,6 @@
 [tool.pdm]
 name = "pdm-pep517"
-version = { use_scm = true }
+version = "0.2.0"
 description = "PEP 517 support"
 author = "Frost Ming <mianghong@gmail.com>"
 license = "MIT"

@@ -34,11 +34,14 @@ def _subprocess_call(cmd, cwd=None, extra_env=None) -> Tuple[int, str, str]:
         env.update(extra_env)
     if isinstance(cmd, str):
         cmd = shlex.split(cmd)
-    proc = subprocess.run(cmd, cwd=cwd, env=env, capture_output=True)
+    proc = subprocess.Popen(
+        cmd, cwd=cwd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    out, err = proc.communicate()
     return (
         proc.returncode,
-        proc.stdout.decode("utf-8", "surrogateescape").strip(),
-        proc.stderr.decode("utf-8", "surrogateescape").strip(),
+        out.decode("utf-8", "surrogateescape").strip(),
+        err.decode("utf-8", "surrogateescape").strip(),
     )
 
 

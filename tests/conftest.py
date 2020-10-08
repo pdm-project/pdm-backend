@@ -17,4 +17,3 @@ def project_with_scm(tmp_path):
         subprocess.check_call(["git", "commit", "-m", "initial commit"])
         subprocess.check_call(["git", "tag", "-a", "0.1.0", "-m", "version 0.1.0"])
         yield tmp_path / project.name
-    shutil.rmtree(tmp_path)
