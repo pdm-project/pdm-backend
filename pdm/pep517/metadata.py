@@ -1,5 +1,6 @@
 import glob
 import os
+from pdm.pep517.scm import get_version_from_scm
 import re
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Tuple, Union
@@ -64,10 +65,17 @@ class Metadata:
         if isinstance(value, str):
             return value
         version_source = value.get("from")
-        with self.filepath.parent.joinpath(version_source).open(encoding="utf-8") as fp:
-            version = re.findall(
-                r"^__version__\s*=\s*[\"'](.+?)[\"']\s*$", fp.read(), re.M
-            )[0]
+        if version_source:
+            with self.filepath.parent.joinpath(version_source).open(
+                encoding="utf-8"
+            ) as fp:
+                version = re.findall(
+                    r"^__version__\s*=\s*[\"'](.+?)[\"']\s*$", fp.read(), re.M
+                )[0]
+        elif value.get("use_scm", False):
+            version = get_version_from_scm(self.filepath.parent())
+        else:
+            version = None
         return version
 
     version: str = MetaField("version", _get_version)
