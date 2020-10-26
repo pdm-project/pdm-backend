@@ -33,8 +33,10 @@ towncrier = "<20.0.0,>=19.2.0"
 pytest-xdist = "<2.0.0,>=1.31.0"
 vendoring = {version="*", marker="python_full_version~='3.8.0'"}
 
-[tool.intreehooks]
+[build-system]
+requires = []
 build-backend = "pdm.pep517.api"
+backend-path = "."
 
 [tool.black]
 line-length = 88
@@ -112,7 +114,4 @@ underlines = "-~^"
   name = "Miscellany"
   showcontent = true
 
-[build-system]
-requires = ["intreehooks"]
-build-backend = "intreehooks:loader"
 
