@@ -28,4 +28,4 @@ jobs:
         run: |
           git config --global user.name "John Doe"
           git config --global user.email "ci@test.org"
-          pdm run pytest -n auto tests
+          pytest -vvv tests
