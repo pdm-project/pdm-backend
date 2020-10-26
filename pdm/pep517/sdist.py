@@ -101,4 +101,6 @@ class SdistBuilder(Builder):
             )
         name = "pyproject.toml"
         tarinfo = tar.gettarinfo(name, os.path.join(tar_dir, name))
-        tar.addfile(tarinfo, io.BytesIO(pyproject_content.encode("utf-8")))
+        bio = io.BytesIO(pyproject_content.encode("utf-8"))
+        tarinfo.size = len(bio.getvalue())
+        tar.addfile(tarinfo, bio)
