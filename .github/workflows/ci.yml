@@ -11,38 +11,19 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.6, 3.7, 3.8, 3.9]
         os: [ubuntu-latest, macOS-latest, windows-latest]
 
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v1
-        with:
-          python-version: 3.8
-      - name: Install PDM
-        run: pip install -U wheel pdm
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Set PY
-        run: echo "::set-env name=PY::$(python -c 'import hashlib, sys;print(hashlib.sha256(sys.version.encode()+sys.executable.encode()).hexdigest())')"
-      - name: Cache PIP
-        uses: actions/cache@v1
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ env.PY }}
-      - name: Cache PEP 582 packages
-        uses: actions/cache@v1
-        with:
-          path: __pypackages__
-          # Look to see if there is a cache hit for the corresponding requirements file
-          key: ${{ runner.os }}-packages-${{ env.PY }}-${{ hashFiles('pdm.lock') }}
       - name: Install Dependencies
         run: |
-          pdm use -f ${{ matrix.python-version }}
-          pdm sync -dvvv
+          python -m pip install -U pip pytest
+          pip install .
       - name: Run Tests
         run: |
           git config --global user.name "John Doe"
