@@ -42,7 +42,7 @@ jobs:
       - name: Install Dependencies
         run: |
           pdm use -f ${{ matrix.python-version }}
-          pdm sync -d
+          pdm sync -dvvv
       - name: Run Tests
         run: |
           git config --global user.name "John Doe"
