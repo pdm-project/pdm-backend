@@ -1,4 +1,6 @@
+import io
 import os
+import re
 import tarfile
 import tempfile
 from copy import copy
@@ -62,11 +64,14 @@ class SdistBuilder(Builder):
             files_to_add = self.find_files_to_add(True)
 
             for relpath in files_to_add:
-                tar.add(
-                    relpath,
-                    arcname=os.path.join(tar_dir, str(relpath)),
-                    recursive=False,
-                )
+                if str(relpath) == "pyproject.toml":
+                    self._add_pyproject(tar, tar_dir)
+                else:
+                    tar.add(
+                        relpath,
+                        arcname=os.path.join(tar_dir, str(relpath)),
+                        recursive=False,
+                    )
                 print(f" - Adding {relpath}")
 
             fd, temp_name = tempfile.mkstemp(prefix="pkg-info")
@@ -81,3 +86,19 @@ class SdistBuilder(Builder):
             tar.close()
 
         return target
+
+    def _add_pyproject(self, tar: tarfile.TarFile, tar_dir: str) -> None:
+        """Rewrites the pyproject.toml before adding to tarball.
+        This is mainly aiming at fixing the version number in pyproject.toml
+        """
+        pyproject_content = self._meta.filepath.read_text()
+        if not isinstance(self._meta._metadata.get("version", ""), str):
+            pyproject_content = re.sub(
+                r"^version *= *.+?$",
+                f'version = "{self._meta.version}"',
+                pyproject_content,
+                flags=re.M,
+            )
+        name = "pyproject.toml"
+        tarinfo = tar.gettarinfo(name, os.path.join(tar_dir, name))
+        tar.addfile(tarinfo, io.BytesIO(pyproject_content.encode("utf-8")))
