@@ -2,7 +2,19 @@ import glob
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from pdm.pep517.scm import get_version_from_scm
 
@@ -10,17 +22,21 @@ from ._vendor import toml
 from .requirements import Requirement
 from .utils import cd, find_packages_iter, safe_name
 
+T = TypeVar("T")
+
 
 class ProjectError(ValueError):
     pass
 
 
-class MetaField:
-    def __init__(self, name, fget=None):
+class MetaField(Generic[T]):
+    def __init__(
+        self, name: str, fget: Optional[Callable[["Metadata", Any], [T]]]
+    ) -> None:
         self.name = name
         self.fget = fget
 
-    def __get__(self, instance, owner):
+    def __get__(self, instance: "Metadata", owner: Type["Metadata"]) -> T:
         if not instance:
             return self
         try:
@@ -60,7 +76,7 @@ class Metadata:
             result[req.identify()] = req
         return result
 
-    name: str = MetaField("name")
+    name: MetaField[str] = MetaField("name")
 
     def _get_version(self, value):
         if isinstance(value, str):
@@ -79,9 +95,9 @@ class Metadata:
             version = None
         return version
 
-    version: str = MetaField("version", _get_version)
-    homepage: str = MetaField("homepage")
-    license: str = MetaField("license")
+    version: MetaField[str] = MetaField("version", _get_version)
+    homepage: MetaField[str] = MetaField("homepage")
+    license: MetaField[str] = MetaField("license")
 
     def _get_name(self, value):
         m = _NAME_EMAIL_RE.match(value)
@@ -91,17 +107,17 @@ class Metadata:
         m = _NAME_EMAIL_RE.match(value)
         return m.group(2) if m else None
 
-    author: str = MetaField("author", _get_name)
-    author_email: str = MetaField("author", _get_email)
-    maintainer: str = MetaField("maintainer", _get_name)
-    maintainer_email: str = MetaField("maintainer", _get_email)
-    classifiers: List[str] = MetaField("classifiers")
-    description: str = MetaField("description")
-    keywords: str = MetaField("keywords")
-    project_urls: Dict[str, str] = MetaField("project_urls")
-    includes: List[str] = MetaField("includes")
-    excludes: List[str] = MetaField("excludes")
-    build: str = MetaField("build")
+    author: MetaField[str] = MetaField("author", _get_name)
+    author_email: MetaField[str] = MetaField("author", _get_email)
+    maintainer: MetaField[str] = MetaField("maintainer", _get_name)
+    maintainer_email: MetaField[str] = MetaField("maintainer", _get_email)
+    classifiers: MetaField[List[str]] = MetaField("classifiers")
+    description: MetaField[str] = MetaField("description")
+    keywords: MetaField[str] = MetaField("keywords")
+    project_urls: MetaField[Dict[str, str]] = MetaField("project_urls")
+    includes: MetaField[List[str]] = MetaField("includes")
+    excludes: MetaField[List[str]] = MetaField("excludes")
+    build: MetaField[str] = MetaField("build")
 
     @property
     def project_name(self) -> str:
@@ -112,9 +128,11 @@ class Metadata:
             return "text/markdown"
         return None
 
-    readme: str = MetaField("readme")
-    long_description_content_type: str = MetaField("readme", _determine_content_type)
-    _extras: List[str] = MetaField("extras")
+    readme: MetaField[str] = MetaField("readme")
+    long_description_content_type: MetaField[str] = MetaField(
+        "readme", _determine_content_type
+    )
+    _extras: MetaField[List[str]] = MetaField("extras")
 
     @property
     def install_requires(self) -> List[str]:
