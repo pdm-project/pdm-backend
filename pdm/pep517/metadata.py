@@ -31,7 +31,7 @@ class ProjectError(ValueError):
 
 class MetaField(Generic[T]):
     def __init__(
-        self, name: str, fget: Optional[Callable[["Metadata", Any], T]]
+        self, name: str, fget: Optional[Callable[["Metadata", Any], T]] = None
     ) -> None:
         self.name = name
         self.fget = fget
