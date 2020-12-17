@@ -88,8 +88,8 @@ class WheelBuilder(Builder):
             tag = (impl, abi_tag, platform)
         else:
             platform = "any"
-            if self.meta.python_requires and SpecifierSet(
-                self.meta.python_requires
+            if self.meta.requires_python and SpecifierSet(
+                self.meta.requires_python
             ).contains("2.7"):
                 impl = "py2.py3"
             else:

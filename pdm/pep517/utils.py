@@ -10,6 +10,9 @@ from fnmatch import fnmatchcase
 from sysconfig import get_config_var
 from typing import Iterable, Optional
 
+from packaging.markers import Marker
+from packaging.requirements import Requirement
+
 from ._vendor import packaging
 
 
@@ -39,6 +42,23 @@ def to_filename(name):
     Any '-' characters are currently replaced with '_'.
     """
     return name.replace("-", "_")
+
+
+def is_dict_like(value):
+    """Determine if an object is dict-like."""
+    return bool(getattr(value, "items", None) and getattr(value, "__getitem__", None))
+
+
+def merge_marker(requirement: Requirement, marker: str) -> None:
+    """Merge the target marker str with the requirement markers"""
+    if not requirement.marker:
+        requirement.marker = Marker(marker)
+    old_marker = requirement.marker
+    if "or" in old_marker._markers:
+        new_marker = Marker(f"({old_marker}) and {marker}")
+    else:
+        new_marker = Marker(f"{old_marker} and {marker}")
+    requirement.marker = new_marker
 
 
 def find_packages_iter(

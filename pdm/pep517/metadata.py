@@ -2,25 +2,13 @@ import glob
 import os
 import re
 from pathlib import Path
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Generic,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar, Union
 
 from pdm.pep517.scm import get_version_from_scm
 
 from ._vendor import toml
-from .requirements import Requirement
-from .utils import cd, find_packages_iter, safe_name
+from ._vendor.packaging.requirements import Requirement
+from .utils import cd, find_packages_iter, is_dict_like, merge_marker, safe_name
 
 T = TypeVar("T")
 
@@ -54,33 +42,30 @@ _NAME_EMAIL_RE = re.compile(r"^\s*([^<>]+?)\s*<([^<>]+)>")
 class Metadata:
     """A class that holds all metadata that Python packaging requries."""
 
+    DEFAULT_ENCODING = "utf-8"
+    SUPPORTED_CONTENT_TYPES = ("text/markdown", "text/x-rst", "text/plain")
+
     def __init__(self, filepath: Union[str, Path]) -> None:
         self.filepath = Path(filepath).absolute()
         try:
             self._metadata = self._read_pyproject(self.filepath)
         except (FileNotFoundError, KeyError, toml.TomlDecodeError):
-            raise ProjectError("The package is not a valid PDM project.")
+            raise ProjectError("The project's pyproject.toml is not valid.")
 
     @staticmethod
     def _read_pyproject(filepath: Path) -> Dict[str, Any]:
         data = toml.loads(filepath.read_text(encoding="utf-8"))
-        return data["tool"]["pdm"]
-
-    def get_dependencies(self, section: str = "default") -> Dict[str, Requirement]:
-        """Read the key:dep pairs from packages section."""
-        section = "dependencies" if section == "default" else f"{section}-dependencies"
-        packages = self._metadata.get(section, {})
-        result = {}
-        for name, req_dict in packages.items():
-            req = Requirement.from_req_dict(name, req_dict)
-            result[req.identify()] = req
-        return result
+        return data["project"]
 
     name: MetaField[str] = MetaField("name")
 
     def _get_version(self, value):
         if isinstance(value, str):
             return value
+        if not self.dynamic or "version" not in self.dynamic:
+            raise ProjectError(
+                "'value' must be in 'dynamic' field to let pdm-pep517 fill in the value"
+            )
         version_source = value.get("from")
         if version_source:
             with self.filepath.parent.joinpath(version_source).open(
@@ -96,107 +81,138 @@ class Metadata:
         return version
 
     version: MetaField[str] = MetaField("version", _get_version)
-    homepage: MetaField[str] = MetaField("homepage")
-    license: MetaField[str] = MetaField("license")
+    description: MetaField[str] = MetaField("description")
+
+    def _get_readme_file(self, value):
+        if is_dict_like(value):
+            return value.get("file")
+        return value
+
+    def _get_readme_content(self, value):
+        if is_dict_like(value):
+            if "file" in value and "text" in value:
+                raise ProjectError(
+                    "readme table shouldn't specify both 'file' "
+                    "and 'text' at the same time"
+                )
+            if "text" in value:
+                return value["text"]
+            file_path = value.get("file")
+            encoding = value.get("charset", self.DEFAULT_ENCODING)
+            return Path(file_path).read_text(encoding=encoding)
+        return Path(value).read_text(encoding=self.DEFAULT_ENCODING)
+
+    def _get_content_type(self, value):
+        if is_dict_like(value):
+            content_type = value.get("content-type")
+            if not content_type:
+                raise ProjectError("'content-type' is missing in the readme table")
+            if content_type not in self.SUPPORTED_CONTENT_TYPES:
+                raise ProjectError(f"Unsupported readme content-type: {content_type}")
+            return content_type
+        if value.lower().endswith(".md"):
+            return "text/markdown"
+        elif value.lower().endswith(".rst"):
+            return "text/x-rst"
+        raise ProjectError(f"Unsupported readme suffix: {value}")
+
+    readme: MetaField[str] = MetaField("readme", _get_readme_file)
+    long_description: MetaField[str] = MetaField("readme", _get_readme_content)
+    long_description_content_type: MetaField[str] = MetaField(
+        "readme", _get_content_type
+    )
+
+    def _get_license(self, value):
+        if "file" in value and "text" in value:
+            raise ProjectError(
+                "license table shouldn't specify both 'file' "
+                "and 'text' at the same time"
+            )
+        return (
+            Path(value["file"]).read_text(encoding=self.DEFAULT_ENCODING)
+            if "file" in value
+            else value.get("text")
+        )
+
+    license: MetaField[str] = MetaField("license", _get_license)
 
     def _get_name(self, value):
-        m = _NAME_EMAIL_RE.match(value)
-        return m.group(1) if m else None
+        result = []
+        for item in value:
+            if "email" not in item and "name" in item:
+                result.append(item.get("name"))
+        return ",".join(result)
 
     def _get_email(self, value):
-        m = _NAME_EMAIL_RE.match(value)
-        return m.group(2) if m else None
+        result = []
+        for item in value:
+            if "email" not in item:
+                continue
+            email = (
+                item["email"]
+                if "name" not in item
+                else "{name} <{email}>".format(**item)
+            )
+            result.append(email)
+        return ",".join(result)
 
-    author: MetaField[str] = MetaField("author", _get_name)
-    author_email: MetaField[str] = MetaField("author", _get_email)
-    maintainer: MetaField[str] = MetaField("maintainer", _get_name)
-    maintainer_email: MetaField[str] = MetaField("maintainer", _get_email)
+    author: MetaField[str] = MetaField("authors", _get_name)
+    author_email: MetaField[str] = MetaField("authors", _get_email)
+    maintainer: MetaField[str] = MetaField("maintainers", _get_name)
+    maintainer_email: MetaField[str] = MetaField("maintainers", _get_email)
     classifiers: MetaField[List[str]] = MetaField("classifiers")
-    description: MetaField[str] = MetaField("description")
     keywords: MetaField[str] = MetaField("keywords")
-    project_urls: MetaField[Dict[str, str]] = MetaField("project_urls")
+    project_urls: MetaField[Dict[str, str]] = MetaField("urls")
     includes: MetaField[List[str]] = MetaField("includes")
     excludes: MetaField[List[str]] = MetaField("excludes")
     build: MetaField[str] = MetaField("build")
+    dependencies: MetaField[List[str]] = MetaField("dependencies")
+    optional_dependencies: MetaField[Dict[str, List[str]]] = MetaField(
+        "optional-dependencies"
+    )
+    dynamic: MetaField[List[str]] = MetaField("dynamic")
 
     @property
     def project_name(self) -> str:
-        return safe_name(self.name)
-
-    def _determine_content_type(self, value):
-        if value.endswith(".md"):
-            return "text/markdown"
-        return None
-
-    readme: MetaField[str] = MetaField("readme")
-    long_description_content_type: MetaField[str] = MetaField(
-        "readme", _determine_content_type
-    )
-    _extras: MetaField[List[str]] = MetaField("extras")
-
-    @property
-    def install_requires(self) -> List[str]:
-        # Exclude editable requirements for not supported in `install_requires`
-        # field.
-        return [r.as_line() for r in self.get_dependencies().values()]
-
-    def _get_extra_require(self, extra: str) -> Tuple[str, Iterable[Requirement]]:
-        if "=" in extra:
-            name, extras = extra.split("=")
-            name = name.strip()
-            extras = [e.strip() for e in extras.strip().split("|")]
-        else:
-            name, extras = extra, [extra]
-        extra_require = {}
-        for extra in extras:
-            extra_require.update(self.get_dependencies(extra))
-        return name, extra_require.values()
-
-    @property
-    def extras_require(self) -> Dict[str, List[str]]:
-        """For setup.py extras_require field"""
-        if not self._extras:
-            return {}
-        return {
-            name: [r.as_line() for r in reqs]
-            for extra in self._extras
-            for name, reqs in [self._get_extra_require(extra)]
-        }
+        return safe_name(self.name).lower()
 
     @property
     def requires_extra(self) -> Dict[str, List[str]]:
         """For PKG-INFO metadata"""
-        if not self._extras:
+        if not self.optional_dependencies:
             return {}
         result = {}
-        for extra in self._extras:
-
-            name, reqs = self._get_extra_require(extra)
+        for name, reqs in self.optional_dependencies.items():
             current = result[name] = []
             for r in reqs:
-                if not r.marker:
-                    r.marker = f"extra == {name!r}"
-                elif " or " in r.marker:
-                    r.marker = f"({r.marker}) and extra == {name!r}"
-                else:
-                    r.marker = f"{r.marker} and extra == {name!r}"
-                current.append(r.as_line())
+                parsed = Requirement(r)
+                merge_marker(parsed, f"extra == {name!r}")
+                current.append(str(parsed))
         return result
 
     @property
-    def python_requires(self) -> str:
-        return self._metadata.get("python_requires", "")
+    def requires_python(self) -> str:
+        return self._metadata.get("requires-python", "")
 
     @property
     def entry_points(self) -> Dict[str, List[str]]:
         result = {}
         settings = self._metadata
-        if "cli" in settings:
+        if "scripts" in settings:
             result["console_scripts"] = [
-                f"{key} = {value}" for key, value in settings["cli"].items()
+                f"{key} = {value}" for key, value in settings["scripts"].items()
             ]
-        if "entry_points" in settings:
-            for plugin, value in settings["entry_points"].items():
+        if "gui-scripts" in settings:
+            result["gui_scripts"] = [
+                f"{key} = {value}" for key, value in settings["gui-scripts"].items()
+            ]
+        if "entry-points" in settings:
+            for plugin, value in settings["entry-points"].items():
+                if plugin in ("console_scripts", "gui_scripts"):
+                    raise ProjectError(
+                        f"'project.entry-points.{plugin}'' should be defined "
+                        f"in 'project.{plugin.replace('_', '-')}'"
+                    )
                 result[plugin] = [f"{k} = {v}" for k, v in value.items()]
         return result
 
