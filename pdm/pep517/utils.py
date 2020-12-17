@@ -53,6 +53,7 @@ def merge_marker(requirement: Requirement, marker: str) -> None:
     """Merge the target marker str with the requirement markers"""
     if not requirement.marker:
         requirement.marker = Marker(marker)
+        return
     old_marker = requirement.marker
     if "or" in old_marker._markers:
         new_marker = Marker(f"({old_marker}) and {marker}")
