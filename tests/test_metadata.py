@@ -11,8 +11,8 @@ def test_parse_module():
     metadata = Metadata(FIXTURES / "projects/demo-module/pyproject.toml")
     assert metadata.name == "demo-module"
     assert metadata.version == "0.1.0"
-    assert metadata.author == "frostming"
-    assert metadata.author_email == "mianghong@gmail.com"
+    assert metadata.author == ""
+    assert metadata.author_email == "frostming <mianghong@gmail.com>"
     paths = metadata.convert_package_paths()
     assert sorted(paths["py_modules"]) == ["bar_module", "foo_module"]
     assert paths["packages"] == []
@@ -52,11 +52,16 @@ def test_parse_src_package_by_include():
 
 def test_parse_package_with_extras():
     metadata = Metadata(FIXTURES / "projects/demo-combined-extras/pyproject.toml")
-    assert metadata.install_requires == ["urllib3"]
-    assert metadata.extras_require == {"be": ["idna"], "all": ["idna", "chardet"]}
+    assert metadata.dependencies == ["urllib3"]
+    assert metadata.optional_dependencies == {
+        "be": ["idna"],
+        "te": ["chardet"],
+        "all": ["idna", "chardet"],
+    }
     assert metadata.requires_extra == {
-        "be": ["idna; extra == 'be'"],
-        "all": ["idna; extra == 'all'", "chardet; extra == 'all'"],
+        "be": ['idna; extra == "be"'],
+        "te": ['chardet; extra == "te"'],
+        "all": ['idna; extra == "all"', 'chardet; extra == "all"'],
     }
 
 

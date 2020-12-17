@@ -8,11 +8,11 @@ from typing import Dict, Iterator, List, Tuple, Union
 from .metadata import Metadata
 from .utils import normalize_path
 
-OPEN_README = """import codecs
-
-with codecs.open({readme!r}, encoding="utf-8") as fp:
-    long_description = fp.read()
+OPEN_README = '''
+long_description = """\\
+{content}
 """
+'''
 
 SETUP_FORMAT = """
 # -*- coding: utf-8 -*-
@@ -246,7 +246,9 @@ class Builder:
 
         package_paths = meta.convert_package_paths()
         if package_paths["packages"]:
-            extra.append("    'packages': {!r},\n".format(package_paths["packages"]))
+            extra.append(
+                "    'packages': {},\n".format(_format_list(package_paths["packages"]))
+            )
         if package_paths["package_dir"]:
             extra.append(
                 "    'package_dir': {!r},\n".format(package_paths["package_dir"])
@@ -262,8 +264,8 @@ class Builder:
                 )
             )
 
-        if meta.readme:
-            before.append(OPEN_README.format(readme=meta.readme))
+        if meta.long_description:
+            before.append(OPEN_README.format(content=meta.long_description))
         else:
             before.append("long_description = None\n")
         if meta.long_description_content_type:
@@ -279,18 +281,20 @@ class Builder:
             extra.append(
                 "    'classifiers': {},\n".format(_format_list(meta.classifiers, 8))
             )
-        if meta.install_requires:
+        if meta.dependencies:
             before.append(
-                "INSTALL_REQUIRES = {}\n".format(_format_list(meta.install_requires))
+                "INSTALL_REQUIRES = {}\n".format(_format_list(meta.dependencies))
             )
             extra.append("    'install_requires': INSTALL_REQUIRES,\n")
-        if meta.extras_require:
+        if meta.optional_dependencies:
             before.append(
-                "EXTRAS_REQUIRE = {}\n".format(_format_dict_list(meta.extras_require))
+                "EXTRAS_REQUIRE = {}\n".format(
+                    _format_dict_list(meta.optional_dependencies)
+                )
             )
             extra.append("    'extras_require': EXTRAS_REQUIRE,\n")
-        if meta.python_requires:
-            extra.append("    'python_requires': {!r},\n".format(meta.python_requires))
+        if meta.requires_python:
+            extra.append("    'python_requires': {!r},\n".format(meta.requires_python))
         if meta.entry_points:
             before.append(
                 "ENTRY_POINTS = {}\n".format(_format_dict_list(meta.entry_points))
@@ -305,7 +309,9 @@ class Builder:
         content = METADATA_BASE.format(
             name=meta.name or "UNKNOWN",
             version=meta.version or "UNKNOWN",
-            homepage=meta.homepage or "UNKNOWN",
+            homepage=meta.project_urls.get("homepage", "UNKNOWN")
+            if meta.project_urls
+            else "UNKNOWN",
             license=meta.license or "UNKNOWN",
             description=meta.description or "UNKNOWN",
             readme=(Path(meta.readme).read_text("utf-8") if meta.readme else "UNKNOWN"),
@@ -327,17 +333,17 @@ class Builder:
         if meta.maintainer_email:
             content += "Maintainer-email: {}\n".format(meta.maintainer_email)
 
-        if meta.python_requires:
-            content += "Requires-Python: {}\n".format(meta.python_requires)
+        if meta.requires_python:
+            content += "Requires-Python: {}\n".format(meta.requires_python)
 
         for classifier in meta.classifiers or []:
             content += "Classifier: {}\n".format(classifier)
 
         if full:
-            for dep in sorted(meta.install_requires):
+            for dep in sorted(meta.dependencies):
                 content += "Requires-Dist: {}\n".format(dep)
 
-        for extra, reqs in sorted(self.meta.requires_extra.items()):
+        for extra, reqs in sorted(meta.requires_extra.items()):
             content += "Provides-Extra: {}\n".format(extra)
             if full:
                 for dep in reqs:
@@ -350,8 +356,8 @@ class Builder:
             content += "Description-Content-Type: {}\n".format(
                 meta.long_description_content_type
             )
-        if meta.readme:
-            readme = Path(meta.readme).read_text("utf-8")
+        if meta.long_description:
+            readme = meta.long_description
             if full:
                 content += "\n" + readme + "\n"
             else:

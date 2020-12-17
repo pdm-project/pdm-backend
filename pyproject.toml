@@ -1,14 +1,18 @@
-[tool.pdm]
+[project]
+# PEP 621 project metadata
+# https://www.python.org/dev/peps/pep-0621
 name = "pdm-pep517"
 version = {use_scm = true}
 description = "PEP 517 support"
-author = "Frost Ming <mianghong@gmail.com>"
-license = "MIT"
-python_requires = ">=3.6"
+authors = [
+  {name = "Frost Ming", email = "mianghong@gmail.com"}
+]
+license = {text = "MIT"}
+requires-python = ">=3.6"
 readme = "README.md"
-homepage = "https://pdm.fming.dev"
 includes = ["pdm"]
 keywords = ["packaging", "PEP 517", "build"]
+dynamic = ["version"]
 
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -20,18 +24,18 @@ classifiers = [
     "Programming Language :: Python :: 3.8"
 ]
 
-[tool.pdm.project_urls]
-Repository = "https://github.com/frostming/pdm-pep517"
+dependencies = []
+dev-dependencies = [
+  "pytest",
+  "pytest-cov",
+  "towncrier",
+  "pytest-xdist",
+  "vendoring; python_version~=3.8"
+]
 
-[tool.pdm.dependencies]
-
-[tool.pdm.dev-dependencies]
-pytest = "*"
-pytest-cov = "*"
-pytest-mock = "*"
-towncrier = "<20.0.0,>=19.2.0"
-pytest-xdist = "<2.0.0,>=1.31.0"
-vendoring = {version="*", marker="python_full_version~='3.8.0'"}
+[project.urls]
+homepage = "https://pdm.fming.dev"
+repository = "https://github.com/frostming/pdm-pep517"
 
 [build-system]
 requires = []
