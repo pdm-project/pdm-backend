@@ -231,7 +231,7 @@ class Builder:
             "maintainer": meta.maintainer,
             "maintainer_email": meta.maintainer_email,
             "description": meta.description,
-            "url": meta.homepage,
+            "url": (meta.project_urls or {}).get("homepage", ""),
         }
 
         if meta.build:
@@ -247,7 +247,9 @@ class Builder:
         package_paths = meta.convert_package_paths()
         if package_paths["packages"]:
             extra.append(
-                "    'packages': {},\n".format(_format_list(package_paths["packages"]))
+                "    'packages': {},\n".format(
+                    _format_list(package_paths["packages"], 8)
+                )
             )
         if package_paths["package_dir"]:
             extra.append(
