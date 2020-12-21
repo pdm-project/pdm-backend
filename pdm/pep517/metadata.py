@@ -8,7 +8,14 @@ from pdm.pep517.scm import get_version_from_scm
 
 from ._vendor import toml
 from ._vendor.packaging.requirements import Requirement
-from .utils import cd, find_packages_iter, is_dict_like, merge_marker, safe_name
+from .utils import (
+    cd,
+    ensure_pep440_req,
+    find_packages_iter,
+    is_dict_like,
+    merge_marker,
+    safe_name,
+)
 
 T = TypeVar("T")
 
@@ -25,7 +32,7 @@ class MetaField(Generic[T]):
         self.fget = fget
 
     def __get__(self, instance: "Metadata", owner: Type["Metadata"]) -> T:
-        if not instance:
+        if instance is None:
             return self
         try:
             rv = instance._metadata[self.name]
@@ -166,9 +173,18 @@ class Metadata:
     includes: MetaField[List[str]] = MetaField("includes")
     excludes: MetaField[List[str]] = MetaField("excludes")
     build: MetaField[str] = MetaField("build")
-    dependencies: MetaField[List[str]] = MetaField("dependencies")
+
+    def _convert_dependencies(self, deps):
+        return list(filter(None, map(ensure_pep440_req, deps)))
+
+    def _convert_optional_dependencies(self, deps):
+        return {k: self._convert_dependencies(deps[k]) for k in deps}
+
+    dependencies: MetaField[List[str]] = MetaField(
+        "dependencies", _convert_dependencies
+    )
     optional_dependencies: MetaField[Dict[str, List[str]]] = MetaField(
-        "optional-dependencies"
+        "optional-dependencies", _convert_optional_dependencies
     )
     dynamic: MetaField[List[str]] = MetaField("dynamic")
 
