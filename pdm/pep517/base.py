@@ -8,11 +8,11 @@ from typing import Dict, Iterator, List, Tuple, Union
 from .metadata import Metadata
 from .utils import normalize_path
 
-OPEN_README = '''
-long_description = """\\
-{content}
+OPEN_README = """import codecs
+
+with codecs.open({readme!r}, encoding="utf-8") as fp:
+    long_description = fp.read()
 """
-'''
 
 SETUP_FORMAT = """
 # -*- coding: utf-8 -*-
@@ -265,9 +265,14 @@ class Builder:
                     package_paths["exclude_package_data"]
                 )
             )
-
-        if meta.long_description:
-            before.append(OPEN_README.format(content=meta.long_description))
+        if meta.readme:
+            before.append(OPEN_README.format(readme=meta.readme))
+        elif meta.long_description:
+            before.append(
+                "long_description = '''{}'''\n".format(
+                    repr(meta.long_description)[1:-1]
+                )
+            )
         else:
             before.append("long_description = None\n")
         if meta.long_description_content_type:
@@ -377,7 +382,7 @@ class Builder:
         if setup_py_path.is_file():
             return setup_py_path
 
-        setup_py_path.write_text(self.format_setup_py())
+        setup_py_path.write_text(self.format_setup_py(), encoding="utf-8")
 
         # Clean this temp file when process exits
         def cleanup():
