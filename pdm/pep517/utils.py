@@ -194,22 +194,8 @@ def get_abi_tag() -> str:
 
 
 def ensure_pep440_req(req: str) -> Optional[str]:
-    """Convert Pip install requirement compatible dependency to PEP 440.
-    This will covert any "editable" requirements to static ones.
-    """
-    from pip._internal.req.constructors import (
-        install_req_from_editable,
-        install_req_from_line,
-    )
+    """Discard all non-PEP 440 requirements, e.g. editable VCS requirements."""
 
     if req.strip().startswith("-e"):
-        ireq = install_req_from_editable(req.strip()[3:])
-    else:
-        ireq = install_req_from_line(req)
-    if not ireq.name:
-        # No name is given: ./local_dir, discard this requirement.
         return None
-    extras = f"[{','.join(ireq.extras)}]" if ireq.extras else ""
-    markers = f"; {ireq.markers}" if ireq.markers else ""
-    location = f"@ {ireq.link.url_without_fragment}" if ireq.link else ""
-    return f"{ireq.name}{extras}{ireq.specifier}{location}{markers}"
+    return req
