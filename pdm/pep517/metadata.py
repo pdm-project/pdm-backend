@@ -66,7 +66,7 @@ class Metadata:
         except toml.TomlDecodeError:
             raise ProjectError("The project's pyproject.toml is not valid.")
         else:
-            if ["project"] in data:
+            if "project" in data:
                 return data["project"]
             elif "tool" in data and "pdm" in data["tool"]:
                 return convert_legacy(data["tool"]["pdm"])

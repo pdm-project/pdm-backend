@@ -3,7 +3,7 @@ requires = ["pdm-pep517"]
 build-backend = "pdm.pep517.api"
 
 [tool.pdm]
-authors = "frostming <mianghong@gmail.com>"
+author = "frostming <mianghong@gmail.com>"
 version = { from = "my_package/__init__.py" }
 python_requires = ">=3.5"
 license = "MIT"

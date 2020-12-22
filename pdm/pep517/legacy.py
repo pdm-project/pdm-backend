@@ -1,6 +1,6 @@
 import functools
 import re
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from pdm.pep517.utils import path_to_url, safe_name
 
@@ -105,29 +105,38 @@ class Requirement:
 
 class Converter:
     def __init__(self) -> None:
-        self._converters: Dict[str, ConvertFunc] = {}
+        self._key_converters: Dict[str, ConvertFunc] = {}
+        self._global_converters: List[ConvertFunc] = []
 
     def register_converter(
-        self, field: str, new_field: Optional[str] = None
+        self, field: Optional[str] = None, new_field: Optional[str] = None
     ) -> Callable[[ConvertFunc], ConvertFunc]:
         def wrapper(func: ConvertFunc) -> ConvertFunc:
             func.field = new_field or func.__name__
-            self._converters[field] = func
+            if field is not None:
+                self._key_converters[field] = func
+            else:
+                self._global_converters.append(func)
             return func
 
         return wrapper
 
     def convert(self, data: Dict[str, Any]) -> Dict[str, Any]:
         result = {}
-        for k, v in data.items():
-            if k in self._converters:
-                func = self._converters[k]
+        for k, v in list(data.items()):
+            if k in self._key_converters:
+                func = self._key_converters[k]
                 new_value = func(v, result)
                 if new_value is UNSET:
                     continue
                 result[func.field] = new_value
-            else:
-                result[k] = v
+                data.pop(k, None)
+        for func in self._global_converters:
+            new_value = func(data, result)
+            if new_value is UNSET:
+                continue
+            result[func.field] = new_value
+        result.update(data)
         return result
 
 
@@ -194,7 +203,7 @@ def dev_dependencies(value, result):
 
 
 @converter.register_converter(new_field="optional-dependencies")
-def optional_dependencies(source):
+def optional_dependencies(source, result):
     extras = {}
     for key, reqs in list(source.items()):
         if key.endswith("-dependencies") and key != "dev-dependencies":
