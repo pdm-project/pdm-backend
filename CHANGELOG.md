@@ -1,3 +1,11 @@
+Release v0.3.3 (2020-12-22)
+---------------------------
+
+### Features & Improvements
+
+- Auto convert legacy metadata format for backward compatibility. [#5](https://github.com/frostming/pdm-pep517/issues/5)
+
+
 Release v0.3.2 (2020-12-21)
 ---------------------------
 
