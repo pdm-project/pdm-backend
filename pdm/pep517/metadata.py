@@ -4,6 +4,7 @@ import re
 from pathlib import Path
 from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar, Union
 
+from pdm.pep517.legacy import convert_legacy
 from pdm.pep517.scm import get_version_from_scm
 
 from ._vendor import toml
@@ -54,15 +55,23 @@ class Metadata:
 
     def __init__(self, filepath: Union[str, Path]) -> None:
         self.filepath = Path(filepath).absolute()
-        try:
-            self._metadata = self._read_pyproject(self.filepath)
-        except (FileNotFoundError, KeyError, toml.TomlDecodeError):
-            raise ProjectError("The project's pyproject.toml is not valid.")
+        self._metadata = self._read_pyproject(self.filepath)
 
     @staticmethod
     def _read_pyproject(filepath: Path) -> Dict[str, Any]:
-        data = toml.loads(filepath.read_text(encoding="utf-8"))
-        return data["project"]
+        try:
+            data = toml.loads(filepath.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            raise ProjectError("pyproject.toml does not exist.")
+        except toml.TomlDecodeError:
+            raise ProjectError("The project's pyproject.toml is not valid.")
+        else:
+            if ["project"] in data:
+                return data["project"]
+            elif "tool" in data and "pdm" in data["tool"]:
+                return convert_legacy(data["tool"]["pdm"])
+            else:
+                raise ProjectError("No [project] config in pyproject.toml")
 
     name: MetaField[str] = MetaField("name")
 
