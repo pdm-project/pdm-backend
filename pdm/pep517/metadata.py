@@ -5,10 +5,13 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar, Union
 
 from pdm.pep517.legacy import convert_legacy
+from pdm.pep517.license import get_license_classifier, license_lookup
 from pdm.pep517.scm import get_version_from_scm
 
 from ._vendor import toml
 from ._vendor.packaging.requirements import Requirement
+from ._vendor.packaging.specifiers import SpecifierSet
+from ._vendor.packaging.version import Version
 from .utils import (
     cd,
     ensure_pep440_req,
@@ -19,6 +22,16 @@ from .utils import (
 )
 
 T = TypeVar("T")
+
+AVAILABLE_PYTHON_VERSIONS = (
+    "2.7",
+    "3.4",
+    "3.5",
+    "3.6",
+    "3.7",
+    "3.8",
+    "3.9",
+)
 
 
 class ProjectError(ValueError):
@@ -139,6 +152,8 @@ class Metadata:
     )
 
     def _get_license(self, value):
+        if not is_dict_like(value):
+            return ""
         if "file" in value and "text" in value:
             raise ProjectError(
                 "license table shouldn't specify both 'file' "
@@ -150,7 +165,15 @@ class Metadata:
             else value.get("text")
         )
 
+    def _get_license_type(self, value):
+        if is_dict_like(value):
+            if value.get("text", "") in license_lookup:
+                return value.get("text")
+        else:
+            return value
+
     license: MetaField[str] = MetaField("license", _get_license)
+    license_type: MetaField[str] = MetaField("license", _get_license_type)
 
     def _get_name(self, value):
         result = []
@@ -176,7 +199,28 @@ class Metadata:
     author_email: MetaField[str] = MetaField("authors", _get_email)
     maintainer: MetaField[str] = MetaField("maintainers", _get_name)
     maintainer_email: MetaField[str] = MetaField("maintainers", _get_email)
-    classifiers: MetaField[List[str]] = MetaField("classifiers")
+
+    @property
+    def classifiers(self):
+        classifers = set(self._metadata.get("classifiers", []))
+
+        if self.dynamic and "classifiers" in self.dynamic:
+            python_constraint = (
+                SpecifierSet(self.requires_python)
+                if self.requires_python
+                else SpecifierSet()
+            )
+
+            for version in AVAILABLE_PYTHON_VERSIONS:
+                if python_constraint.contains(Version(version)):
+                    classifers.add(f"Programming Language :: Python :: {version[0]}")
+                    classifers.add(f"Programming Language :: Python :: {version}")
+
+            if self.license_type:
+                classifers.add(get_license_classifier(self.license_type))
+
+        return sorted(classifers)
+
     keywords: MetaField[str] = MetaField("keywords")
     project_urls: MetaField[Dict[str, str]] = MetaField("urls")
     includes: MetaField[List[str]] = MetaField("includes")

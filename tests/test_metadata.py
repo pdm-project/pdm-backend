@@ -19,6 +19,15 @@ def test_parse_module():
     assert paths["package_dir"] == {}
 
 
+def test_autogen_classifiers():
+    metadata = Metadata(FIXTURES / "projects/demo-module/pyproject.toml")
+    classifiers = metadata.classifiers
+    for python_version in ("3", "3.5", "3.6", "3.7", "3.8", "3.9"):
+        assert f"Programming Language :: Python :: {python_version}" in classifiers
+    assert "Programming Language :: Python :: 2.7" not in classifiers
+    assert "License :: OSI Approved :: MIT License" in classifiers
+
+
 def test_parse_package():
     metadata = Metadata(FIXTURES / "projects/demo-package-include/pyproject.toml")
     paths = metadata.convert_package_paths()
@@ -26,6 +35,7 @@ def test_parse_package():
     assert paths["packages"] == ["my_package"]
     assert paths["package_dir"] == {}
     assert paths["package_data"] == {"": ["*"]}
+    assert not metadata.classifiers
 
 
 def test_parse_error_package():

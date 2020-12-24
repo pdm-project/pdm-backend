@@ -70,7 +70,8 @@ drop = [
     "bin/",
     "*.so",
     "typing.*",
-    "*/tests/"
+    "*/tests/",
+    "spdx/data/*.txt"
 ]
 
 [tool.vendoring.typing-stubs]

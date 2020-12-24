@@ -226,7 +226,7 @@ class Builder:
             "name": meta.name,
             "version": meta.version,
             "author": meta.author,
-            "license": meta.license,
+            "license": meta.license_type,
             "author_email": meta.author_email,
             "maintainer": meta.maintainer,
             "maintainer_email": meta.maintainer_email,
@@ -319,7 +319,7 @@ class Builder:
             homepage=meta.project_urls.get("homepage", "UNKNOWN")
             if meta.project_urls
             else "UNKNOWN",
-            license=meta.license or "UNKNOWN",
+            license=meta.license_type or "UNKNOWN",
             description=meta.description or "UNKNOWN",
             readme=(Path(meta.readme).read_text("utf-8") if meta.readme else "UNKNOWN"),
         )

@@ -6,7 +6,7 @@ build-backend = "pdm.pep517.api"
 authors = [
     {name = "frostming", email = "mianghong@gmail.com"},
 ]
-dynamic = ["version"]
+dynamic = ["version", "classifiers"]
 version = { from = "foo_module.py" }
 requires-python = ">=3.5"
 license = {text = "MIT"}
