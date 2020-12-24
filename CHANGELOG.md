@@ -1,3 +1,11 @@
+Release v0.4.0 (2020-12-24)
+---------------------------
+
+### Features & Improvements
+
+- Autogen trove classifiers based on `requires-python` and `license`. [#6](https://github.com/frostming/pdm-pep517/issues/6)
+
+
 Release v0.3.3 (2020-12-22)
 ---------------------------
 
