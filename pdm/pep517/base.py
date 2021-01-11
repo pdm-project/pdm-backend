@@ -107,7 +107,6 @@ class Builder:
         self._old_cwd = None
         self.location = Path(location).absolute()
         self._meta = None
-        self.package_dir = self.meta.package_dir
 
     @property
     def meta(self) -> Metadata:
@@ -133,7 +132,7 @@ class Builder:
         dont_find_froms = []
 
         if not self.meta.includes:
-            find_froms = _find_top_packages(self.package_dir or ".")
+            find_froms = _find_top_packages(self.meta.package_dir or ".")
             if not find_froms:
                 includes = ["*.py"]
         else:
