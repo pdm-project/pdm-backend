@@ -1,3 +1,11 @@
+Release v0.5.0 (2021-01-11)
+---------------------------
+
+### Features & Improvements
+
+- Support PEP 420 implicit namespace packages [#7](https://github.com/frostming/pdm-pep517/issues/7)
+
+
 Release v0.4.0 (2020-12-24)
 ---------------------------
 
