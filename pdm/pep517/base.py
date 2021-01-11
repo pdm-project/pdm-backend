@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Dict, Iterator, List, Tuple, Union
 
 from .metadata import Metadata
-from .utils import normalize_path
+from .utils import is_python_package, normalize_path
 
 OPEN_README = """import codecs
 
@@ -75,11 +75,7 @@ def _find_top_packages(root: str) -> List[str]:
     result = []
     for path in os.listdir(root):
         path = os.path.join(root, path)
-        if (
-            os.path.isdir(path)
-            and os.path.exists(os.path.join(path, "__init__.py"))
-            and not path.startswith("test")
-        ):
+        if is_python_package(path):
             result.append(path)
     return result
 
@@ -109,9 +105,9 @@ class Builder:
 
     def __init__(self, location: Union[str, Path]) -> None:
         self._old_cwd = None
-        self.package_dir = None
         self.location = Path(location).absolute()
         self._meta = None
+        self.package_dir = self.meta.package_dir
 
     @property
     def meta(self) -> Metadata:
@@ -137,11 +133,7 @@ class Builder:
         dont_find_froms = []
 
         if not self.meta.includes:
-            if os.path.isdir("src"):
-                find_froms = ["src"]
-                self.package_dir = "src"
-            else:
-                find_froms = _find_top_packages(".")
+            find_froms = _find_top_packages(self.package_dir or ".")
             if not find_froms:
                 includes = ["*.py"]
         else:
@@ -169,13 +161,6 @@ class Builder:
             if not path_base or path_base == ".":
                 # the path is top level itself
                 path_base = path
-
-            if (
-                not os.path.isfile(os.path.join(path_base, "__init__.py"))
-                and _find_top_packages(path_base)
-                and not self.package_dir
-            ):  # Determine package_dir smartly
-                self.package_dir = path_base
 
             for root, dirs, filenames in os.walk(path):
                 if root == "__pycache__" or any(

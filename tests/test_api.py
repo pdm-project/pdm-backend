@@ -105,7 +105,7 @@ def test_build_package_include(tmp_path):
         assert "data_out.json" in zip_names
 
 
-def test_build_src_package_by_include(tmp_path):
+def test_namespace_package_by_include(tmp_path):
     with build_fixture_project("demo-src-package-include"):
         wheel_name = api.build_wheel(tmp_path.as_posix())
         sdist_name = api.build_sdist(tmp_path.as_posix())
@@ -116,6 +116,22 @@ def test_build_src_package_by_include(tmp_path):
         zip_names = get_wheel_names(tmp_path / wheel_name)
         assert "demo-package-0.1.0/sub/my_package/__init__.py" in tar_names
         assert "demo-package-0.1.0/sub/my_package/data.json" in tar_names
+
+        assert "sub/my_package/__init__.py" in zip_names
+        assert "sub/my_package/data.json" in zip_names
+
+
+def test_build_explicit_package_dir(tmp_path):
+    with build_fixture_project("demo-explicit-package-dir"):
+        wheel_name = api.build_wheel(tmp_path.as_posix())
+        sdist_name = api.build_sdist(tmp_path.as_posix())
+        assert sdist_name == "demo-package-0.1.0.tar.gz"
+        assert wheel_name == "demo_package-0.1.0-py3-none-any.whl"
+
+        tar_names = get_tarball_names(tmp_path / sdist_name)
+        zip_names = get_wheel_names(tmp_path / wheel_name)
+        assert "demo-package-0.1.0/foo/my_package/__init__.py" in tar_names
+        assert "demo-package-0.1.0/foo/my_package/data.json" in tar_names
 
         assert "my_package/__init__.py" in zip_names
         assert "my_package/data.json" in zip_names

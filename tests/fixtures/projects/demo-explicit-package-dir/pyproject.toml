@@ -1,0 +1,22 @@
+[build-system]
+requires = ["pdm-pep517"]
+build-backend = "pdm.pep517.api"
+
+[project]
+authors = [
+    {name = "frostming", email = "mianghong@gmail.com"},
+]
+dynamic = ["version"]
+version = { from = "foo/my_package/__init__.py" }
+package-dir = "foo"
+requires-python = ">=3.5"
+license = {text = "MIT"}
+dependencies = []
+dev-dependencies = []
+description = ""
+name = "demo-package"
+
+[project.urls]
+homepage = ""
+
+[project.optional-dependencies]

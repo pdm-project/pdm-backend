@@ -285,9 +285,17 @@ class Metadata:
                 result[plugin] = [f"{k} = {v}" for k, v in value.items()]
         return result
 
+    @property
+    def package_dir(self) -> str:
+        """A directory that will be used to looking for packages."""
+        if "package-dir" in self._metadata:
+            return self._metadata["package-dir"]
+        elif self.filepath.parent.joinpath("src").is_dir():
+            return "src"
+        return ""
+
     def convert_package_paths(self) -> Dict[str, Union[List, Dict]]:
         """Return a {package_dir, packages, package_data, exclude_package_data} dict."""
-        package_dir = {}
         packages = []
         py_modules = []
         package_data = {"": ["*"]}
@@ -295,11 +303,13 @@ class Metadata:
 
         with cd(self.filepath.parent.as_posix()):
             if not self.includes:
-                if os.path.isdir("src"):
-                    package_dir[""] = "src"
-                    packages = list(find_packages_iter("src"))
-                else:
-                    packages = list(find_packages_iter(exclude=["tests", "tests.*"]))
+                packages = list(
+                    find_packages_iter(
+                        self.package_dir or ".",
+                        exclude=["tests", "tests.*"],
+                        src=self.package_dir or ".",
+                    )
+                )
                 if not packages:
                     py_modules = [path[:-3] for path in glob.glob("*.py")]
             else:
@@ -310,11 +320,11 @@ class Metadata:
                         include = include[:-2]
                     if "*" not in include and os.path.isdir(include):
                         dir_name = include.rstrip("/\\")
-                        temp = list(find_packages_iter(dir_name))
-                        if os.path.exists(dir_name + "/__init__.py"):
-                            temp = [dir_name] + [f"{dir_name}.{part}" for part in temp]
-                        elif temp:
-                            package_dir[""] = dir_name
+                        temp = list(
+                            find_packages_iter(dir_name, src=self.package_dir or ".")
+                        )
+                        if os.path.isfile(os.path.join(dir_name, "__init__.py")):
+                            temp.insert(0, dir_name)
                         packages_set.update(temp)
                         includes.remove(include)
                 packages[:] = list(packages_set)
@@ -339,7 +349,7 @@ class Metadata:
                     "Can't specify packages and py_modules at the same time."
                 )
         return {
-            "package_dir": package_dir,
+            "package_dir": {"": self.package_dir} if self.package_dir else {},
             "packages": packages,
             "py_modules": py_modules,
             "package_data": package_data,

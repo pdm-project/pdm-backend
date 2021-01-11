@@ -49,6 +49,19 @@ def is_dict_like(value):
     return bool(getattr(value, "items", None) and getattr(value, "__getitem__", None))
 
 
+def is_python_package(fullpath):
+    if not os.path.isdir(fullpath):
+        return False
+    for subpath in os.listdir(fullpath):
+        path = os.path.join(fullpath, subpath)
+        if os.path.isdir(path):
+            if is_python_package(path):
+                return True
+        if path.endswith(".py"):
+            return True
+    return False
+
+
 def merge_marker(requirement: Requirement, marker: str) -> None:
     """Merge the target marker str with the requirement markers"""
     if not requirement.marker:
@@ -66,6 +79,7 @@ def find_packages_iter(
     where: os.PathLike = ".",
     exclude: Iterable[str] = (),
     include: Iterable[str] = ("*",),
+    src: os.PathLike = ".",
 ) -> Iterable[str]:
     """
     All the packages found in 'where' that pass the 'include' filter, but
@@ -87,14 +101,18 @@ def find_packages_iter(
 
         for dir in all_dirs:
             full_path = os.path.join(root, dir)
-            rel_path = os.path.relpath(full_path, where)
+            rel_path = os.path.relpath(full_path, src)
             package = rel_path.replace(os.path.sep, ".")
             # Skip directory trees that are not valid packages
-            if "." in dir or not os.path.isfile(os.path.join(full_path, "__init__.py")):
+            if "." in dir or not is_python_package(full_path):
                 continue
 
             # Should this package be included?
-            if include(package) and not exclude(package):
+            if (
+                os.path.isfile(os.path.join(full_path, "__init__.py"))
+                and include(package)
+                and not exclude(package)
+            ):
                 yield package
 
             # Keep searching subdirectories, as there may be more packages

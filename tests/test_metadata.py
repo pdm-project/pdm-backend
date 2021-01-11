@@ -55,8 +55,8 @@ def test_parse_src_package():
 def test_parse_src_package_by_include():
     metadata = Metadata(FIXTURES / "projects/demo-src-package-include/pyproject.toml")
     paths = metadata.convert_package_paths()
-    assert paths["package_dir"] == {"": "sub"}
-    assert paths["packages"] == ["my_package"]
+    assert paths["package_dir"] == {}
+    assert paths["packages"] == ["sub.my_package"]
     assert paths["py_modules"] == []
 
 
@@ -92,3 +92,19 @@ def test_convert_legacy_project():
     assert metadata.dependencies == ["flask"]
     assert metadata.author == ""
     assert metadata.author_email == "frostming <mianghong@gmail.com>"
+
+
+def test_explicit_package_dir():
+    metadata = Metadata(FIXTURES / "projects/demo-explicit-package-dir/pyproject.toml")
+    paths = metadata.convert_package_paths()
+    assert paths["packages"] == ["my_package"]
+    assert paths["py_modules"] == []
+    assert paths["package_dir"] == {"": "foo"}
+
+
+def test_implicit_namespace_package():
+    metadata = Metadata(FIXTURES / "projects/demo-pep420-package/pyproject.toml")
+    paths = metadata.convert_package_paths()
+    assert paths["packages"] == ["foo.my_package"]
+    assert paths["py_modules"] == []
+    assert paths["package_dir"] == {}
