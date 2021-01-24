@@ -1,3 +1,10 @@
+Release v0.5.1 (2021-01-24)
+---------------------------
+
+### Bug Fixes
+
+- Fix a bug that `__pypackages__` gets included in the build files unexpectedly.
+
 Release v0.5.0 (2021-01-11)
 ---------------------------
 

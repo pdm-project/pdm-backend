@@ -52,6 +52,8 @@ def is_dict_like(value):
 def is_python_package(fullpath):
     if not os.path.isdir(fullpath):
         return False
+    if os.path.basename(fullpath.rstrip("/")) in ("__pycache__", "__pypackages__"):
+        return False
     for subpath in os.listdir(fullpath):
         path = os.path.join(fullpath, subpath)
         if os.path.isdir(path):
