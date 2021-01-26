@@ -1,3 +1,10 @@
+Release v0.5.4 (2021-01-26)
+---------------------------
+
+### Bug Fixes
+
+- Automatically exclude `tests` directory from the build results when not specified.
+
 Release v0.5.3 (2021-01-26)
 ---------------------------
 

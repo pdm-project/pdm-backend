@@ -52,7 +52,9 @@ class BuildError(RuntimeError):
 
 
 def _match_path(path: str, pattern: str) -> bool:
-    return normalize_path(path) == normalize_path(pattern)
+    return normalize_path(os.path.abspath(path)) == normalize_path(
+        os.path.abspath(pattern)
+    )
 
 
 def _merge_globs(
@@ -129,7 +131,7 @@ class Builder:
         includes = []
         find_froms = []
         excludes = []
-        dont_find_froms = []
+        dont_find_froms = ["tests"]
 
         if not self.meta.includes:
             find_froms = _find_top_packages(self.meta.package_dir or ".")
@@ -156,16 +158,14 @@ class Builder:
 
         includes, excludes = _merge_globs(include_globs, excludes_globs)
         for path in find_froms:
+            if any(_match_path(path, item) for item in dont_find_froms):
+                continue
             path_base = os.path.dirname(path)
             if not path_base or path_base == ".":
                 # the path is top level itself
                 path_base = path
 
             for root, dirs, filenames in os.walk(path):
-                if root == "__pycache__" or any(
-                    _match_path(root, item) for item in dont_find_froms
-                ):
-                    continue
 
                 for filename in filenames:
                     if filename.endswith(".pyc") or any(
