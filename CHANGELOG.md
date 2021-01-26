@@ -1,3 +1,10 @@
+Release v0.5.3 (2021-01-26)
+---------------------------
+
+### Bug Fixes
+
+- Fix a bug that default settings include many misc directories that are not Python packages.
+
 Release v0.5.2 (2021-01-24)
 ---------------------------
 

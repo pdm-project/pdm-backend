@@ -54,14 +54,7 @@ def is_python_package(fullpath):
         return False
     if os.path.basename(fullpath.rstrip("/")) in ("__pycache__", "__pypackages__"):
         return False
-    for subpath in os.listdir(fullpath):
-        path = os.path.join(fullpath, subpath)
-        if os.path.isdir(path):
-            if is_python_package(path):
-                return True
-        if path.endswith(".py"):
-            return True
-    return False
+    return os.path.isfile(os.path.join(fullpath, "__init__.py"))
 
 
 def merge_marker(requirement: Requirement, marker: str) -> None:
@@ -106,7 +99,7 @@ def find_packages_iter(
             rel_path = os.path.relpath(full_path, src)
             package = rel_path.replace(os.path.sep, ".")
             # Skip directory trees that are not valid packages
-            if "." in dir or not is_python_package(full_path):
+            if "." in dir:
                 continue
 
             # Should this package be included?
