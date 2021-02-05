@@ -3,8 +3,8 @@ PEP-517 compliant buildsystem API
 """
 from pathlib import Path
 
-from .sdist import SdistBuilder
-from .wheel import WheelBuilder
+from pdm.pep517.sdist import SdistBuilder
+from pdm.pep517.wheel import WheelBuilder
 
 
 def get_requires_for_build_wheel(config_settings=None):

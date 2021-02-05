@@ -5,8 +5,8 @@ import textwrap
 from pathlib import Path
 from typing import Dict, Iterator, List, Tuple, Union
 
-from .metadata import Metadata
-from .utils import is_python_package, normalize_path
+from pdm.pep517.metadata import Metadata
+from pdm.pep517.utils import is_python_package, normalize_path
 
 OPEN_README = """import codecs
 

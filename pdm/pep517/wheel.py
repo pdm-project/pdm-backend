@@ -13,10 +13,10 @@ from io import StringIO
 from pathlib import Path
 from typing import List, Tuple, Union
 
-from ._vendor.packaging.markers import default_environment
-from ._vendor.packaging.specifiers import SpecifierSet
-from .base import Builder, BuildError
-from .utils import get_abi_tag, get_platform, safe_version, to_filename
+from pdm.pep517._vendor.packaging.markers import default_environment
+from pdm.pep517._vendor.packaging.specifiers import SpecifierSet
+from pdm.pep517.base import Builder, BuildError
+from pdm.pep517.utils import get_abi_tag, get_platform, safe_version, to_filename
 
 WHEEL_FILE_FORMAT = """\
 Wheel-Version: 1.0

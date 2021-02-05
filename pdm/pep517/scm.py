@@ -12,7 +12,7 @@ from collections import namedtuple
 from datetime import datetime
 from typing import Optional, Tuple
 
-from ._vendor.packaging.version import parse as parse_version
+from pdm.pep517._vendor.packaging.version import parse as parse_version
 
 DEFAULT_TAG_REGEX = re.compile(
     r"^(?:[\w-]+-)?(?P<version>[vV]?\d+(?:\.\d+){0,2}[^\+]*)(?:\+.*)?$"

@@ -4,15 +4,14 @@ import re
 from pathlib import Path
 from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar, Union
 
+from pdm.pep517._vendor import toml
+from pdm.pep517._vendor.packaging.requirements import Requirement
+from pdm.pep517._vendor.packaging.specifiers import SpecifierSet
+from pdm.pep517._vendor.packaging.version import Version
 from pdm.pep517.legacy import convert_legacy
 from pdm.pep517.license import get_license_classifier, license_lookup
 from pdm.pep517.scm import get_version_from_scm
-
-from ._vendor import toml
-from ._vendor.packaging.requirements import Requirement
-from ._vendor.packaging.specifiers import SpecifierSet
-from ._vendor.packaging.version import Version
-from .utils import (
+from pdm.pep517.utils import (
     cd,
     ensure_pep440_req,
     find_packages_iter,

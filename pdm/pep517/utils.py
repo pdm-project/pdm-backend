@@ -10,10 +10,9 @@ from fnmatch import fnmatchcase
 from sysconfig import get_config_var
 from typing import Iterable, Optional
 
-from packaging.markers import Marker
-from packaging.requirements import Requirement
-
-from ._vendor import packaging
+from pdm.pep517._vendor.packaging.markers import Marker
+from pdm.pep517._vendor.packaging.requirements import Requirement
+from pdm.pep517._vendor.packaging.version import InvalidVersion, Version
 
 
 def safe_name(name: str) -> str:
@@ -30,8 +29,8 @@ def safe_version(version):
     """
     try:
         # normalize the version
-        return str(packaging.version.Version(version))
-    except packaging.version.InvalidVersion:
+        return str(Version(version))
+    except InvalidVersion:
         version = version.replace(" ", ".")
         return re.sub("[^A-Za-z0-9.]+", "-", version)
 

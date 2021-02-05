@@ -5,8 +5,8 @@ import tarfile
 import tempfile
 from copy import copy
 
-from .base import Builder
-from .utils import safe_version, to_filename
+from pdm.pep517.base import Builder
+from pdm.pep517.utils import safe_version, to_filename
 
 
 def normalize_file_permissions(st_mode):
