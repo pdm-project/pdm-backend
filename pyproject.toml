@@ -59,7 +59,7 @@ exclude = '''
 [tool.vendoring]
 destination = "pdm/pep517/_vendor/"
 requirements = "pdm/pep517/_vendor/vendor.txt"
-namespace = ""
+namespace = "pdm.pep517._vendor"
 
 protected-files = ["__init__.py", "README.md", "vendor.txt"]
 patches-dir = "vendors/patches"

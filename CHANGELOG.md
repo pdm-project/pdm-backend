@@ -1,3 +1,10 @@
+Release v0.5.5 (2021-02-05)
+---------------------------
+
+### Bug Fixes
+
+- Rewrite the import statements in vendored packages to avoid namespace conflicts.
+
 Release v0.5.4 (2021-01-26)
 ---------------------------
 

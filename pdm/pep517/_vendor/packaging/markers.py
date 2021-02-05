@@ -8,9 +8,9 @@ import os
 import platform
 import sys
 
-from pyparsing import ParseException, ParseResults, stringStart, stringEnd
-from pyparsing import ZeroOrMore, Group, Forward, QuotedString
-from pyparsing import Literal as L  # noqa
+from pdm.pep517._vendor.pyparsing import ParseException, ParseResults, stringStart, stringEnd
+from pdm.pep517._vendor.pyparsing import ZeroOrMore, Group, Forward, QuotedString
+from pdm.pep517._vendor.pyparsing import Literal as L  # noqa
 
 from ._compat import string_types
 from ._typing import TYPE_CHECKING

@@ -3,8 +3,8 @@
 Released under the MIT license.
 """
 
-from toml import encoder
-from toml import decoder
+from pdm.pep517._vendor.toml import encoder
+from pdm.pep517._vendor.toml import decoder
 
 __version__ = "0.10.1"
 _spec_ = "0.5.0"
