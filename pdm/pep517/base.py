@@ -42,7 +42,6 @@ Metadata-Version: 2.1
 Name: {name}
 Version: {version}
 Summary: {description}
-Home-page: {homepage}
 License: {license}
 """
 
@@ -300,9 +299,6 @@ class Builder:
         content = METADATA_BASE.format(
             name=meta.name or "UNKNOWN",
             version=meta.version or "UNKNOWN",
-            homepage=meta.project_urls.get("homepage", "UNKNOWN")
-            if meta.project_urls
-            else "UNKNOWN",
             license=meta.license_type or "UNKNOWN",
             description=meta.description or "UNKNOWN",
             readme=(Path(meta.readme).read_text("utf-8") if meta.readme else "UNKNOWN"),

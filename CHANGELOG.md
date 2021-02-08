@@ -1,3 +1,10 @@
+Release v0.5.6 (2021-02-08)
+---------------------------
+
+### Bug Fixes
+
+- Don't include redundant `Homepage` in the core metadata.
+
 Release v0.5.5 (2021-02-05)
 ---------------------------
 
