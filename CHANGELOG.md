@@ -1,3 +1,11 @@
+Release v0.5.7 (2021-03-05)
+---------------------------
+
+### Bug Fixes
+
+- Fix a bug that python modules under `src` directory without a parent package are not included in the built results nor `py_modules` key in `setup.py`. [#9](https://github.com/frostming/pdm-pep517/issues/9)
+
+
 Release v0.5.6 (2021-02-08)
 ---------------------------
 
