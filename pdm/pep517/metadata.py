@@ -301,16 +301,17 @@ class Metadata:
         exclude_package_data = {}
 
         with cd(self.filepath.parent.as_posix()):
+            src_dir = Path(self.package_dir or ".")
             if not self.includes:
                 packages = list(
                     find_packages_iter(
                         self.package_dir or ".",
                         exclude=["tests", "tests.*"],
-                        src=self.package_dir or ".",
+                        src=src_dir,
                     )
                 )
                 if not packages:
-                    py_modules = [path[:-3] for path in glob.glob("*.py")]
+                    py_modules = [path.name[:-3] for path in src_dir.glob("*.py")]
             else:
                 packages_set = set()
                 includes = self.includes

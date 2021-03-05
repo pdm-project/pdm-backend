@@ -163,3 +163,15 @@ def test_build_legacypackage(tmp_path):
         assert "my_package/data.json" in zip_names
         assert "single_module.py" not in zip_names
         assert "data_out.json" not in zip_names
+
+
+def test_build_package_with_modules_in_src(tmp_path):
+    with build_fixture_project("demo-src-pymodule"):
+        wheel_name = api.build_wheel(tmp_path.as_posix())
+        sdist_name = api.build_sdist(tmp_path.as_posix())
+
+        tar_names = get_tarball_names(tmp_path / sdist_name)
+        assert "demo-module-0.1.0/src/foo_module.py" in tar_names
+
+        zip_names = get_wheel_names(tmp_path / wheel_name)
+        assert "foo_module.py" in zip_names

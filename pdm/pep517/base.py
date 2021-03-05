@@ -135,7 +135,9 @@ class Builder:
         if not self.meta.includes:
             find_froms = _find_top_packages(self.meta.package_dir or ".")
             if not find_froms:
-                includes = ["*.py"]
+                includes = [
+                    f"{self.meta.package_dir}/*.py" if self.meta.package_dir else "*.py"
+                ]
         else:
             for pat in self.meta.includes:
                 if os.path.basename(pat) == "*":

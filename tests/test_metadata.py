@@ -108,3 +108,11 @@ def test_implicit_namespace_package():
     assert paths["packages"] == ["foo.my_package"]
     assert paths["py_modules"] == []
     assert paths["package_dir"] == {}
+
+
+def test_src_dir_containing_modules():
+    metadata = Metadata(FIXTURES / "projects/demo-src-pymodule/pyproject.toml")
+    paths = metadata.convert_package_paths()
+    assert paths["package_dir"] == {"": "src"}
+    assert not paths["packages"]
+    assert paths["py_modules"] == ["foo_module"]

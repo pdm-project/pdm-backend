@@ -3,7 +3,7 @@
 # https://www.python.org/dev/peps/pep-0621
 name = "pdm-pep517"
 version = {use_scm = true}
-description = "PEP 517 support"
+description = "A PEP 517 backend for PDM that supports PEP 621 metadata"
 authors = [
   {name = "Frost Ming", email = "mianghong@gmail.com"}
 ]
@@ -12,16 +12,11 @@ requires-python = ">=3.6"
 readme = "README.md"
 includes = ["pdm"]
 keywords = ["packaging", "PEP 517", "build"]
-dynamic = ["version"]
+dynamic = ["version", "classifiers"]
 
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Topic :: Software Development :: Build Tools",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8"
 ]
 
 dependencies = []
