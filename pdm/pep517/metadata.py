@@ -242,7 +242,7 @@ class Metadata:
 
     @property
     def project_name(self) -> str:
-        return safe_name(self.name).lower()
+        return safe_name(self.name)
 
     @property
     def requires_extra(self) -> Dict[str, List[str]]:

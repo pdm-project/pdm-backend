@@ -82,9 +82,7 @@ class WheelBuilder(Builder):
                 else info["python_version"].replace(".", "")
             )
             impl = impl_name + impl_ver
-            abi_tag = get_abi_tag(
-                tuple(int(p) for p in info["python_version"].split("."))
-            )
+            abi_tag = get_abi_tag()
             tag = (impl, abi_tag, platform)
         else:
             platform = "any"
@@ -157,12 +155,12 @@ class WheelBuilder(Builder):
             setup_py,
             "build",
             "-b",
-            str(self.project.root / "build"),
+            str(self.location / "build"),
         ]
-        proc = subprocess.run(build_args, capture_output=True)
-        print(proc.stdout)
-        if proc.returncode:
-            raise BuildError(f"Error occurs when running {build_args}:\n{proc.stderr}")
+        try:
+            subprocess.check_call(build_args)
+        except subprocess.CalledProcessError as e:
+            raise BuildError(f"Error occurs when running {build_args}:\n{e}")
         build_dir = self.location / "build"
         lib_dir = next(build_dir.glob("lib.*"), None)
         if not lib_dir:

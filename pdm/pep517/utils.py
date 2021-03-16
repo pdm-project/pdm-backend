@@ -1,4 +1,4 @@
-import distutils
+import distutils.util
 import os
 import re
 import sys
@@ -10,6 +10,7 @@ from fnmatch import fnmatchcase
 from sysconfig import get_config_var
 from typing import Iterable, Optional
 
+from pdm.pep517._vendor.packaging import tags
 from pdm.pep517._vendor.packaging.markers import Marker
 from pdm.pep517._vendor.packaging.requirements import Requirement
 from pdm.pep517._vendor.packaging.version import InvalidVersion, Version
@@ -165,43 +166,33 @@ def get_flag(var, fallback, expected=True, warn=True):
     return val == expected
 
 
-def get_abi_tag() -> str:
+def get_abi_tag():
     """Return the ABI tag based on SOABI (if available) or emulate SOABI
-    (CPython 2, PyPy).
-    A replacement for pip._internal.models.pep425tags:get_abi_tag()
-    """
-
-    from ._vendor.packaging.tags import interpreter_name as get_abbr_impl
-
+    (CPython 2, PyPy)."""
     soabi = get_config_var("SOABI")
-    impl = get_abbr_impl()
-    abi = None  # type: Optional[str]
-    python_version = sys.version_info[:2]
-
-    if not soabi and impl in {"cp", "pp"} and hasattr(sys, "maxunicode"):
+    impl = tags.interpreter_name()
+    is_cpython = impl == "cp"
+    if not soabi and impl in ("cp", "pp") and hasattr(sys, "maxunicode"):
         d = ""
         m = ""
         u = ""
-        is_cpython = impl == "cp"
-        if get_flag("Py_DEBUG", lambda: hasattr(sys, "gettotalrefcount"), warn=False):
+        if get_flag("Py_DEBUG", hasattr(sys, "gettotalrefcount"), warn=is_cpython):
             d = "d"
-        if python_version < (3, 8) and get_flag(
-            "WITH_PYMALLOC", lambda: is_cpython, warn=False
+        if sys.version_info < (3, 8) and get_flag(
+            "WITH_PYMALLOC", is_cpython, warn=is_cpython
         ):
             m = "m"
-        if python_version < (3, 3) and get_flag(
-            "Py_UNICODE_SIZE",
-            lambda: sys.maxunicode == 0x10FFFF,
-            expected=4,
-            warn=False,
+        if sys.version_info < (3, 3) and get_flag(
+            "Py_UNICODE_SIZE", sys.maxunicode == 0x10FFFF, expected=4, warn=is_cpython
         ):
             u = "u"
-        abi = "%s%s%s%s%s" % (impl, "".join(map(str, python_version)), d, m, u)
+        abi = "%s%s%s%s%s" % (impl, tags.interpreter_version(), d, m, u)
     elif soabi and soabi.startswith("cpython-"):
         abi = "cp" + soabi.split("-")[1]
     elif soabi:
         abi = soabi.replace(".", "_").replace("-", "_")
-
+    else:
+        abi = None
     return abi
 
 
