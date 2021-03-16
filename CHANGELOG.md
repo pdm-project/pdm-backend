@@ -1,3 +1,10 @@
+Release v0.5.8 (2021-03-16)
+---------------------------
+
+### Bug Fixes
+
+- Fix a bug that platform-specific tags cannot be generated correctly.
+
 Release v0.5.7 (2021-03-05)
 ---------------------------
 
