@@ -368,7 +368,10 @@ class Builder:
 
         # Clean this temp file when process exits
         def cleanup():
-            setup_py_path.unlink()
+            try:
+                setup_py_path.unlink()
+            except OSError:
+                pass
 
         if clean:
             atexit.register(cleanup)
