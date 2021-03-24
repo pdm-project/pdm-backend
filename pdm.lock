@@ -5,6 +5,12 @@ version = "1.5"
 summary = "apipkg: namespace control and lazy-import mechanism"
 
 [[package]]
+name = "arpeggio"
+sections = ["dev"]
+version = "1.10.1"
+summary = "Packrat parser interpreter"
+
+[[package]]
 name = "atomicwrites"
 sections = ["dev"]
 version = "1.4.0"
@@ -68,7 +74,7 @@ summary = "Internationalized Domain Names in Applications (IDNA)"
 
 [[package]]
 name = "importlib-metadata"
-sections = ["default", "dev"]
+sections = ["dev"]
 version = "3.7.3"
 marker = "python_version < '4.0'"
 summary = "Read metadata from Python packages"
@@ -125,6 +131,17 @@ version = "20.9"
 summary = "Core utilities for Python packages"
 dependencies = [
     "pyparsing>=2.0.2",
+]
+
+[[package]]
+name = "parver"
+sections = ["dev"]
+version = "0.3.1"
+summary = "Parse and manipulate version numbers."
+dependencies = [
+    "arpeggio~=1.7",
+    "attrs>=19.2",
+    "six~=1.13",
 ]
 
 [[package]]
@@ -227,7 +244,6 @@ summary = "Easily download, build, install, upgrade, and uninstall Python packag
 name = "six"
 sections = ["dev"]
 version = "1.15.0"
-marker = "python_version >= '3.8' and python_version < '4.0'"
 summary = "Python 2 and 3 compatibility utilities"
 
 [[package]]
@@ -250,7 +266,7 @@ dependencies = [
 
 [[package]]
 name = "typing-extensions"
-sections = ["default", "dev"]
+sections = ["dev"]
 version = "3.7.4.3"
 marker = "python_version < '3.8'"
 summary = "Backported and Experimental Type Hints for Python 3.5+"
@@ -278,19 +294,23 @@ dependencies = [
 
 [[package]]
 name = "zipp"
-sections = ["default", "dev"]
+sections = ["dev"]
 version = "3.4.1"
 marker = "python_version < '4.0'"
 summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "2"
-content_hash = "sha256:f304cd96200ca03db079a6b7602f1dcd3a69b666747db1424b6c38235e5d64e1"
+content_hash = "sha256:98151236cb48db601ee36a6c6069944a52442f9fae607e4682724964a8a2302f"
 
 [metadata.files]
 "apipkg 1.5" = [
     {file = "apipkg-1.5-py2.py3-none-any.whl", hash = "sha256:58587dd4dc3daefad0487f6d9ae32b4542b185e1c36db6993290e7c41ca2b47c"},
     {file = "apipkg-1.5.tar.gz", hash = "sha256:37228cda29411948b422fae072f57e31d3396d2ee1c9783775980ee9c9990af6"},
+]
+"arpeggio 1.10.1" = [
+    {file = "Arpeggio-1.10.1-py2.py3-none-any.whl", hash = "sha256:f01a330148d972714458faf7bc142e9780fb443d33bb2474e5df2ad0a81635bc"},
+    {file = "Arpeggio-1.10.1.tar.gz", hash = "sha256:920d12cc762edb2eb56daae64a14c93e43dc181b481c88fc79314c0df6ee639e"},
 ]
 "atomicwrites 1.4.0" = [
     {file = "atomicwrites-1.4.0-py2.py3-none-any.whl", hash = "sha256:6d1784dea7c0c8d4a5172b6c620f40b6e4cbfdf96d783691f2e1302a7b88e197"},
@@ -455,6 +475,10 @@ content_hash = "sha256:f304cd96200ca03db079a6b7602f1dcd3a69b666747db1424b6c38235
 "packaging 20.9" = [
     {file = "packaging-20.9-py2.py3-none-any.whl", hash = "sha256:67714da7f7bc052e064859c05c595155bd1ee9f69f76557e21f051443c20947a"},
     {file = "packaging-20.9.tar.gz", hash = "sha256:5b327ac1320dc863dca72f4514ecc086f31186744b84a230374cc1fd776feae5"},
+]
+"parver 0.3.1" = [
+    {file = "parver-0.3.1-py2.py3-none-any.whl", hash = "sha256:41a548c51b006a2f2522b54293cbfd2514bffa10774ece8430c9964a20cbd8b4"},
+    {file = "parver-0.3.1.tar.gz", hash = "sha256:c902e0653bcce927cc156a7fd9b3a51924cbce3bf3d0bfd49fc282bfd0c5dfd3"},
 ]
 "pluggy 0.13.1" = [
     {file = "pluggy-0.13.1-py2.py3-none-any.whl", hash = "sha256:966c145cd83c96502c3c3868f50408687b38434af77734af1e9ca461a4081d2d"},

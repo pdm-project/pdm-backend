@@ -13,12 +13,12 @@ from io import StringIO
 from pathlib import Path
 from typing import List, Tuple, Union
 
+from pdm.pep517 import __version__
 from pdm.pep517._vendor.packaging.markers import default_environment
 from pdm.pep517._vendor.packaging.specifiers import SpecifierSet
 from pdm.pep517.base import Builder, BuildError
 from pdm.pep517.utils import (
     get_abi_tag,
-    get_package_version,
     get_platform,
     safe_version,
     to_filename,
@@ -31,7 +31,7 @@ Generator: pdm-pep517 %s
 Root-Is-Purelib: {pure_lib}
 Tag: {tag}
 """
-    % get_package_version()
+    % __version__
 )
 
 
