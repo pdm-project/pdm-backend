@@ -18,9 +18,7 @@ jobs:
           architecture: "x64"
       - name: Build artifacts
         run: |
-          python scripts/build.py
-        env:
-          PYTHONPATH: "__pypackages__/3.8/lib"
+          python -m scripts.build
 
       - name: Test build
         run: |
