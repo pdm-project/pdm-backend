@@ -1,3 +1,11 @@
+Release v0.5.10 (2021-03-24)
+----------------------------
+
+### Dependencies
+
+- Remove the external dependency of `importlib-metadata`. [#13](https://github.com/frostming/pdm-pep517/issues/13)
+
+
 Release v0.5.9 (2021-03-24)
 ---------------------------
 
