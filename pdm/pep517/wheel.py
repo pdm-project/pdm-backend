@@ -16,14 +16,23 @@ from typing import List, Tuple, Union
 from pdm.pep517._vendor.packaging.markers import default_environment
 from pdm.pep517._vendor.packaging.specifiers import SpecifierSet
 from pdm.pep517.base import Builder, BuildError
-from pdm.pep517.utils import get_abi_tag, get_platform, safe_version, to_filename
+from pdm.pep517.utils import (
+    get_abi_tag,
+    get_package_version,
+    get_platform,
+    safe_version,
+    to_filename,
+)
 
-WHEEL_FILE_FORMAT = """\
+WHEEL_FILE_FORMAT = (
+    """\
 Wheel-Version: 1.0
-Generator: poetry {version}
+Generator: pdm-pep517 %s
 Root-Is-Purelib: {pure_lib}
 Tag: {tag}
 """
+    % get_package_version()
+)
 
 
 class WheelBuilder(Builder):
@@ -222,7 +231,6 @@ class WheelBuilder(Builder):
     def _write_wheel_file(self, fp):
         fp.write(
             WHEEL_FILE_FORMAT.format(
-                version=self.meta.version,
                 pure_lib=self.meta.build is None,
                 tag=self.tag,
             )

@@ -19,13 +19,13 @@ classifiers = [
     "Topic :: Software Development :: Build Tools",
 ]
 
-dependencies = []
+dependencies = ["importlib-metadata; python_version < '3.8'"]
 dev-dependencies = [
   "pytest",
   "pytest-cov",
   "towncrier",
   "pytest-xdist",
-  "vendoring; python_version~=3.8"
+  "vendoring; python_version ~= '3.8'"
 ]
 
 [project.urls]
@@ -33,7 +33,7 @@ homepage = "https://pdm.fming.dev"
 repository = "https://github.com/frostming/pdm-pep517"
 
 [build-system]
-requires = []
+requires = ["importlib-metadata; python_version < '3.8'"]
 build-backend = "pdm.pep517.api"
 backend-path = "."
 

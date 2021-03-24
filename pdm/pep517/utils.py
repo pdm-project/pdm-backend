@@ -1,5 +1,6 @@
 import distutils.util
 import os
+from pathlib import Path
 import re
 import sys
 import urllib.parse as urllib_parse
@@ -202,3 +203,24 @@ def ensure_pep440_req(req: str) -> Optional[str]:
     if req.strip().startswith("-e"):
         return None
     return req
+
+
+def get_package_version() -> str:
+    """Read the version of pdm-pep517 from the metadata"""
+    from pdm.pep517.metadata import Metadata
+
+    try:
+        from importlib.metadata import version
+    except ImportError:
+        from importlib_metadata import version
+
+    try:
+        return version(__package__)
+    except ModuleNotFoundError:
+        # Editable distributions can't be found by importlib.metadata
+        # Try reading from pyproject.toml in tree.
+        source_root = Path(__file__).parent.parent.parent
+        try:
+            return Metadata(source_root / "pyproject.toml").version
+        except ValueError:
+            return "UNKNOWN"
