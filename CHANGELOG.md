@@ -1,3 +1,12 @@
+Release v0.5.9 (2021-03-24)
+---------------------------
+
+### Bug Fixes
+
+- Fix a parsing error on reStructuredText description due to missing indentation for empty lines. [#11](https://github.com/frostming/pdm-pep517/issues/11)
+- Fix the WHEEL writer to report the correct wheel generator. [#12](https://github.com/frostming/pdm-pep517/issues/12)
+
+
 Release v0.5.8 (2021-03-16)
 ---------------------------
 
