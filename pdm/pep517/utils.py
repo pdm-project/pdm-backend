@@ -215,7 +215,7 @@ def get_package_version() -> str:
         from importlib_metadata import version
 
     try:
-        return version(__package__)
+        return version("pdm-pep517")
     except ModuleNotFoundError:
         # Editable distributions can't be found by importlib.metadata
         # Try reading from pyproject.toml in tree.
