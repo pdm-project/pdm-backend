@@ -1,6 +1,5 @@
 import distutils.util
 import os
-from pathlib import Path
 import re
 import sys
 import urllib.parse as urllib_parse
@@ -8,6 +7,7 @@ import urllib.request as urllib_request
 import warnings
 from contextlib import contextmanager
 from fnmatch import fnmatchcase
+from pathlib import Path
 from sysconfig import get_config_var
 from typing import Iterable, Optional
 

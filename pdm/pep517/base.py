@@ -303,7 +303,6 @@ class Builder:
             version=meta.version or "UNKNOWN",
             license=meta.license_type or "UNKNOWN",
             description=meta.description or "UNKNOWN",
-            readme=(Path(meta.readme).read_text("utf-8") if meta.readme else "UNKNOWN"),
         )
 
         # Optional fields
@@ -351,7 +350,7 @@ class Builder:
                 content += "\n" + readme + "\n"
             else:
                 content += "Description: {}\n".format(
-                    textwrap.indent(readme, " " * 8).lstrip()
+                    textwrap.indent(readme, " " * 8, lambda line: True).lstrip()
                 )
 
         return content
