@@ -11,10 +11,16 @@ version = { from = "my_package/__init__.py" }
 requires-python = ">=3.5"
 license = {text = "MIT"}
 dependencies = ["flask"]
-dev-dependencies = []
 description = ""
 name = "demo-package"
 readme = "README.md"
+
+[project.urls]
+homepage = ""
+
+[project.optional-dependencies]
+
+[tool.pdm]
 includes = [
     "my_package/",
     "single_module.py",
@@ -23,8 +29,3 @@ includes = [
 excludes = [
     "my_package/*.json"
 ]
-
-[project.urls]
-homepage = ""
-
-[project.optional-dependencies]

@@ -14,9 +14,11 @@ dependencies = []
 dev-dependencies = []
 description = ""
 name = "demo-package"
-includes = ["sub"]
 
 [project.urls]
 homepage = ""
 
 [project.optional-dependencies]
+
+[tool.pdm]
+includes = ["sub"]

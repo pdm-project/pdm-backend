@@ -12,7 +12,6 @@ package-dir = "foo"
 requires-python = ">=3.5"
 license = {text = "MIT"}
 dependencies = []
-dev-dependencies = []
 description = ""
 name = "demo-package"
 

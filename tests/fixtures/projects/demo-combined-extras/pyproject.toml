@@ -11,7 +11,6 @@ requires-python = ">=3.5"
 version = "0.1.0"
 
 dependencies = ["urllib3"]
-dev-dependencies = []
 
 [project.optional-dependencies]
 be = ["idna"]
