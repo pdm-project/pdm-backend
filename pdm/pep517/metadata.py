@@ -67,21 +67,25 @@ class Metadata:
 
     def __init__(self, filepath: Union[str, Path]) -> None:
         self.filepath = Path(filepath).absolute()
-        self._metadata = self._read_pyproject(self.filepath)
+        self._tool_settings = {}
+        self._metadata = {}
+        self._read_pyproject()
 
-    @staticmethod
-    def _read_pyproject(filepath: Path) -> Dict[str, Any]:
+    def _read_pyproject(self) -> Dict[str, Any]:
         try:
-            data = toml.loads(filepath.read_text(encoding="utf-8"))
+            data = toml.loads(self.filepath.read_text(encoding="utf-8"))
         except FileNotFoundError:
             raise ProjectError("pyproject.toml does not exist.")
         except toml.TomlDecodeError:
             raise ProjectError("The project's pyproject.toml is not valid.")
         else:
+            if "tool" in data and "pdm" in data["tool"]:
+                self._tool_settings = data["tool"]["pdm"]
             if "project" in data:
-                return data["project"]
-            elif "tool" in data and "pdm" in data["tool"]:
-                return convert_legacy(data["tool"]["pdm"])
+                self._metadata = data["project"]
+            elif self._tool_settings:
+                # TODO: deprecate legacy format
+                self._metadata = convert_legacy(self._tool_settings)
             else:
                 raise ProjectError("No [project] config in pyproject.toml")
 
@@ -222,9 +226,31 @@ class Metadata:
 
     keywords: MetaField[str] = MetaField("keywords")
     project_urls: MetaField[Dict[str, str]] = MetaField("urls")
-    includes: MetaField[List[str]] = MetaField("includes")
-    excludes: MetaField[List[str]] = MetaField("excludes")
-    build: MetaField[str] = MetaField("build")
+
+    # Deprecate legacy metadata location
+    @property
+    def includes(self):
+        if "includes" in self._metadata:
+            return self._metadata["includes"]
+        elif "includes" in self._tool_settings:
+            return self._tool_settings["includes"]
+        return None
+
+    @property
+    def excludes(self):
+        if "excludes" in self._metadata:
+            return self._metadata["excludes"]
+        elif "excludes" in self._tool_settings:
+            return self._tool_settings["excludes"]
+        return None
+
+    @property
+    def build(self):
+        if "build" in self._metadata:
+            return self._metadata["build"]
+        elif "build" in self._tool_settings:
+            return self._tool_settings["build"]
+        return None
 
     def _convert_dependencies(self, deps):
         return list(filter(None, map(ensure_pep440_req, deps)))

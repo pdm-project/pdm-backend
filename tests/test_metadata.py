@@ -38,6 +38,16 @@ def test_parse_package():
     assert not metadata.classifiers
 
 
+def test_package_with_old_include():
+    metadata = Metadata(FIXTURES / "projects/demo-package-include-old/pyproject.toml")
+    paths = metadata.convert_package_paths()
+    assert paths["py_modules"] == []
+    assert paths["packages"] == ["my_package"]
+    assert paths["package_dir"] == {}
+    assert paths["package_data"] == {"": ["*"]}
+    assert not metadata.classifiers
+
+
 def test_parse_error_package():
     metadata = Metadata(FIXTURES / "projects/demo-package-include-error/pyproject.toml")
     with pytest.raises(ValueError):
