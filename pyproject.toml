@@ -67,7 +67,7 @@ requirements = "pdm/pep517/_vendor/vendor.txt"
 namespace = "pdm.pep517._vendor"
 
 protected-files = ["__init__.py", "README.md", "vendor.txt"]
-patches-dir = "vendors/patches"
+patches-dir = "scripts/patches"
 
 [tool.vendoring.transformations]
 substitute = []
