@@ -1,3 +1,11 @@
+Release v0.6.1 (2021-03-29)
+---------------------------
+
+### Features & Improvements
+
+- Temporily disable the strict validation.
+
+
 Release v0.6.0 (2021-03-29)
 ---------------------------
 
