@@ -69,7 +69,7 @@ PEP621_SCHEMA = {
 }
 
 
-class ValidationError(ValueError):
+class PEP621ValidationError(ValueError):
     def __init__(self, errors):
         super().__init__(errors)
         self.errors = errors
@@ -82,5 +82,5 @@ def validate_pep621(data: Mapping, raising: bool = False) -> bool:
     validator = cerberus.Validator(PEP621_SCHEMA)
     result = validator.validate(data)
     if raising and not result:
-        raise ValidationError(validator.errors)
+        raise PEP621ValidationError(validator.errors)
     return result
