@@ -1,3 +1,12 @@
+Release v0.6.0 (2021-03-29)
+---------------------------
+
+### Features & Improvements
+
+- Move the fields that are not specified by PEP 621 to `[tool.pdm]` table. [#14](https://github.com/frostming/pdm-pep517/issues/14)
+- Validate PEP 621 metadata. [#15](https://github.com/frostming/pdm-pep517/issues/15)
+
+
 Release v0.5.10 (2021-03-24)
 ----------------------------
 
