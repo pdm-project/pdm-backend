@@ -2,7 +2,18 @@ import glob
 import os
 import re
 from pathlib import Path
-from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Mapping,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from pdm.pep517._vendor import toml
 from pdm.pep517._vendor.packaging.requirements import Requirement
@@ -19,6 +30,7 @@ from pdm.pep517.utils import (
     merge_marker,
     safe_name,
 )
+from pdm.pep517.validator import validate_pep621
 
 T = TypeVar("T")
 
@@ -65,11 +77,14 @@ class Metadata:
     DEFAULT_ENCODING = "utf-8"
     SUPPORTED_CONTENT_TYPES = ("text/markdown", "text/x-rst", "text/plain")
 
-    def __init__(self, filepath: Union[str, Path]) -> None:
+    def __init__(
+        self, filepath: Union[str, Path], data: Optional[Mapping] = None
+    ) -> None:
         self.filepath = Path(filepath).absolute()
         self._tool_settings = {}
-        self._metadata = {}
-        self._read_pyproject()
+        self._metadata = data
+        if self._metadata is None:
+            self._read_pyproject()
 
     def _read_pyproject(self) -> Dict[str, Any]:
         try:
@@ -88,6 +103,9 @@ class Metadata:
                 self._metadata = convert_legacy(self._tool_settings)
             else:
                 raise ProjectError("No [project] config in pyproject.toml")
+
+    def validate(self, raising: bool = False) -> bool:
+        return validate_pep621(self._metadata, raising)
 
     name: MetaField[str] = MetaField("name")
 
@@ -252,6 +270,17 @@ class Metadata:
             return self._tool_settings["build"]
         return None
 
+    @property
+    def package_dir(self) -> str:
+        """A directory that will be used to looking for packages."""
+        if "package-dir" in self._metadata:
+            return self._metadata["package-dir"]
+        elif "package-dir" in self._tool_settings:
+            return self._tool_settings["package-dir"]
+        elif self.filepath.parent.joinpath("src").is_dir():
+            return "src"
+        return ""
+
     def _convert_dependencies(self, deps):
         return list(filter(None, map(ensure_pep440_req, deps)))
 
@@ -309,15 +338,6 @@ class Metadata:
                     )
                 result[plugin] = [f"{k} = {v}" for k, v in value.items()]
         return result
-
-    @property
-    def package_dir(self) -> str:
-        """A directory that will be used to looking for packages."""
-        if "package-dir" in self._metadata:
-            return self._metadata["package-dir"]
-        elif self.filepath.parent.joinpath("src").is_dir():
-            return "src"
-        return ""
 
     def convert_package_paths(self) -> Dict[str, Union[List, Dict]]:
         """Return a {package_dir, packages, package_data, exclude_package_data} dict."""

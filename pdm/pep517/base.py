@@ -113,6 +113,7 @@ class Builder:
     def meta(self) -> Metadata:
         if not self._meta:
             self._meta = Metadata(self.location / "pyproject.toml")
+            self._meta.validate(True)
         return self._meta
 
     def __enter__(self) -> "Builder":

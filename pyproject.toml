@@ -10,7 +10,6 @@ authors = [
 license = {text = "MIT"}
 requires-python = ">=3.6"
 readme = "README.md"
-includes = ["pdm"]
 keywords = ["packaging", "PEP 517", "build"]
 dynamic = ["version", "classifiers"]
 
@@ -67,7 +66,7 @@ requirements = "pdm/pep517/_vendor/vendor.txt"
 namespace = "pdm.pep517._vendor"
 
 protected-files = ["__init__.py", "README.md", "vendor.txt"]
-patches-dir = "vendors/patches"
+patches-dir = "scripts/patches"
 
 [tool.vendoring.transformations]
 substitute = []

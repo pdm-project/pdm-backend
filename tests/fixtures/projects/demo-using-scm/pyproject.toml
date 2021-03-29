@@ -11,7 +11,6 @@ version = { use_scm = true }
 requires-python = ">=3.5"
 license = {text = "MIT"}
 dependencies = []
-dev-dependencies = []
 description = ""
 name = "demo-module"
 readme = "README.md"

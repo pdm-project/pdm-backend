@@ -8,7 +8,6 @@ authors = [
 ]
 dynamic = ["version"]
 version = { from = "foo/my_package/__init__.py" }
-package-dir = "foo"
 requires-python = ">=3.5"
 license = {text = "MIT"}
 dependencies = []
@@ -19,3 +18,6 @@ name = "demo-package"
 homepage = ""
 
 [project.optional-dependencies]
+
+[tool.pdm]
+package-dir = "foo"
