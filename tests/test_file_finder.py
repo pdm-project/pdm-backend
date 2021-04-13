@@ -1,7 +1,8 @@
 from pathlib import Path
+
 from pdm.pep517 import utils
-from tests import FIXTURES
 from pdm.pep517.base import Builder
+from tests import FIXTURES
 
 
 def test_auto_include_tests_for_sdist():
