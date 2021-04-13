@@ -1,10 +1,10 @@
 import io
 import os
-import re
 import tarfile
 import tempfile
 from copy import copy
 
+from pdm.pep517._vendor import toml
 from pdm.pep517.base import Builder
 from pdm.pep517.utils import safe_version, to_filename
 
@@ -91,16 +91,10 @@ class SdistBuilder(Builder):
         """Rewrites the pyproject.toml before adding to tarball.
         This is mainly aiming at fixing the version number in pyproject.toml
         """
-        pyproject_content = self._meta.filepath.read_text()
-        if not isinstance(self._meta._metadata.get("version", ""), str):
-            pyproject_content = re.sub(
-                r"^version *= *.+?$",
-                f'version = "{self._meta.version}"',
-                pyproject_content,
-                flags=re.M,
-            )
+        if not isinstance(self.meta._metadata.get("version", ""), str):
+            self.meta._metadata["version"] = self.meta.version
         name = "pyproject.toml"
         tarinfo = tar.gettarinfo(name, os.path.join(tar_dir, name))
-        bio = io.BytesIO(pyproject_content.encode("utf-8"))
+        bio = io.BytesIO(toml.dumps(self.meta._metadata).encode("utf-8"))
         tarinfo.size = len(bio.getvalue())
         tar.addfile(tarinfo, bio)

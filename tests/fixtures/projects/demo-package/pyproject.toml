@@ -20,6 +20,9 @@ homepage = ""
 
 [project.optional-dependencies]
 
+[tool.pdm]
+source-includes = ["data_out.json"]
+
 [[tool.pdm.source]]
 url = "https://test.pypi.org/simple"
 verify_ssl = true

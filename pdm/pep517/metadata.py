@@ -247,23 +247,27 @@ class Metadata:
 
     # Deprecate legacy metadata location
     @property
-    def includes(self):
+    def includes(self) -> List[str]:
         if "includes" in self._metadata:
             return self._metadata["includes"]
         elif "includes" in self._tool_settings:
             return self._tool_settings["includes"]
-        return None
+        return []
 
     @property
-    def excludes(self):
+    def source_includes(self) -> List[str]:
+        return self._tool_settings.get("source-includes", [])
+
+    @property
+    def excludes(self) -> List[str]:
         if "excludes" in self._metadata:
             return self._metadata["excludes"]
         elif "excludes" in self._tool_settings:
             return self._tool_settings["excludes"]
-        return None
+        return []
 
     @property
-    def build(self):
+    def build(self) -> Optional[str]:
         if "build" in self._metadata:
             return self._metadata["build"]
         elif "build" in self._tool_settings:
