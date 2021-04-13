@@ -1,5 +1,6 @@
 import atexit
 import glob
+import itertools
 import os
 import textwrap
 from pathlib import Path
@@ -128,33 +129,36 @@ class Builder:
     def build(self, build_dir: str, **kwargs) -> str:
         raise NotImplementedError
 
-    def _find_files_iter(self, include_build: bool = False) -> Iterator[str]:
-        includes = []
-        find_froms = []
-        excludes = []
-        dont_find_froms = ["tests"]
+    def _find_files_iter(self, for_sdist: bool = False) -> Iterator[str]:
+        includes = set()
+        find_froms = set()
+        excludes = set()
+        # Don't exclude tests directory for sdist
+        dont_find_froms = {"tests"} if not for_sdist else set()
+        meta_includes = itertools.chain(
+            self.meta.includes, self.meta.source_includes if for_sdist else []
+        )
 
+        for pat in meta_includes:
+            if os.path.basename(pat) == "*":
+                pat = pat[:-2]
+            if "*" in pat or os.path.isfile(pat):
+                includes.add(pat)
+            else:
+                find_froms.add(pat)
         if not self.meta.includes:
-            find_froms = _find_top_packages(self.meta.package_dir or ".")
-            if not find_froms:
-                includes = [
-                    f"{self.meta.package_dir}/*.py" if self.meta.package_dir else "*.py"
-                ]
-        else:
-            for pat in self.meta.includes:
-                if os.path.basename(pat) == "*":
-                    pat = pat[:-2]
-                if "*" in pat or os.path.isfile(pat):
-                    includes.append(pat)
-                else:
-                    find_froms.append(pat)
+            top_packages = _find_top_packages(self.meta.package_dir or ".")
+            if top_packages:
+                find_froms.update(top_packages)
+            else:
+                includes.add(f"{self.meta.package_dir or '.'}/*.py")
 
         if self.meta.excludes:
             for pat in self.meta.excludes:
                 if "*" in pat or os.path.isfile(pat):
-                    excludes.append(pat)
+                    excludes.add(pat)
                 else:
-                    dont_find_froms.append(pat)
+                    dont_find_froms.add(pat)
 
         include_globs = {path: key for key in includes for path in glob.glob(key)}
         excludes_globs = {path: key for key in excludes for path in glob.glob(key)}
@@ -181,7 +185,7 @@ class Builder:
         for path in includes:
             if os.path.isfile(path):
                 yield path
-        if not include_build:
+        if not for_sdist:
             return
 
         if self.meta.build and os.path.isfile(self.meta.build):
@@ -198,13 +202,13 @@ class Builder:
         if self.meta.filepath.exists():
             yield "pyproject.toml"
 
-    def find_files_to_add(self, include_build: bool = False) -> List[Path]:
+    def find_files_to_add(self, for_sdist: bool = False) -> List[Path]:
         """Traverse the project path and return a list of file names
         that should be included in a sdist distribution.
-        If include_build is True, will include files like LICENSE, README and pyproject
+        If for_sdist is True, will include files like LICENSE, README and pyproject
         Produce a paths list relative to the source dir.
         """
-        return sorted(set(Path(p) for p in self._find_files_iter(include_build)))
+        return sorted(set(Path(p) for p in self._find_files_iter(for_sdist)))
 
     def format_setup_py(self) -> str:
         before, extra, after = [], [], []

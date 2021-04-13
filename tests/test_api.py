@@ -61,7 +61,7 @@ def test_build_package(tmp_path):
         assert "demo-package-0.1.0/my_package/__init__.py" in tar_names
         assert "demo-package-0.1.0/my_package/data.json" in tar_names
         assert "demo-package-0.1.0/single_module.py" not in tar_names
-        assert "demo-package-0.1.0/data_out.json" not in tar_names
+        assert "demo-package-0.1.0/data_out.json" in tar_names
 
         zip_names = get_wheel_names(tmp_path / wheel_name)
         assert "my_package/__init__.py" in zip_names
