@@ -68,9 +68,6 @@ class MetaField(Generic[T]):
             return None
 
 
-_NAME_EMAIL_RE = re.compile(r"^\s*([^<>]+?)\s*<([^<>]+)>")
-
-
 class Metadata:
     """A class that holds all metadata that Python packaging requries."""
 

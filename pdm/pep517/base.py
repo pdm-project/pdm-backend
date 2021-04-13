@@ -64,7 +64,7 @@ def _merge_globs(
     for path, key in include_globs.items():
         # The longer glob pattern wins
         if path in excludes_globs:
-            if len(key) <= excludes_globs[path]:
+            if len(key) <= len(excludes_globs[path]):
                 continue
             else:
                 del excludes_globs[path]
@@ -133,11 +133,14 @@ class Builder:
         includes = set()
         find_froms = set()
         excludes = set()
-        # Don't exclude tests directory for sdist
-        dont_find_froms = {"tests"} if not for_sdist else set()
-        meta_includes = itertools.chain(
-            self.meta.includes, self.meta.source_includes if for_sdist else []
-        )
+        dont_find_froms = set()
+        source_includes = self.meta.source_includes or ["tests"]
+        meta_includes = itertools.chain(self.meta.includes, source_includes)
+        meta_excludes = list(self.meta.excludes)
+
+        if not for_sdist:
+            # exclude source-includes for non-sdist builds
+            meta_excludes.extend(source_includes)
 
         for pat in meta_includes:
             if os.path.basename(pat) == "*":
@@ -153,12 +156,11 @@ class Builder:
             else:
                 includes.add(f"{self.meta.package_dir or '.'}/*.py")
 
-        if self.meta.excludes:
-            for pat in self.meta.excludes:
-                if "*" in pat or os.path.isfile(pat):
-                    excludes.add(pat)
-                else:
-                    dont_find_froms.add(pat)
+        for pat in meta_excludes:
+            if "*" in pat or os.path.isfile(pat):
+                excludes.add(pat)
+            else:
+                dont_find_froms.add(pat)
 
         include_globs = {path: key for key in includes for path in glob.glob(key)}
         excludes_globs = {path: key for key in excludes for path in glob.glob(key)}

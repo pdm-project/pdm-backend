@@ -124,3 +124,5 @@ underlines = "-~^"
   name = "Miscellany"
   showcontent = true
 
+[tool.pytest.ini-options]
+norecursedirs = ["fixtures", "__pypackages__"]
