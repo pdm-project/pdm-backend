@@ -1,3 +1,12 @@
+Release v0.7.0 (2021-04-13)
+---------------------------
+
+### Features & Improvements
+
+- Support sdist-only include files list. Include `tests` folder for sdist build if none is given. [#16](https://github.com/frostming/pdm-pep517/issues/16)
+- Exclude the files specified by `source-includes` in non-sdist builds. [#16](https://github.com/frostming/pdm-pep517/issues/16)
+
+
 Release v0.6.1 (2021-03-29)
 ---------------------------
 
