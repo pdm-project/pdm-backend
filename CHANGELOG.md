@@ -1,3 +1,10 @@
+Release v0.7.1 (2021-04-20)
+---------------------------
+
+### Bug Fixes
+
+- Fix the pyproject.toml file in sdist builds.
+
 Release v0.7.0 (2021-04-13)
 ---------------------------
 
