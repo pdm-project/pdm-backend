@@ -1,64 +1,64 @@
 [[package]]
 name = "apipkg"
-sections = ["dev"]
+sections = ["test"]
 version = "1.5"
 summary = "apipkg: namespace control and lazy-import mechanism"
 
 [[package]]
 name = "arpeggio"
-sections = ["dev"]
+sections = ["test"]
 version = "1.10.1"
 summary = "Packrat parser interpreter"
 
 [[package]]
 name = "atomicwrites"
-sections = ["dev"]
+sections = ["test"]
 version = "1.4.0"
 marker = "sys_platform == 'win32'"
 summary = "Atomic file writes."
 
 [[package]]
 name = "attrs"
-sections = ["dev"]
+sections = ["test"]
 version = "20.3.0"
 summary = "Classes Without Boilerplate"
 
 [[package]]
 name = "certifi"
-sections = ["dev"]
+sections = ["test"]
 version = "2020.12.5"
 marker = "python_version >= '3.8' and python_version < '4.0'"
 summary = "Python package for providing Mozilla's CA Bundle."
 
 [[package]]
 name = "chardet"
-sections = ["dev"]
+sections = ["test"]
 version = "4.0.0"
 marker = "python_version >= '3.8' and python_version < '4.0'"
 summary = "Universal encoding detector for Python 2 and 3"
 
 [[package]]
 name = "click"
-sections = ["dev"]
+sections = ["test"]
 version = "7.1.2"
 summary = "Composable command line interface toolkit"
 
 [[package]]
 name = "colorama"
-sections = ["dev"]
+sections = ["test"]
 version = "0.4.4"
 marker = "sys_platform == 'win32'"
 summary = "Cross-platform colored terminal text."
 
 [[package]]
 name = "coverage"
-sections = ["dev"]
+sections = ["test"]
 version = "5.5"
 summary = "Code coverage measurement for Python"
 
 [[package]]
 name = "execnet"
-sections = ["dev"]
+sections = ["test"]
 version = "1.8.0"
 summary = "execnet: rapid multi-Python deployment"
 dependencies = [
@@ -67,14 +67,14 @@ dependencies = [
 
 [[package]]
 name = "idna"
-sections = ["dev"]
+sections = ["test"]
 version = "2.10"
 marker = "python_version >= '3.8' and python_version < '4.0'"
 summary = "Internationalized Domain Names in Applications (IDNA)"
 
 [[package]]
 name = "importlib-metadata"
-sections = ["dev"]
+sections = ["test"]
 version = "3.7.3"
 marker = "python_version < '4.0'"
 summary = "Read metadata from Python packages"
@@ -85,19 +85,19 @@ dependencies = [
 
 [[package]]
 name = "incremental"
-sections = ["dev"]
+sections = ["test"]
 version = "21.3.0"
 summary = "A small library that versions your Python projects."
 
 [[package]]
 name = "iniconfig"
-sections = ["dev"]
+sections = ["test"]
 version = "1.1.1"
 summary = "iniconfig: brain-dead simple config-ini parsing"
 
 [[package]]
 name = "jinja2"
-sections = ["dev"]
+sections = ["test"]
 version = "2.11.3"
 summary = "A very fast and expressive template engine."
 dependencies = [
@@ -106,7 +106,7 @@ dependencies = [
 
 [[package]]
 name = "jsonschema"
-sections = ["dev"]
+sections = ["test"]
 version = "3.1.1"
 marker = "python_version >= '3.8' and python_version < '4.0'"
 summary = "An implementation of JSON Schema validation for Python"
@@ -120,13 +120,13 @@ dependencies = [
 
 [[package]]
 name = "MarkupSafe"
-sections = ["dev"]
+sections = ["test"]
 version = "1.1.1"
 summary = "Safely add untrusted strings to HTML/XML markup."
 
 [[package]]
 name = "packaging"
-sections = ["dev"]
+sections = ["test"]
 version = "20.9"
 summary = "Core utilities for Python packages"
 dependencies = [
@@ -135,7 +135,7 @@ dependencies = [
 
 [[package]]
 name = "parver"
-sections = ["dev"]
+sections = ["test"]
 version = "0.3.1"
 summary = "Parse and manipulate version numbers."
 dependencies = [
@@ -146,7 +146,7 @@ dependencies = [
 
 [[package]]
 name = "pluggy"
-sections = ["dev"]
+sections = ["test"]
 version = "0.13.1"
 summary = "plugin and hook calling mechanisms for python"
 dependencies = [
@@ -155,26 +155,26 @@ dependencies = [
 
 [[package]]
 name = "py"
-sections = ["dev"]
+sections = ["test"]
 version = "1.10.0"
 summary = "library with cross-python path, ini-parsing, io, code, log facilities"
 
 [[package]]
 name = "pyparsing"
-sections = ["dev"]
+sections = ["test"]
 version = "2.4.7"
 summary = "Python parsing module"
 
 [[package]]
 name = "pyrsistent"
-sections = ["dev"]
+sections = ["test"]
 version = "0.17.3"
 marker = "python_version >= '3.8' and python_version < '4.0'"
 summary = "Persistent/Functional/Immutable data structures"
 
 [[package]]
 name = "pytest"
-sections = ["dev"]
+sections = ["test"]
 version = "6.2.2"
 summary = "pytest: simple powerful testing with Python"
 dependencies = [
@@ -191,7 +191,7 @@ dependencies = [
 
 [[package]]
 name = "pytest-cov"
-sections = ["dev"]
+sections = ["test"]
 version = "2.11.1"
 summary = "Pytest plugin for measuring coverage."
 dependencies = [
@@ -201,7 +201,7 @@ dependencies = [
 
 [[package]]
 name = "pytest-forked"
-sections = ["dev"]
+sections = ["test"]
 version = "1.3.0"
 summary = "run tests in isolated forked subprocesses"
 dependencies = [
@@ -211,7 +211,7 @@ dependencies = [
 
 [[package]]
 name = "pytest-xdist"
-sections = ["dev"]
+sections = ["test"]
 version = "2.2.1"
 summary = "pytest xdist plugin for distributed testing and loop-on-failing modes"
 dependencies = [
@@ -222,7 +222,7 @@ dependencies = [
 
 [[package]]
 name = "requests"
-sections = ["dev"]
+sections = ["test"]
 version = "2.25.1"
 marker = "python_version >= '3.8' and python_version < '4.0'"
 summary = "Python HTTP for Humans."
@@ -235,26 +235,26 @@ dependencies = [
 
 [[package]]
 name = "setuptools"
-sections = ["dev"]
+sections = ["test"]
 version = "54.2.0"
 marker = "python_version >= '3.8' and python_version < '4.0'"
 summary = "Easily download, build, install, upgrade, and uninstall Python packages"
 
 [[package]]
 name = "six"
-sections = ["dev"]
+sections = ["test"]
 version = "1.15.0"
 summary = "Python 2 and 3 compatibility utilities"
 
 [[package]]
 name = "toml"
-sections = ["dev"]
+sections = ["test"]
 version = "0.10.2"
 summary = "Python Library for Tom's Obvious, Minimal Language"
 
 [[package]]
 name = "towncrier"
-sections = ["dev"]
+sections = ["test"]
 version = "19.2.0"
 summary = "Building newsfiles for your project."
 dependencies = [
@@ -266,21 +266,21 @@ dependencies = [
 
 [[package]]
 name = "typing-extensions"
-sections = ["dev"]
+sections = ["test"]
 version = "3.7.4.3"
 marker = "python_version < '3.8'"
 summary = "Backported and Experimental Type Hints for Python 3.5+"
 
 [[package]]
 name = "urllib3"
-sections = ["dev"]
+sections = ["test"]
 version = "1.26.4"
 marker = "python_version >= '3.8' and python_version < '4.0'"
 summary = "HTTP library with thread-safe connection pooling, file post, and more."
 
 [[package]]
 name = "vendoring"
-sections = ["dev"]
+sections = ["test"]
 version = "0.3.3"
 marker = "python_version >= '3.8' and python_version < '4.0'"
 summary = "A command line tool, to simplify vendoring pure Python dependencies."
@@ -294,14 +294,14 @@ dependencies = [
 
 [[package]]
 name = "zipp"
-sections = ["dev"]
+sections = ["test"]
 version = "3.4.1"
 marker = "python_version < '4.0'"
 summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "2"
-content_hash = "sha256:98151236cb48db601ee36a6c6069944a52442f9fae607e4682724964a8a2302f"
+content_hash = "sha256:87167ea14a5f4f86d01e2d3bfed91a14991809866fd105fe8da91d9ffe02fd9d"
 
 [metadata.files]
 "apipkg 1.5" = [
