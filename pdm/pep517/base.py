@@ -51,9 +51,10 @@ class BuildError(RuntimeError):
     pass
 
 
-def _match_path(path: str, pattern: str) -> bool:
-    return normalize_path(os.path.abspath(path)) == normalize_path(
-        os.path.abspath(pattern)
+def is_same_or_descendant_path(target: str, path: str) -> bool:
+    """Check target is same or descendant with path"""
+    return normalize_path(os.path.abspath(target)).startswith(
+        normalize_path(os.path.abspath(path))
     )
 
 
@@ -167,7 +168,7 @@ class Builder:
 
         includes, excludes = _merge_globs(include_globs, excludes_globs)
         for path in find_froms:
-            if any(_match_path(path, item) for item in dont_find_froms):
+            if any(is_same_or_descendant_path(path, item) for item in dont_find_froms):
                 continue
             path_base = os.path.dirname(path)
             if not path_base or path_base == ".":
@@ -178,7 +179,7 @@ class Builder:
 
                 for filename in filenames:
                     if filename.endswith(".pyc") or any(
-                        _match_path(os.path.join(root, filename), item)
+                        is_same_or_descendant_path(os.path.join(root, filename), item)
                         for item in excludes
                     ):
                         continue
