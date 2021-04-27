@@ -6,7 +6,7 @@ Released under the MIT license.
 from pdm.pep517._vendor.toml import encoder
 from pdm.pep517._vendor.toml import decoder
 
-__version__ = "0.10.1"
+__version__ = "0.10.2"
 _spec_ = "0.5.0"
 
 load = decoder.load
