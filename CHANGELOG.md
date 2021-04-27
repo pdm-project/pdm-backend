@@ -1,3 +1,15 @@
+Release v0.7.2 (2021-04-27)
+---------------------------
+
+### Bug Fixes
+
+- Fix files finding error if the glob result of excludes containing directory. [#17](https://github.com/frostming/pdm-pep517/issues/17)
+
+### Dependencies
+
+- Update `toml` from `0.10.1` to `0.10.2`. [#19](https://github.com/frostming/pdm-pep517/issues/19)
+
+
 Release v0.7.1 (2021-04-20)
 ---------------------------
 
