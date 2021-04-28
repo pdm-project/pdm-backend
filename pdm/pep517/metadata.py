@@ -376,7 +376,7 @@ class Metadata:
                         includes.remove(include)
                 packages[:] = list(packages_set)
                 for include in includes:
-                    for path in glob.glob(include):
+                    for path in glob.glob(include, recursive=True):
                         if "/" not in path.lstrip("./") and path.endswith(".py"):
                             # Only include top level py modules
                             py_modules.append(path.lstrip("./")[:-3])

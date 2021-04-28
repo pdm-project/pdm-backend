@@ -163,8 +163,12 @@ class Builder:
             else:
                 dont_find_froms.add(pat)
 
-        include_globs = {path: key for key in includes for path in glob.glob(key)}
-        excludes_globs = {path: key for key in excludes for path in glob.glob(key)}
+        include_globs = {
+            path: key for key in includes for path in glob.glob(key, recursive=True)
+        }
+        excludes_globs = {
+            path: key for key in excludes for path in glob.glob(key, recursive=True)
+        }
 
         includes, excludes = _merge_globs(include_globs, excludes_globs)
         for path in find_froms:
