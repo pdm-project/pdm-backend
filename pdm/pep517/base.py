@@ -53,9 +53,7 @@ class BuildError(RuntimeError):
 
 def is_same_or_descendant_path(target: str, path: str) -> bool:
     """Check target is same or descendant with path"""
-    return normalize_path(os.path.abspath(target)).startswith(
-        normalize_path(os.path.abspath(path))
-    )
+    return Path(target).is_relative_to(path)
 
 
 def _merge_globs(
