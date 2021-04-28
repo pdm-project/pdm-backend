@@ -38,3 +38,23 @@ def test_auto_include_tests_for_sdist():
 )
 def test_is_same_or_descendant_path(target, path, expect):
     assert is_same_or_descendant_path(target, path) == expect
+
+
+def test_recursive_glob_patterns_in_includes():
+    builder = Builder(FIXTURES / "projects/demo-package-with-deep-path")
+    with utils.cd(builder.location):
+        sdist_files = builder.find_files_to_add(True)
+        wheel_files = builder.find_files_to_add(False)
+
+    data_files = (
+        "my_package/data/data_a.json",
+        "my_package/data/data_inner/data_b.json",
+    )
+
+    assert Path("my_package/__init__.py") in sdist_files
+    assert Path("my_package/__init__.py") in wheel_files
+
+    for file in data_files:
+        path = Path(file)
+        assert path in sdist_files
+        assert path not in wheel_files
