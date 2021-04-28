@@ -163,24 +163,27 @@ class Builder:
 
     def _find_files_iter(self, for_sdist: bool = False) -> Iterator[str]:
         includes, excludes = self._get_include_and_exclude_paths(for_sdist)
-        for path in includes:
-            if os.path.isfile(path):
-                yield path
+        for include_path in includes:
+            include_path = Path(include_path)
+            if include_path.is_file():
+                yield include_path
                 continue
 
-            for root, _, filenames in os.walk(path):
-                for filename in filenames:
-                    if filename.endswith(".pyc") or any(
-                        is_same_or_descendant_path(
-                            (Path(root) / filename)
-                            .absolute()
-                            .relative_to(self.location),
-                            item,
-                        )
-                        for item in excludes
-                    ):
-                        continue
-                    yield os.path.join(root, filename)
+            for path in include_path.glob("**/*"):
+                if not path.is_file():
+                    continue
+
+                rel_path = path.absolute().relative_to(self.location)
+                if path.name.endswith(".pyc") or any(
+                    is_same_or_descendant_path(
+                        rel_path,
+                        exclude_path,
+                    )
+                    for exclude_path in excludes
+                ):
+                    continue
+
+                yield rel_path
 
         if not for_sdist:
             return
