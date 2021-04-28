@@ -175,17 +175,18 @@ class WheelBuilder(Builder):
             if pkg.is_dir():
                 continue
 
-            rel_path = pkg.relative_to(lib_dir).as_posix()
+            whl_path = pkg.relative_to(lib_dir).as_posix()
+            rel_path = pkg.relative_to(self.location)
             if any(
                 is_same_or_descendant_path(rel_path, exclude_path)
                 for exclude_path in excludes
             ):
                 continue
 
-            if rel_path in wheel.namelist():
+            if whl_path in wheel.namelist():
                 continue
 
-            self._add_file(wheel, pkg, rel_path)
+            self._add_file(wheel, pkg, whl_path)
 
     def _copy_module(self, wheel):
         for path in self.find_files_to_add():

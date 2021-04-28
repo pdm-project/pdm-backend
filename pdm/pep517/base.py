@@ -171,7 +171,12 @@ class Builder:
             for root, _, filenames in os.walk(path):
                 for filename in filenames:
                     if filename.endswith(".pyc") or any(
-                        is_same_or_descendant_path(os.path.join(root, filename), item)
+                        is_same_or_descendant_path(
+                            (Path(root) / filename)
+                            .absolute()
+                            .relative_to(self.location),
+                            item,
+                        )
                         for item in excludes
                     ):
                         continue
