@@ -175,8 +175,11 @@ class WheelBuilder(Builder):
             if pkg.is_dir():
                 continue
 
-            whl_path = pkg.relative_to(lib_dir).as_posix()
-            rel_path = pkg.relative_to(self.location)
+            whl_path = rel_path = pkg.relative_to(lib_dir).as_posix()
+            if self.meta.package_dir:
+                # act like being in the package_dir
+                rel_path = Path(self.meta.package_dir) / rel_path
+
             if self._is_excluded(rel_path, excludes):
                 continue
 
