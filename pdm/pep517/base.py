@@ -1,13 +1,12 @@
 import atexit
 import glob
-import itertools
 import os
 import textwrap
 from pathlib import Path
 from typing import Dict, Iterator, List, Tuple, Union
 
 from pdm.pep517.metadata import Metadata
-from pdm.pep517.utils import is_python_package, normalize_path
+from pdm.pep517.utils import is_python_package
 
 OPEN_README = """import codecs
 
