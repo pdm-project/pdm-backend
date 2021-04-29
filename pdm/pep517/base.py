@@ -164,6 +164,12 @@ class Builder:
         include_paths, exclude_paths = _merge_globs(include_globs, excludes_globs)
         return sorted(include_paths), sorted(exclude_paths)
 
+    def _is_excluded(self, path: str, exclude_paths: List[str]) -> bool:
+        return any(
+            is_same_or_descendant_path(path, exclude_path)
+            for exclude_path in exclude_paths
+        )
+
     def _find_files_iter(self, for_sdist: bool = False) -> Iterator[str]:
         includes, excludes = self._get_include_and_exclude_paths(for_sdist)
         for include_path in includes:
@@ -177,13 +183,7 @@ class Builder:
                     continue
 
                 rel_path = path.absolute().relative_to(self.location)
-                if path.name.endswith(".pyc") or any(
-                    is_same_or_descendant_path(
-                        rel_path,
-                        exclude_path,
-                    )
-                    for exclude_path in excludes
-                ):
+                if path.name.endswith(".pyc") or self._is_excluded(rel_path, excludes):
                     continue
 
                 yield rel_path

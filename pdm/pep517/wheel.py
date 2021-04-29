@@ -16,7 +16,7 @@ from typing import List, Tuple, Union
 from pdm.pep517 import __version__
 from pdm.pep517._vendor.packaging.markers import default_environment
 from pdm.pep517._vendor.packaging.specifiers import SpecifierSet
-from pdm.pep517.base import Builder, BuildError, is_same_or_descendant_path
+from pdm.pep517.base import Builder, BuildError
 from pdm.pep517.utils import get_abi_tag, get_platform, safe_version, to_filename
 
 WHEEL_FILE_FORMAT = (
@@ -177,10 +177,7 @@ class WheelBuilder(Builder):
 
             whl_path = pkg.relative_to(lib_dir).as_posix()
             rel_path = pkg.relative_to(self.location)
-            if any(
-                is_same_or_descendant_path(rel_path, exclude_path)
-                for exclude_path in excludes
-            ):
+            if self._is_excluded(rel_path, excludes):
                 continue
 
             if whl_path in wheel.namelist():
