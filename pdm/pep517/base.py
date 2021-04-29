@@ -143,14 +143,14 @@ class Builder:
         if not self.meta.includes:
             top_packages = _find_top_packages(self.meta.package_dir or ".")
             if top_packages:
-                includes |= set(top_packages)
+                includes.update(top_packages)
             else:
                 includes.add(f"{self.meta.package_dir or '.'}/*.py")
         else:
-            includes |= set(self.meta.includes)
+            includes.update(self.meta.includes)
 
-        includes |= set(source_includes)
-        excludes |= set(meta_excludes)
+        includes.update(source_includes)
+        excludes.update(meta_excludes)
         include_globs = {
             path: key for key in includes for path in glob.glob(key, recursive=True)
         }
