@@ -156,7 +156,7 @@ class WheelBuilder(Builder):
         setup_py = self.ensure_setup_py()
         build_args = [
             sys.executable,
-            setup_py,
+            str(setup_py),
             "build",
             "-b",
             str(self.location / "build"),
