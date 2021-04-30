@@ -105,7 +105,7 @@ def _format_dict_list(data: Dict[str, List[str]], indent: int = 4) -> str:
 class Builder:
     """Base class for building and distributing a package from given path."""
 
-    DEFAULT_EXCLUDES = ["ez_setup", "*__pycache__", "tests", "tests.*"]
+    DEFAULT_EXCLUDES = ["build"]
 
     def __init__(self, location: Union[str, Path]) -> None:
         self._old_cwd = None
@@ -154,9 +154,17 @@ class Builder:
 
         includes.update(source_includes)
         excludes.update(meta_excludes)
+
         include_globs = {
-            path: key for key in includes for path in glob.glob(key, recursive=True)
+            path: key
+            for key in includes
+            for path in glob.glob(key, recursive=True)
+            if not any(
+                is_same_or_descendant_path(path, exclude_path)
+                for exclude_path in self.DEFAULT_EXCLUDES
+            )
         }
+
         excludes_globs = {
             path: key for key in excludes for path in glob.glob(key, recursive=True)
         }
