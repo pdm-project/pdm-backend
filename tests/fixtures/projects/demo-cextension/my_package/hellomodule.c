@@ -11,15 +11,15 @@ static PyMethodDef myMethods[] = {
     { NULL, NULL, 0, NULL }
 };
 
-static struct PyModuleDef pytestmodule = {
+static struct PyModuleDef hellomodule = {
     PyModuleDef_HEAD_INIT,
-    "pytestmodule",
+    "hello",
     "Test Module",
     -1,
     myMethods
 };
 
-PyMODINIT_FUNC PyInit_pytestmodule(void)
+PyMODINIT_FUNC PyInit_hello(void)
 {
-    return PyModule_Create(&pytestmodule);
+    return PyModule_Create(&hellomodule);
 }
