@@ -67,29 +67,30 @@ def _merge_globs(
     determine the priority in the following ways:
 
     1. The one with more parts in the path wins
-    2. If part number is equal, concrete file path wins
+    2. If part numbers are equal, concrete file path wins
     3. If both are of the same pattern type, **excludes** wins
     """
+
+    def path_weight(pathname):
+        """Return a two-element tuple [part_num, concrete_level]"""
+        pathname_parts = Path(pathname).parts
+        wildcard_count = 0
+        if glob.has_magic(pathname):
+            for part in pathname_parts:
+                if part == "**":
+                    wildcard_count += 2
+                elif glob.has_magic(part):
+                    wildcard_count += 1
+        # The concrete level is the opposite of wildcard_count
+        return len(pathname_parts), -wildcard_count
 
     includes = []
     for path, key in include_globs.items():
         if path in excludes_globs:
-            include_path_parts = len(Path(key).parts)
-            exclude_path_parts = len(Path(excludes_globs[path]).parts)
-            if "*" in key:
-                if include_path_parts <= exclude_path_parts:
-                    continue
-                else:
-                    del excludes_globs[path]
+            if path_weight(key) <= path_weight(excludes_globs[path]):
+                continue  # Exclude wins
             else:
-                if (
-                    include_path_parts < exclude_path_parts
-                    or include_path_parts == exclude_path_parts
-                    and "*" not in excludes_globs[path]
-                ):
-                    continue
-                else:
-                    del excludes_globs[path]
+                del excludes_globs[path]  # Include wins
         includes.append(path)
     return includes, list(excludes_globs)
 
@@ -180,11 +181,11 @@ class Builder:
         excludes.update(meta_excludes)
 
         include_globs = {
-            path: key for key in includes for path in glob.glob(key, recursive=True)
+            path: key for key in includes for path in glob.iglob(key, recursive=True)
         }
 
         excludes_globs = {
-            path: key for key in excludes for path in glob.glob(key, recursive=True)
+            path: key for key in excludes for path in glob.iglob(key, recursive=True)
         }
 
         include_paths, exclude_paths = _merge_globs(include_globs, excludes_globs)
