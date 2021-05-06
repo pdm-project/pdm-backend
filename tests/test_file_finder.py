@@ -4,6 +4,7 @@ import pytest
 
 from pdm.pep517 import utils
 from pdm.pep517.base import Builder, is_same_or_descendant_path
+from pdm.pep517.metadata import Metadata
 from tests import FIXTURES
 
 
@@ -42,7 +43,7 @@ def test_is_same_or_descendant_path(target, path, expect):
 
 def test_recursive_glob_patterns_in_includes():
     builder = Builder(FIXTURES / "projects/demo-package-with-deep-path")
-    with utils.cd(builder.location):
+    with builder:
         sdist_files = builder.find_files_to_add(True)
         wheel_files = builder.find_files_to_add(False)
 
@@ -58,3 +59,34 @@ def test_recursive_glob_patterns_in_includes():
         path = Path(file)
         assert path in sdist_files
         assert path not in wheel_files
+
+
+@pytest.mark.parametrize(
+    ["includes", "excludes", "data_a_exist", "data_b_exist"],
+    [
+        (["**/*.json"], ["my_package/data/*.json"], False, True),
+        (["my_package/data/data_a.json"], ["my_package/data/*.json"], True, False),
+        (
+            ["my_package/", "my_package/data/data_a.json"],
+            ["my_package/data/data_a.json"],
+            False,
+            True,
+        ),
+        (["my_package/data/*"], ["my_package/data/"], True, False),
+        (["**/data/*.json"], ["my_package/data/*.json"], False, False),
+    ],
+)
+def test_merge_includes_and_excludes(
+    monkeypatch, includes, excludes, data_a_exist, data_b_exist
+):
+    builder = Builder(FIXTURES / "projects/demo-package-with-deep-path")
+    data_a, data_b = Path("my_package/data/data_a.json"), Path(
+        "my_package/data/data_inner/data_b.json"
+    )
+    with builder:
+        monkeypatch.setattr(Metadata, "source_includes", [])
+        monkeypatch.setattr(Metadata, "includes", includes)
+        monkeypatch.setattr(Metadata, "excludes", excludes)
+        include_files = builder.find_files_to_add()
+        assert (data_a in include_files) == data_a_exist
+        assert (data_b in include_files) == data_b_exist

@@ -67,8 +67,8 @@ def _merge_globs(
     determine the priority in the following ways:
 
     1. The one with more parts in the path wins
-    2. If part numbers are equal, concrete file path wins
-    3. If both are of the same pattern type, **excludes** wins
+    2. If part numbers are equal, the one that is more concrete wins
+    3. If both have the same part number and concrete level, *excludes* wins
     """
 
     def path_weight(pathname):
@@ -158,7 +158,7 @@ class Builder:
 
     def _get_include_and_exclude_paths(
         self, for_sdist: bool = False
-    ) -> Tuple[Iterator[str], Iterator[str]]:
+    ) -> Tuple[List[str], List[str]]:
         includes = set()
         excludes = set(self.DEFAULT_EXCLUDES)
 
@@ -181,11 +181,15 @@ class Builder:
         excludes.update(meta_excludes)
 
         include_globs = {
-            path: key for key in includes for path in glob.iglob(key, recursive=True)
+            os.path.normpath(path): key
+            for key in includes
+            for path in glob.iglob(key, recursive=True)
         }
 
         excludes_globs = {
-            path: key for key in excludes for path in glob.iglob(key, recursive=True)
+            os.path.normpath(path): key
+            for key in excludes
+            for path in glob.iglob(key, recursive=True)
         }
 
         include_paths, exclude_paths = _merge_globs(include_globs, excludes_globs)
