@@ -3,7 +3,7 @@ import glob
 import os
 import textwrap
 from pathlib import Path
-from typing import Dict, Iterator, List, Tuple, Union
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 from pdm.pep517.metadata import Metadata
 from pdm.pep517.utils import is_python_package
@@ -107,9 +107,14 @@ class Builder:
 
     DEFAULT_EXCLUDES = ["build"]
 
-    def __init__(self, location: Union[str, Path]) -> None:
+    def __init__(
+        self,
+        location: Union[str, Path],
+        config_settings: Optional[Dict[str, Any]] = None,
+    ) -> None:
         self._old_cwd = None
         self.location = Path(location).absolute()
+        self.config_settings = config_settings
         self._meta = None
 
     @property

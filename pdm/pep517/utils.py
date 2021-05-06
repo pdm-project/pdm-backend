@@ -14,6 +14,7 @@ from pdm.pep517._vendor.packaging import tags
 from pdm.pep517._vendor.packaging.markers import Marker
 from pdm.pep517._vendor.packaging.requirements import Requirement
 from pdm.pep517._vendor.packaging.version import InvalidVersion, Version
+from pdm.pep517.macosx_platform import calculate_macosx_platform_tag
 
 
 def safe_name(name: str) -> str:
@@ -141,10 +142,12 @@ def path_to_url(path: str) -> str:
     return url
 
 
-def get_platform() -> str:
+def get_platform(build_dir: os.PathLike) -> str:
     """Return our platform name 'win32', 'linux_x86_64'"""
-    result = distutils.util.get_platform().replace(".", "_").replace("-", "_")
-    if result == "linux_x86_64" and sys.maxsize == 2147483647:
+    result = distutils.util.get_platform()
+    if result.startswith("macosx") and os.path.exists(build_dir):
+        result = calculate_macosx_platform_tag(build_dir, result)
+    if result in ("linux_x86_64", "linux-x86_64") and sys.maxsize == 2147483647:
         # pip pull request #3497
         result = "linux_i686"
     return result
