@@ -2,6 +2,7 @@ import contextlib
 import glob
 import hashlib
 import os
+import re
 import shutil
 import stat
 import subprocess
@@ -11,10 +12,10 @@ import zipfile
 from base64 import urlsafe_b64encode
 from io import StringIO
 from pathlib import Path
-from typing import List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pdm.pep517 import __version__
-from pdm.pep517._vendor.packaging.markers import default_environment
+from pdm.pep517._vendor.packaging import tags
 from pdm.pep517._vendor.packaging.specifiers import SpecifierSet
 from pdm.pep517.base import Builder, BuildError
 from pdm.pep517.utils import get_abi_tag, get_platform, safe_version, to_filename
@@ -29,11 +30,35 @@ Tag: {tag}
     % __version__
 )
 
+PY_LIMITED_API_PATTERN = r"cp3\d"
+
 
 class WheelBuilder(Builder):
-    def __init__(self, location: Union[str, Path]) -> None:
-        super().__init__(location)
+    def __init__(
+        self,
+        location: Union[str, Path],
+        config_settings: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        super().__init__(location, config_settings)
         self._records = []  # type: List[Tuple[str, str, str]]
+        self._parse_config_settings()
+
+    def _parse_config_settings(self):
+        self.python_tag = None
+        self.py_limited_api = None
+        self.plat_name = None
+        if not self.config_settings:
+            return
+        if "--python-tag" in self.config_settings:
+            self.python_tag = self.config_settings["--python-tag"]
+        if "--py-limited-api" in self.config_settings:
+            self.py_limited_api = self.config_settings["--py-limited-api"]
+            if not re.match(PY_LIMITED_API_PATTERN, self.py_limited_api):
+                raise ValueError(
+                    "py-limited-api must match '%s'" % PY_LIMITED_API_PATTERN
+                )
+        if "--plat-name" in self.config_settings:
+            self.plat_name = self.config_settings["--plat-name"]
 
     def build(self, build_dir: str, **kwargs) -> str:
         if not os.path.exists(build_dir):
@@ -65,41 +90,35 @@ class WheelBuilder(Builder):
 
     @property
     def tag(self) -> str:
+        platform = self.plat_name
+        impl = self.python_tag
         if self.meta.build:
-            info = default_environment()
-            platform = get_platform()
-            implementation = info["implementation_name"]
-            impl_name = (
-                "cp"
-                if implementation.startswith("cp")
-                else "jp"
-                if implementation.startswith("jp")
-                else "ip"
-                if implementation.startswith("ir")
-                else "pp"
-                if implementation.startswith("pypy")
-                else "unknown"
-            )
-            impl_ver = (
-                info["python_full_version"].replace(".", "")
-                if impl_name == "pp"
-                else info["python_version"].replace(".", "")
-            )
-            impl = impl_name + impl_ver
-            abi_tag = get_abi_tag()
-            tag = (impl, abi_tag, platform)
-        else:
-            platform = "any"
-            if self.meta.requires_python and SpecifierSet(
-                self.meta.requires_python
-            ).contains("2.7"):
-                impl = "py2.py3"
+            if not platform:
+                platform = get_platform(self.location / "build")
+            if not impl:
+                impl = tags.interpreter_name() + tags.interpreter_version()
+            if self.py_limited_api and impl.startswith("cp3"):
+                impl = self.py_limited_api
+                abi_tag = "abi3"
             else:
-                impl = "py3"
+                abi_tag = str(get_abi_tag()).lower()
+        else:
+            if not platform:
+                platform = "any"
+            abi_tag = "none"
+            if not impl:
+                if self.meta.requires_python and SpecifierSet(
+                    self.meta.requires_python
+                ).contains("2.7"):
+                    impl = "py2.py3"
+                else:
+                    impl = "py3"
 
-            tag = (impl, "none", platform)
-
-        return "-".join(tag)
+        platform = platform.lower().replace("-", "_").replace(".", "_")
+        tag = (impl, abi_tag, platform)
+        supported_tags = [(t.interpreter, t.abi, platform) for t in tags.sys_tags()]
+        assert tag in supported_tags, f"would build wheel with unsupported tag {tag}"
+        return "-".join((impl, abi_tag, platform))
 
     @property
     def dist_info_name(self) -> str:

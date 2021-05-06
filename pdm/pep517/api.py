@@ -24,7 +24,7 @@ get_requires_for_build_sdist = get_requires_for_build_wheel
 
 
 def prepare_metadata_for_build_wheel(metadata_directory, config_settings=None):
-    builder = WheelBuilder(Path.cwd())
+    builder = WheelBuilder(Path.cwd(), config_settings)
 
     dist_info = Path(metadata_directory, builder.dist_info_name)
     dist_info.mkdir(exist_ok=True)
@@ -44,11 +44,11 @@ def prepare_metadata_for_build_wheel(metadata_directory, config_settings=None):
 
 def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
     """Builds a wheel, places it in wheel_directory"""
-    with WheelBuilder(Path.cwd()) as builder:
+    with WheelBuilder(Path.cwd(), config_settings) as builder:
         return Path(builder.build(wheel_directory)).name
 
 
 def build_sdist(sdist_directory, config_settings=None):
     """Builds an sdist, places it in sdist_directory"""
-    with SdistBuilder(Path.cwd()) as builder:
+    with SdistBuilder(Path.cwd(), config_settings) as builder:
         return Path(builder.build(sdist_directory)).name
