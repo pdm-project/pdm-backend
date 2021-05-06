@@ -1,13 +1,12 @@
 import atexit
 import glob
-import itertools
 import os
 import textwrap
 from pathlib import Path
 from typing import Dict, Iterator, List, Tuple, Union
 
 from pdm.pep517.metadata import Metadata
-from pdm.pep517.utils import is_python_package, normalize_path
+from pdm.pep517.utils import is_python_package
 
 OPEN_README = """import codecs
 
@@ -53,9 +52,11 @@ class BuildError(RuntimeError):
 
 def is_same_or_descendant_path(target: str, path: str) -> bool:
     """Check target is same or descendant with path"""
-    return normalize_path(os.path.abspath(target)).startswith(
-        normalize_path(os.path.abspath(path))
-    )
+    try:
+        Path(target).relative_to(path)
+        return True
+    except ValueError:
+        return False
 
 
 def _merge_globs(
@@ -104,7 +105,7 @@ def _format_dict_list(data: Dict[str, List[str]], indent: int = 4) -> str:
 class Builder:
     """Base class for building and distributing a package from given path."""
 
-    DEFAULT_EXCLUDES = ["ez_setup", "*__pycache__", "tests", "tests.*"]
+    DEFAULT_EXCLUDES = ["build"]
 
     def __init__(self, location: Union[str, Path]) -> None:
         self._old_cwd = None
@@ -130,68 +131,71 @@ class Builder:
     def build(self, build_dir: str, **kwargs) -> str:
         raise NotImplementedError
 
-    def _find_files_iter(self, for_sdist: bool = False) -> Iterator[str]:
+    def _get_include_and_exclude_paths(
+        self, for_sdist: bool = False
+    ) -> Tuple[Iterator[str], Iterator[str]]:
         includes = set()
-        find_froms = set()
         excludes = set()
-        dont_find_froms = set()
-        source_includes = self.meta.source_includes or ["tests"]
-        meta_includes = itertools.chain(self.meta.includes, source_includes)
-        meta_excludes = list(self.meta.excludes)
 
+        meta_excludes = list(self.meta.excludes)
+        source_includes = self.meta.source_includes or ["tests"]
         if not for_sdist:
             # exclude source-includes for non-sdist builds
             meta_excludes.extend(source_includes)
 
-        for pat in meta_includes:
-            if os.path.basename(pat) == "*":
-                pat = pat[:-2]
-            if "*" in pat or os.path.isfile(pat):
-                includes.add(pat)
-            else:
-                find_froms.add(pat)
         if not self.meta.includes:
             top_packages = _find_top_packages(self.meta.package_dir or ".")
             if top_packages:
-                find_froms.update(top_packages)
+                includes.update(top_packages)
             else:
                 includes.add(f"{self.meta.package_dir or '.'}/*.py")
+        else:
+            includes.update(self.meta.includes)
 
-        for pat in meta_excludes:
-            if "*" in pat or os.path.isfile(pat):
-                excludes.add(pat)
-            else:
-                dont_find_froms.add(pat)
+        includes.update(source_includes)
+        excludes.update(meta_excludes)
 
         include_globs = {
-            path: key for key in includes for path in glob.glob(key, recursive=True)
+            path: key
+            for key in includes
+            for path in glob.glob(key, recursive=True)
+            if not any(
+                is_same_or_descendant_path(path, exclude_path)
+                for exclude_path in self.DEFAULT_EXCLUDES
+            )
         }
+
         excludes_globs = {
             path: key for key in excludes for path in glob.glob(key, recursive=True)
         }
 
-        includes, excludes = _merge_globs(include_globs, excludes_globs)
-        for path in find_froms:
-            if any(is_same_or_descendant_path(path, item) for item in dont_find_froms):
+        include_paths, exclude_paths = _merge_globs(include_globs, excludes_globs)
+        return sorted(include_paths), sorted(exclude_paths)
+
+    def _is_excluded(self, path: str, exclude_paths: List[str]) -> bool:
+        return any(
+            is_same_or_descendant_path(path, exclude_path)
+            for exclude_path in exclude_paths
+        )
+
+    def _find_files_iter(self, for_sdist: bool = False) -> Iterator[str]:
+        includes, excludes = self._get_include_and_exclude_paths(for_sdist)
+        for include_path in includes:
+            include_path = Path(include_path)
+            if include_path.is_file():
+                yield include_path
                 continue
-            path_base = os.path.dirname(path)
-            if not path_base or path_base == ".":
-                # the path is top level itself
-                path_base = path
 
-            for root, dirs, filenames in os.walk(path):
+            for path in include_path.glob("**/*"):
+                if not path.is_file():
+                    continue
 
-                for filename in filenames:
-                    if filename.endswith(".pyc") or any(
-                        is_same_or_descendant_path(os.path.join(root, filename), item)
-                        for item in excludes
-                    ):
-                        continue
-                    yield os.path.join(root, filename)
+                rel_path = path.absolute().relative_to(self.location)
+                if path.name.endswith(".pyc") or self._is_excluded(rel_path, excludes):
+                    continue
 
-        for path in includes:
-            if os.path.isfile(path):
-                yield path
+                yield rel_path
+
         if not for_sdist:
             return
 

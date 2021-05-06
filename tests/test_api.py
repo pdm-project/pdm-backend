@@ -178,3 +178,45 @@ def test_build_package_with_modules_in_src(tmp_path):
 
         zip_names = get_wheel_names(tmp_path / wheel_name)
         assert "foo_module.py" in zip_names
+
+
+def test_build_with_cextension(tmp_path):
+    with build_fixture_project("demo-cextension"):
+        wheel_name = api.build_wheel(tmp_path.as_posix())
+        sdist_name = api.build_sdist(tmp_path.as_posix())
+
+        zip_names = get_wheel_names(tmp_path / wheel_name)
+        assert "my_package/__init__.py" in zip_names
+        assert (
+            "my_package/hellomodule.c" not in zip_names
+        ), "Not collect c files while building wheel"
+
+        tar_names = get_tarball_names(tmp_path / sdist_name)
+        assert "demo-package-0.1.0/my_package/__init__.py" in tar_names
+        assert (
+            "demo-package-0.1.0/my_package/hellomodule.c" in tar_names
+        ), "Collect c files while building sdist"
+        assert not any(
+            path.startswith("build") for path in tar_names
+        ), 'Not collect c files in temporary directory "./build"'
+
+
+def test_build_with_cextension_in_src(tmp_path):
+    with build_fixture_project("demo-cextension-in-src"):
+        wheel_name = api.build_wheel(tmp_path.as_posix())
+        sdist_name = api.build_sdist(tmp_path.as_posix())
+
+        zip_names = get_wheel_names(tmp_path / wheel_name)
+        assert "my_package/__init__.py" in zip_names
+        assert (
+            "my_package/hellomodule.c" not in zip_names
+        ), "Not collect c files while building wheel"
+
+        tar_names = get_tarball_names(tmp_path / sdist_name)
+        assert "demo-package-0.1.0/src/my_package/__init__.py" in tar_names
+        assert (
+            "demo-package-0.1.0/src/my_package/hellomodule.c" in tar_names
+        ), "Collect c files while building sdist"
+        assert not any(
+            path.startswith("build") for path in tar_names
+        ), 'Not collect c files in temporary directory "./build"'
