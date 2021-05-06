@@ -118,7 +118,7 @@ class WheelBuilder(Builder):
         tag = (impl, abi_tag, platform)
         supported_tags = [(t.interpreter, t.abi, platform) for t in tags.sys_tags()]
         assert tag in supported_tags, f"would build wheel with unsupported tag {tag}"
-        return "-".join((impl, abi_tag, platform))
+        return "-".join(tag)
 
     @property
     def dist_info_name(self) -> str:
