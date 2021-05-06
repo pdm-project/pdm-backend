@@ -62,17 +62,37 @@ def is_same_or_descendant_path(target: str, path: str) -> bool:
 def _merge_globs(
     include_globs: Dict[str, str], excludes_globs: Dict[str, str]
 ) -> Tuple[List[str], List[str]]:
-    includes, excludes = [], []
+    """Correctly merge includes and excludes.
+    When a pattern exists in both includes and excludes,
+    determine the priority in the following ways:
+
+    1. The one with more parts in the path wins
+    2. If part numbers are equal, the one that is more concrete wins
+    3. If both have the same part number and concrete level, *excludes* wins
+    """
+
+    def path_weight(pathname):
+        """Return a two-element tuple [part_num, concrete_level]"""
+        pathname_parts = Path(pathname).parts
+        wildcard_count = 0
+        if glob.has_magic(pathname):
+            for part in pathname_parts:
+                if part == "**":
+                    wildcard_count += 2
+                elif glob.has_magic(part):
+                    wildcard_count += 1
+        # The concrete level is the opposite of wildcard_count
+        return len(pathname_parts), -wildcard_count
+
+    includes = []
     for path, key in include_globs.items():
-        # The longer glob pattern wins
         if path in excludes_globs:
-            if len(key) <= len(excludes_globs[path]):
-                continue
+            if path_weight(key) <= path_weight(excludes_globs[path]):
+                continue  # Exclude wins
             else:
-                del excludes_globs[path]
+                del excludes_globs[path]  # Include wins
         includes.append(path)
-    excludes = list(excludes_globs)
-    return includes, excludes
+    return includes, list(excludes_globs)
 
 
 def _find_top_packages(root: str) -> List[str]:
@@ -138,9 +158,9 @@ class Builder:
 
     def _get_include_and_exclude_paths(
         self, for_sdist: bool = False
-    ) -> Tuple[Iterator[str], Iterator[str]]:
+    ) -> Tuple[List[str], List[str]]:
         includes = set()
-        excludes = set()
+        excludes = set(self.DEFAULT_EXCLUDES)
 
         meta_excludes = list(self.meta.excludes)
         source_includes = self.meta.source_includes or ["tests"]
@@ -161,17 +181,15 @@ class Builder:
         excludes.update(meta_excludes)
 
         include_globs = {
-            path: key
+            os.path.normpath(path): key
             for key in includes
-            for path in glob.glob(key, recursive=True)
-            if not any(
-                is_same_or_descendant_path(path, exclude_path)
-                for exclude_path in self.DEFAULT_EXCLUDES
-            )
+            for path in glob.iglob(key, recursive=True)
         }
 
         excludes_globs = {
-            path: key for key in excludes for path in glob.glob(key, recursive=True)
+            os.path.normpath(path): key
+            for key in excludes
+            for path in glob.iglob(key, recursive=True)
         }
 
         include_paths, exclude_paths = _merge_globs(include_globs, excludes_globs)
@@ -190,12 +208,12 @@ class Builder:
             if include_path.is_file():
                 yield include_path
                 continue
-
+            # The path is a directory name
             for path in include_path.glob("**/*"):
                 if not path.is_file():
                     continue
 
-                rel_path = path.absolute().relative_to(self.location)
+                rel_path = path.absolute().relative_to(self.location).as_posix()
                 if path.name.endswith(".pyc") or self._is_excluded(rel_path, excludes):
                     continue
 
@@ -216,7 +234,7 @@ class Builder:
             yield self.meta.readme
 
         if self.meta.filepath.exists():
-            yield "pyproject.toml"
+            yield self.meta.filepath.name
 
     def find_files_to_add(self, for_sdist: bool = False) -> List[Path]:
         """Traverse the project path and return a list of file names
