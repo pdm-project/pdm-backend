@@ -1,3 +1,17 @@
+Release v0.7.3 (2021-05-07)
+---------------------------
+
+### Features & Improvements
+
+- Support recursive glob pattern `**` in `includes`, `excludes` and `source-includes`. [#20](https://github.com/frostming/pdm-pep517/issues/20)
+- Support passing `config_settings` to the backend APIs. [#23](https://github.com/frostming/pdm-pep517/issues/23)
+
+### Miscellany
+
+- Rewrite the `_merge_globs` function to be clearer and more robust. [#25](https://github.com/frostming/pdm-pep517/issues/25)
+- Add type hints to the codebase. [#27](https://github.com/frostming/pdm-pep517/issues/27)
+
+
 Release v0.7.2 (2021-04-27)
 ---------------------------
 
