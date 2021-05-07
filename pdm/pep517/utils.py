@@ -2,13 +2,11 @@ import distutils.util
 import os
 import re
 import sys
-import urllib.parse as urllib_parse
-import urllib.request as urllib_request
 import warnings
 from contextlib import contextmanager
 from fnmatch import fnmatchcase
 from sysconfig import get_config_var
-from typing import Iterable, Optional
+from typing import Callable, Generator, Iterable, Optional
 
 from pdm.pep517._vendor.packaging import tags
 from pdm.pep517._vendor.packaging.markers import Marker
@@ -25,7 +23,7 @@ def safe_name(name: str) -> str:
     return re.sub("[^A-Za-z0-9.]+", "-", name)
 
 
-def safe_version(version):
+def safe_version(version: str) -> str:
     """
     Convert an arbitrary string to a standard version string
     """
@@ -37,7 +35,7 @@ def safe_version(version):
         return re.sub("[^A-Za-z0-9.]+", "-", version)
 
 
-def to_filename(name):
+def to_filename(name: str) -> str:
     """Convert a project or version name to its filename-escaped form
 
     Any '-' characters are currently replaced with '_'.
@@ -45,12 +43,7 @@ def to_filename(name):
     return name.replace("-", "_")
 
 
-def is_dict_like(value):
-    """Determine if an object is dict-like."""
-    return bool(getattr(value, "items", None) and getattr(value, "__getitem__", None))
-
-
-def is_python_package(fullpath):
+def is_python_package(fullpath: str) -> bool:
     if not os.path.isdir(fullpath):
         return False
     if os.path.basename(fullpath.rstrip("/")) in ("__pycache__", "__pypackages__"):
@@ -72,24 +65,24 @@ def merge_marker(requirement: Requirement, marker: str) -> None:
 
 
 def find_packages_iter(
-    where: os.PathLike = ".",
+    where: str = ".",
     exclude: Iterable[str] = (),
     include: Iterable[str] = ("*",),
-    src: os.PathLike = ".",
+    src: str = ".",
 ) -> Iterable[str]:
     """
     All the packages found in 'where' that pass the 'include' filter, but
     not the 'exclude' filter.
     """
 
-    def _build_filter(patterns):
+    def _build_filter(patterns: Iterable[str]) -> Callable[[str], bool]:
         """
         Given a list of patterns, return a callable that will be true only if
         the input matches at least one of the patterns.
         """
         return lambda name: any(fnmatchcase(name, pat=pat) for pat in patterns)
 
-    exclude, include = _build_filter(exclude), _build_filter(include)
+    fexclude, finclude = _build_filter(exclude), _build_filter(include)
     for root, dirs, files in os.walk(where, followlinks=True):
         # Copy dirs to iterate over it, then empty dirs.
         all_dirs = dirs[:]
@@ -106,8 +99,8 @@ def find_packages_iter(
             # Should this package be included?
             if (
                 os.path.isfile(os.path.join(full_path, "__init__.py"))
-                and include(package)
-                and not exclude(package)
+                and finclude(package)
+                and not fexclude(package)
             ):
                 yield package
 
@@ -117,7 +110,7 @@ def find_packages_iter(
 
 
 @contextmanager
-def cd(path: str):
+def cd(path: str) -> Generator[None, None, None]:
     _old_cwd = os.getcwd()
     os.chdir(path)
     try:
@@ -132,16 +125,6 @@ def normalize_path(filename: os.PathLike) -> str:
     return os.path.normcase(os.path.realpath(os.path.normpath(filename)))
 
 
-def path_to_url(path: str) -> str:
-    """
-    Convert a path to a file: URL.  The path will be made absolute and have
-    quoted path parts.
-    """
-    path = os.path.normpath(os.path.abspath(path))
-    url = urllib_parse.urljoin("file:", urllib_request.pathname2url(path))
-    return url
-
-
 def get_platform(build_dir: os.PathLike) -> str:
     """Return our platform name 'win32', 'linux_x86_64'"""
     result = distutils.util.get_platform()
@@ -153,7 +136,9 @@ def get_platform(build_dir: os.PathLike) -> str:
     return result
 
 
-def get_flag(var, fallback, expected=True, warn=True):
+def get_flag(
+    var: str, fallback: bool, expected: bool = True, warn: bool = True
+) -> bool:
     """Use a fallback value for determining SOABI flags if the needed config
     var is unset or unavailable."""
     val = get_config_var(var)
@@ -169,7 +154,7 @@ def get_flag(var, fallback, expected=True, warn=True):
     return val == expected
 
 
-def get_abi_tag():
+def get_abi_tag() -> Optional[str]:
     """Return the ABI tag based on SOABI (if available) or emulate SOABI
     (CPython 2, PyPy)."""
     soabi = get_config_var("SOABI")
@@ -189,14 +174,13 @@ def get_abi_tag():
             "Py_UNICODE_SIZE", sys.maxunicode == 0x10FFFF, expected=4, warn=is_cpython
         ):
             u = "u"
-        abi = "%s%s%s%s%s" % (impl, tags.interpreter_version(), d, m, u)
+        return "%s%s%s%s%s" % (impl, tags.interpreter_version(), d, m, u)
     elif soabi and soabi.startswith("cpython-"):
-        abi = "cp" + soabi.split("-")[1]
+        return "cp" + soabi.split("-")[1]
     elif soabi:
-        abi = soabi.replace(".", "_").replace("-", "_")
+        return soabi.replace(".", "_").replace("-", "_")
     else:
-        abi = None
-    return abi
+        return None
 
 
 def ensure_pep440_req(req: str) -> Optional[str]:

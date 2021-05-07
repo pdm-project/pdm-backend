@@ -3,13 +3,14 @@ import os
 import tarfile
 import tempfile
 from copy import copy
+from typing import Any
 
 from pdm.pep517._vendor import toml
 from pdm.pep517.base import Builder
 from pdm.pep517.utils import safe_version, to_filename
 
 
-def normalize_file_permissions(st_mode):
+def normalize_file_permissions(st_mode: int) -> int:
     """
     Normalizes the permission bits in the st_mode field from stat to 644/755
 
@@ -25,7 +26,7 @@ def normalize_file_permissions(st_mode):
     return new_mode
 
 
-def clean_tarinfo(tar_info):
+def clean_tarinfo(tar_info: tarfile.TarInfo) -> tarfile.TarInfo:
     """
     Clean metadata from a TarInfo object to make it more reproducible.
 
@@ -47,7 +48,7 @@ def clean_tarinfo(tar_info):
 class SdistBuilder(Builder):
     """This build should be performed for PDM project only."""
 
-    def build(self, build_dir: str, **kwargs):
+    def build(self, build_dir: str, **kwargs: Any) -> str:
         if not os.path.exists(build_dir):
             os.makedirs(build_dir, exist_ok=True)
 

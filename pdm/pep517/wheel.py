@@ -12,7 +12,7 @@ import zipfile
 from base64 import urlsafe_b64encode
 from io import StringIO
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Generator, List, Mapping, Optional, TextIO, Tuple, Union
 
 from pdm.pep517 import __version__
 from pdm.pep517._vendor.packaging import tags
@@ -37,13 +37,13 @@ class WheelBuilder(Builder):
     def __init__(
         self,
         location: Union[str, Path],
-        config_settings: Optional[Dict[str, Any]] = None,
+        config_settings: Optional[Mapping[str, Any]] = None,
     ) -> None:
         super().__init__(location, config_settings)
         self._records = []  # type: List[Tuple[str, str, str]]
         self._parse_config_settings()
 
-    def _parse_config_settings(self):
+    def _parse_config_settings(self) -> None:
         self.python_tag = None
         self.py_limited_api = None
         self.plat_name = None
@@ -60,7 +60,7 @@ class WheelBuilder(Builder):
         if "--plat-name" in self.config_settings:
             self.plat_name = self.config_settings["--plat-name"]
 
-    def build(self, build_dir: str, **kwargs) -> str:
+    def build(self, build_dir: str, **kwargs: Any) -> str:
         if not os.path.exists(build_dir):
             os.makedirs(build_dir, exist_ok=True)
 
@@ -126,12 +126,12 @@ class WheelBuilder(Builder):
         version = to_filename(safe_version(self.meta.version))
         return f"{name}-{version}.dist-info"
 
-    def _write_record(self, fp):
+    def _write_record(self, fp: TextIO) -> None:
         for row in self._records:
             fp.write("{},sha256={},{}\n".format(*row))
         fp.write(self.dist_info_name + "/RECORD,,\n")
 
-    def _write_metadata(self, wheel):
+    def _write_metadata(self, wheel: zipfile.ZipFile) -> None:
         dist_info = self.dist_info_name
         if self.meta.entry_points:
             with self._write_to_zip(wheel, dist_info + "/entry_points.txt") as f:
@@ -152,7 +152,9 @@ class WheelBuilder(Builder):
             self._write_record(f)
 
     @contextlib.contextmanager
-    def _write_to_zip(self, wheel, rel_path):
+    def _write_to_zip(
+        self, wheel: zipfile.ZipFile, rel_path: str
+    ) -> Generator[StringIO, None, None]:
         sio = StringIO()
         yield sio
 
@@ -169,7 +171,7 @@ class WheelBuilder(Builder):
         print(f" - Adding {rel_path}")
         self._records.append((rel_path, hash_digest, str(len(b))))
 
-    def _build(self, wheel):
+    def _build(self, wheel: zipfile.ZipFile) -> None:
         if not self.meta.build:
             return
         setup_py = self.ensure_setup_py()
@@ -207,7 +209,7 @@ class WheelBuilder(Builder):
 
             self._add_file(wheel, pkg, whl_path)
 
-    def _copy_module(self, wheel):
+    def _copy_module(self, wheel: zipfile.ZipFile) -> None:
         for path in self.find_files_to_add():
             rel_path = None
             if self.meta.package_dir:
@@ -217,7 +219,9 @@ class WheelBuilder(Builder):
                     pass
             self._add_file(wheel, str(path), rel_path)
 
-    def _add_file(self, wheel, full_path, rel_path=None):
+    def _add_file(
+        self, wheel: zipfile.ZipFile, full_path: str, rel_path: Optional[str] = None
+    ) -> None:
         if not rel_path:
             rel_path = full_path
         if os.sep != "/":
@@ -248,10 +252,10 @@ class WheelBuilder(Builder):
 
         self._records.append((rel_path, hash_digest, str(size)))
 
-    def _write_metadata_file(self, fp):
+    def _write_metadata_file(self, fp: TextIO) -> None:
         fp.write(self.format_pkginfo())
 
-    def _write_wheel_file(self, fp):
+    def _write_wheel_file(self, fp: TextIO) -> None:
         fp.write(
             WHEEL_FILE_FORMAT.format(
                 pure_lib=self.meta.build is None,
@@ -259,7 +263,7 @@ class WheelBuilder(Builder):
             )
         )
 
-    def _write_entry_points(self, fp):
+    def _write_entry_points(self, fp: TextIO) -> None:
         entry_points = self.meta.entry_points
         for group_name in sorted(entry_points):
             fp.write("[{}]\n".format(group_name))

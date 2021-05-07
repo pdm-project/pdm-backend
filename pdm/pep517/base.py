@@ -3,7 +3,7 @@ import glob
 import os
 import textwrap
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Tuple, Union
 
 from pdm.pep517.metadata import Metadata
 from pdm.pep517.utils import is_python_package
@@ -71,7 +71,7 @@ def _merge_globs(
     3. If both have the same part number and concrete level, *excludes* wins
     """
 
-    def path_weight(pathname):
+    def path_weight(pathname: str) -> Tuple[int, int]:
         """Return a two-element tuple [part_num, concrete_level]"""
         pathname_parts = Path(pathname).parts
         wildcard_count = 0
@@ -130,12 +130,12 @@ class Builder:
     def __init__(
         self,
         location: Union[str, Path],
-        config_settings: Optional[Dict[str, Any]] = None,
+        config_settings: Optional[Mapping[str, Any]] = None,
     ) -> None:
-        self._old_cwd = None
+        self._old_cwd: Optional[str] = None
         self.location = Path(location).absolute()
         self.config_settings = config_settings
-        self._meta = None
+        self._meta: Optional[Metadata] = None
 
     @property
     def meta(self) -> Metadata:
@@ -150,10 +150,11 @@ class Builder:
         os.chdir(self.location)
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(self, *args: Any) -> None:
+        assert self._old_cwd
         os.chdir(self._old_cwd)
 
-    def build(self, build_dir: str, **kwargs) -> str:
+    def build(self, build_dir: str, **kwargs: Any) -> str:
         raise NotImplementedError
 
     def _get_include_and_exclude_paths(
@@ -204,12 +205,12 @@ class Builder:
     def _find_files_iter(self, for_sdist: bool = False) -> Iterator[str]:
         includes, excludes = self._get_include_and_exclude_paths(for_sdist)
         for include_path in includes:
-            include_path = Path(include_path)
-            if include_path.is_file():
+            path = Path(include_path)
+            if path.is_file():
                 yield include_path
                 continue
             # The path is a directory name
-            for path in include_path.glob("**/*"):
+            for path in path.glob("**/*"):
                 if not path.is_file():
                     continue
 
@@ -226,9 +227,9 @@ class Builder:
             yield self.meta.build
 
         for pat in ("COPYING", "LICENSE"):
-            for path in glob.glob(pat + "*"):
-                if os.path.isfile(path):
-                    yield path
+            for p in glob.glob(pat + "*"):
+                if os.path.isfile(p):
+                    yield p
 
         if self.meta.readme and os.path.isfile(self.meta.readme):
             yield self.meta.readme
@@ -336,7 +337,7 @@ class Builder:
             before="".join(before), after="".join(after), extra="".join(extra), **kwargs
         )
 
-    def format_pkginfo(self, full=True) -> str:
+    def format_pkginfo(self, full: bool = True) -> str:
         meta = self.meta
         content = METADATA_BASE.format(
             name=meta.name or "UNKNOWN",
@@ -406,7 +407,7 @@ class Builder:
         setup_py_path.write_text(self.format_setup_py(), encoding="utf-8")
 
         # Clean this temp file when process exits
-        def cleanup():
+        def cleanup() -> None:
             try:
                 setup_py_path.unlink()
             except OSError:

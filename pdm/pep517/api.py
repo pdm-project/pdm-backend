@@ -2,12 +2,15 @@
 PEP-517 compliant buildsystem API
 """
 from pathlib import Path
+from typing import Any, List, Mapping, Optional
 
 from pdm.pep517.sdist import SdistBuilder
 from pdm.pep517.wheel import WheelBuilder
 
 
-def get_requires_for_build_wheel(config_settings=None):
+def get_requires_for_build_wheel(
+    config_settings: Optional[Mapping[str, Any]] = None
+) -> List[str]:
     """
     Returns an additional list of requirements for building, as PEP508 strings,
     above and beyond those specified in the pyproject.toml file.
@@ -23,7 +26,9 @@ def get_requires_for_build_wheel(config_settings=None):
 get_requires_for_build_sdist = get_requires_for_build_wheel
 
 
-def prepare_metadata_for_build_wheel(metadata_directory, config_settings=None):
+def prepare_metadata_for_build_wheel(
+    metadata_directory: str, config_settings: Optional[Mapping[str, Any]] = None
+) -> str:
     builder = WheelBuilder(Path.cwd(), config_settings)
 
     dist_info = Path(metadata_directory, builder.dist_info_name)
@@ -42,13 +47,19 @@ def prepare_metadata_for_build_wheel(metadata_directory, config_settings=None):
     return dist_info.name
 
 
-def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
+def build_wheel(
+    wheel_directory: str,
+    config_settings: Optional[Mapping[str, Any]] = None,
+    metadata_directory: Optional[str] = None,
+) -> str:
     """Builds a wheel, places it in wheel_directory"""
     with WheelBuilder(Path.cwd(), config_settings) as builder:
         return Path(builder.build(wheel_directory)).name
 
 
-def build_sdist(sdist_directory, config_settings=None):
+def build_sdist(
+    sdist_directory: str, config_settings: Optional[Mapping[str, Any]] = None
+) -> str:
     """Builds an sdist, places it in sdist_directory"""
     with SdistBuilder(Path.cwd(), config_settings) as builder:
         return Path(builder.build(sdist_directory)).name
