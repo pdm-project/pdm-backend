@@ -96,14 +96,6 @@ def test_project_version_use_scm(project_with_scm):
     assert "0.1.1.dev1+g" in metadata.version
 
 
-def test_convert_legacy_project():
-    metadata = Metadata(FIXTURES / "projects/demo-legacy/pyproject.toml")
-    assert metadata.version == "0.1.0"
-    assert metadata.dependencies == ["flask"]
-    assert metadata.author == ""
-    assert metadata.author_email == "frostming <mianghong@gmail.com>"
-
-
 def test_explicit_package_dir():
     metadata = Metadata(FIXTURES / "projects/demo-explicit-package-dir/pyproject.toml")
     paths = metadata.convert_package_paths()

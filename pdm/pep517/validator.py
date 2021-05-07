@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import List, Mapping
 
 from pdm.pep517._vendor import cerberus
 
@@ -70,7 +70,7 @@ PEP621_SCHEMA = {
 
 
 class PEP621ValidationError(ValueError):
-    def __init__(self, errors):
+    def __init__(self, errors: List[str]) -> None:
         super().__init__(errors)
         self.errors = errors
 

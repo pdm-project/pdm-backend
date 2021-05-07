@@ -11,6 +11,7 @@ https://github.com/pypa/wheel/blob/6e86e6b886/src/wheel/macosx_libfile.py
 import ctypes
 import os
 import sys
+from typing import BinaryIO, List, Optional, Tuple, Type, TypeVar, no_type_check
 
 """here the needed const and struct from mach-o header files"""
 
@@ -205,8 +206,10 @@ struct build_version_command {
 };
 """
 
+Version = Tuple[int, int, int]
 
-def swap32(x):
+
+def swap32(x: int) -> int:
     return (
         ((x << 24) & 0xFF000000)
         | ((x << 8) & 0x00FF0000)
@@ -215,7 +218,9 @@ def swap32(x):
     )
 
 
-def get_base_class_and_magic_number(lib_file, seek=None):
+def get_base_class_and_magic_number(
+    lib_file: BinaryIO, seek: Optional[int] = None
+) -> Tuple[Type[ctypes.Structure], int]:
     if seek is None:
         seek = lib_file.tell()
     else:
@@ -227,7 +232,7 @@ def get_base_class_and_magic_number(lib_file, seek=None):
     # Handle wrong byte order
     if magic_number in [FAT_CIGAM, FAT_CIGAM_64, MH_CIGAM, MH_CIGAM_64]:
         if sys.byteorder == "little":
-            BaseClass = ctypes.BigEndianStructure
+            BaseClass: Type[ctypes.Structure] = ctypes.BigEndianStructure
         else:
             BaseClass = ctypes.LittleEndianStructure
 
@@ -239,15 +244,19 @@ def get_base_class_and_magic_number(lib_file, seek=None):
     return BaseClass, magic_number
 
 
-def read_data(struct_class, lib_file):
+S = TypeVar("S", bound=ctypes.Structure)
+
+
+def read_data(struct_class: Type[S], lib_file: BinaryIO) -> S:
     return struct_class.from_buffer_copy(lib_file.read(ctypes.sizeof(struct_class)))
 
 
-def extract_macosx_min_system_version(path_to_lib):
+@no_type_check
+def extract_macosx_min_system_version(path_to_lib: str) -> Optional[Version]:
     with open(path_to_lib, "rb") as lib_file:
         BaseClass, magic_number = get_base_class_and_magic_number(lib_file, 0)
         if magic_number not in [FAT_MAGIC, FAT_MAGIC_64, MH_MAGIC, MH_MAGIC_64]:
-            return
+            return None
 
         if magic_number in [FAT_MAGIC, FAT_CIGAM_64]:
 
@@ -269,7 +278,7 @@ def extract_macosx_min_system_version(path_to_lib):
                 read_data(FatArch, lib_file) for _ in range(fat_header.nfat_arch)
             ]
 
-            versions_list = []
+            versions_list: List[Version] = []
             for el in fat_arch_list:
                 try:
                     version = read_mach_header(lib_file, el.offset)
@@ -301,7 +310,10 @@ def extract_macosx_min_system_version(path_to_lib):
                 return None
 
 
-def read_mach_header(lib_file, seek=None):
+@no_type_check
+def read_mach_header(
+    lib_file: BinaryIO, seek: Optional[int] = None
+) -> Optional[Version]:
     """
     This funcition parse mach-O header and extract
     information about minimal system version
@@ -350,7 +362,7 @@ def read_mach_header(lib_file, seek=None):
             continue
 
 
-def parse_version(version):
+def parse_version(version: int) -> Version:
     x = (version & 0xFFFF0000) >> 16
     y = (version & 0x0000FF00) >> 8
     z = version & 0x000000FF
@@ -363,8 +375,8 @@ def calculate_macosx_platform_tag(archive_root: os.PathLike, platform_tag: str) 
 
     Example platform tag `macosx-10.14-x86_64`
     """
-    prefix, base_version, suffix = platform_tag.split("-")
-    base_version = tuple([int(x) for x in base_version.split(".")])[:2]
+    prefix, base_version_str, suffix = platform_tag.split("-")
+    base_version = tuple([int(x) for x in base_version_str.split(".")])[:2]
     if base_version[0] > 10:
         base_version = (base_version[0], 0)
     assert len(base_version) == 2
@@ -406,8 +418,9 @@ def calculate_macosx_platform_tag(archive_root: os.PathLike, platform_tag: str) 
     # macosx platform tag do not support minor bugfix release
     fin_base_version = "_".join([str(x) for x in base_version])
     if start_version < base_version:
-        problematic_files = [k for k, v in versions_dict.items() if v > start_version]
-        problematic_files = "\n".join(problematic_files)
+        problematic_files = "\n".join(
+            k for k, v in versions_dict.items() if v > start_version
+        )
         if len(problematic_files) == 1:
             files_form = "this file"
         else:

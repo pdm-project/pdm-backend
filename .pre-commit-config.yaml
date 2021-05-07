@@ -14,3 +14,9 @@ repos:
     hooks:
       - id: isort
         exclude: ^.*/?setup\.py$
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v0.812
+    hooks:
+      - id: mypy
+        files: pdm/pep517/(?!_vendor).*.py

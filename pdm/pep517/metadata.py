@@ -7,6 +7,7 @@ from typing import (
     Callable,
     Dict,
     Generic,
+    Iterable,
     List,
     Mapping,
     Optional,
@@ -19,14 +20,12 @@ from pdm.pep517._vendor import toml
 from pdm.pep517._vendor.packaging.requirements import Requirement
 from pdm.pep517._vendor.packaging.specifiers import SpecifierSet
 from pdm.pep517._vendor.packaging.version import Version
-from pdm.pep517.legacy import convert_legacy
 from pdm.pep517.license import get_license_classifier, license_lookup
 from pdm.pep517.scm import get_version_from_scm
 from pdm.pep517.utils import (
     cd,
     ensure_pep440_req,
     find_packages_iter,
-    is_dict_like,
     merge_marker,
     safe_name,
 )
@@ -56,7 +55,7 @@ class MetaField(Generic[T]):
         self.name = name
         self.fget = fget
 
-    def __get__(self, instance: "Metadata", owner: Type["Metadata"]) -> T:
+    def __get__(self, instance: "Metadata", owner: Type["Metadata"]) -> Optional[T]:
         if instance is None:
             return self
         try:
@@ -75,15 +74,17 @@ class Metadata:
     SUPPORTED_CONTENT_TYPES = ("text/markdown", "text/x-rst", "text/plain")
 
     def __init__(
-        self, filepath: Union[str, Path], data: Optional[Mapping] = None
+        self, filepath: Union[str, Path], data: Optional[Mapping[str, Any]] = None
     ) -> None:
         self.filepath = Path(filepath).absolute()
-        self._tool_settings = {}
-        self._metadata = data
-        if self._metadata is None:
+        self._tool_settings: Dict[str, Any] = {}
+        if data is not None:
+            self._metadata = dict(data)
+        else:
+            self._metadata = {}
             self._read_pyproject()
 
-    def _read_pyproject(self) -> Dict[str, Any]:
+    def _read_pyproject(self) -> None:
         try:
             data = toml.loads(self.filepath.read_text(encoding="utf-8"))
         except FileNotFoundError:
@@ -95,9 +96,6 @@ class Metadata:
                 self._tool_settings = data["tool"]["pdm"]
             if "project" in data:
                 self._metadata = data["project"]
-            elif self._tool_settings:
-                # TODO: deprecate legacy format
-                self._metadata = convert_legacy(self._tool_settings)
             else:
                 raise ProjectError("No [project] config in pyproject.toml")
 
@@ -106,7 +104,7 @@ class Metadata:
 
     name: MetaField[str] = MetaField("name")
 
-    def _get_version(self, value):
+    def _get_version(self, value: Union[Mapping[str, str], str]) -> str:
         if isinstance(value, str):
             return value
         if not self.dynamic or "version" not in self.dynamic:
@@ -130,38 +128,38 @@ class Metadata:
     version: MetaField[str] = MetaField("version", _get_version)
     description: MetaField[str] = MetaField("description")
 
-    def _get_readme_file(self, value):
-        if is_dict_like(value):
-            return value.get("file")
-        return value
+    def _get_readme_file(self, value: Union[Mapping[str, str], str]) -> str:
+        if isinstance(value, str):
+            return value
+        return value.get("file", "")
 
-    def _get_readme_content(self, value):
-        if is_dict_like(value):
-            if "file" in value and "text" in value:
-                raise ProjectError(
-                    "readme table shouldn't specify both 'file' "
-                    "and 'text' at the same time"
-                )
-            if "text" in value:
-                return value["text"]
-            file_path = value.get("file")
-            encoding = value.get("charset", self.DEFAULT_ENCODING)
-            return Path(file_path).read_text(encoding=encoding)
-        return Path(value).read_text(encoding=self.DEFAULT_ENCODING)
+    def _get_readme_content(self, value: Union[Mapping[str, str], str]) -> str:
+        if isinstance(value, str):
+            return Path(value).read_text(encoding=self.DEFAULT_ENCODING)
+        if "file" in value and "text" in value:
+            raise ProjectError(
+                "readme table shouldn't specify both 'file' "
+                "and 'text' at the same time"
+            )
+        if "text" in value:
+            return value["text"]
+        file_path = value.get("file", "")
+        encoding = value.get("charset", self.DEFAULT_ENCODING)
+        return Path(file_path).read_text(encoding=encoding)
 
-    def _get_content_type(self, value):
-        if is_dict_like(value):
-            content_type = value.get("content-type")
-            if not content_type:
-                raise ProjectError("'content-type' is missing in the readme table")
-            if content_type not in self.SUPPORTED_CONTENT_TYPES:
-                raise ProjectError(f"Unsupported readme content-type: {content_type}")
-            return content_type
-        if value.lower().endswith(".md"):
-            return "text/markdown"
-        elif value.lower().endswith(".rst"):
-            return "text/x-rst"
-        raise ProjectError(f"Unsupported readme suffix: {value}")
+    def _get_content_type(self, value: Union[Mapping[str, str], str]) -> str:
+        if isinstance(value, str):
+            if value.lower().endswith(".md"):
+                return "text/markdown"
+            elif value.lower().endswith(".rst"):
+                return "text/x-rst"
+            raise ProjectError(f"Unsupported readme suffix: {value}")
+        content_type = value.get("content-type")
+        if not content_type:
+            raise ProjectError("'content-type' is missing in the readme table")
+        if content_type not in self.SUPPORTED_CONTENT_TYPES:
+            raise ProjectError(f"Unsupported readme content-type: {content_type}")
+        return content_type
 
     readme: MetaField[str] = MetaField("readme", _get_readme_file)
     long_description: MetaField[str] = MetaField("readme", _get_readme_content)
@@ -169,8 +167,8 @@ class Metadata:
         "readme", _get_content_type
     )
 
-    def _get_license(self, value):
-        if not is_dict_like(value):
+    def _get_license(self, value: Union[Mapping[str, str], str]) -> str:
+        if isinstance(value, str):
             return ""
         if "file" in value and "text" in value:
             raise ProjectError(
@@ -180,27 +178,27 @@ class Metadata:
         return (
             Path(value["file"]).read_text(encoding=self.DEFAULT_ENCODING)
             if "file" in value
-            else value.get("text")
+            else value.get("text", "")
         )
 
-    def _get_license_type(self, value):
-        if is_dict_like(value):
-            if value.get("text", "") in license_lookup:
-                return value.get("text")
-        else:
+    def _get_license_type(self, value: Union[Mapping[str, str], str]) -> str:
+        if isinstance(value, str):
             return value
+        if value.get("text", "") in license_lookup:
+            return value["text"]
+        return "UNKNOWN"
 
     license: MetaField[str] = MetaField("license", _get_license)
     license_type: MetaField[str] = MetaField("license", _get_license_type)
 
-    def _get_name(self, value):
+    def _get_name(self, value: Iterable[Mapping[str, str]]) -> str:
         result = []
         for item in value:
             if "email" not in item and "name" in item:
-                result.append(item.get("name"))
+                result.append(item["name"])
         return ",".join(result)
 
-    def _get_email(self, value):
+    def _get_email(self, value: Iterable[Mapping[str, str]]) -> str:
         result = []
         for item in value:
             if "email" not in item:
@@ -219,7 +217,7 @@ class Metadata:
     maintainer_email: MetaField[str] = MetaField("maintainers", _get_email)
 
     @property
-    def classifiers(self):
+    def classifiers(self) -> List[str]:
         classifers = set(self._metadata.get("classifiers", []))
 
         if self.dynamic and "classifiers" in self.dynamic:
@@ -282,10 +280,12 @@ class Metadata:
             return "src"
         return ""
 
-    def _convert_dependencies(self, deps):
+    def _convert_dependencies(self, deps: List[str]) -> List[str]:
         return list(filter(None, map(ensure_pep440_req, deps)))
 
-    def _convert_optional_dependencies(self, deps):
+    def _convert_optional_dependencies(
+        self, deps: Mapping[str, List[str]]
+    ) -> Dict[str, List[str]]:
         return {k: self._convert_dependencies(deps[k]) for k in deps}
 
     dependencies: MetaField[List[str]] = MetaField(
@@ -305,7 +305,7 @@ class Metadata:
         """For PKG-INFO metadata"""
         if not self.optional_dependencies:
             return {}
-        result = {}
+        result: Dict[str, List[str]] = {}
         for name, reqs in self.optional_dependencies.items():
             current = result[name] = []
             for r in reqs:
@@ -345,7 +345,7 @@ class Metadata:
         packages = []
         py_modules = []
         package_data = {"": ["*"]}
-        exclude_package_data = {}
+        exclude_package_data: Dict[str, List[str]] = {}
 
         with cd(self.filepath.parent.as_posix()):
             src_dir = Path(self.package_dir or ".")
