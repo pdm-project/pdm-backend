@@ -116,8 +116,11 @@ class WheelBuilder(Builder):
 
         platform = platform.lower().replace("-", "_").replace(".", "_")
         tag = (impl, abi_tag, platform)
-        supported_tags = [(t.interpreter, t.abi, platform) for t in tags.sys_tags()]
-        assert tag in supported_tags, f"would build wheel with unsupported tag {tag}"
+        if self.meta.build:
+            supported_tags = [(t.interpreter, t.abi, platform) for t in tags.sys_tags()]
+            assert (
+                tag in supported_tags
+            ), f"would build wheel with unsupported tag {tag}"
         return "-".join(tag)
 
     @property
