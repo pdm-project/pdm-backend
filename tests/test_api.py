@@ -55,7 +55,7 @@ def test_build_package(tmp_path):
         wheel_name = api.build_wheel(tmp_path.as_posix())
         sdist_name = api.build_sdist(tmp_path.as_posix())
         assert sdist_name == "demo-package-0.1.0.tar.gz"
-        assert wheel_name == "demo_package-0.1.0-py3-none-any.whl"
+        assert wheel_name == "demo_package-0.1.0-py2.py3-none-any.whl"
 
         tar_names = get_tarball_names(tmp_path / sdist_name)
         assert "demo-package-0.1.0/my_package/__init__.py" in tar_names

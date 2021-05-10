@@ -8,7 +8,7 @@ authors = [
 ]
 dynamic = ["version"]
 version = { from = "my_package/__init__.py" }
-requires-python = ">=3.5"
+requires-python = ">=2.7"
 license = {text = "MIT"}
 dependencies = ["flask"]
 description = ""
