@@ -1,3 +1,11 @@
+Release v0.7.4 (2021-05-10)
+---------------------------
+
+### Bug Fixes
+
+- Fix pure Py27 package build wheel failure. [#28](https://github.com/frostming/pdm-pep517/issues/28)
+
+
 Release v0.7.3 (2021-05-07)
 ---------------------------
 
