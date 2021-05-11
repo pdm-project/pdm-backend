@@ -245,10 +245,14 @@ class Metadata:
                     is_wildcard = True
                 if "*" in version:
                     # Only supports the suffix of version is wildcard
-                    raise InvalidVersion(origin)
+                    raise InvalidVersion(f"Invalid version for Python: {origin!r}")
+                # Now the version does not have wildcards.
                 # Parse and get the prefix of version
                 # because we only need first two version digits
                 parsed_version = Version(version)
+                if parsed_version.is_prerelease:
+                    # Only supports the normal released version
+                    raise InvalidVersion(f"Invalid version for Python: {origin!r}")
                 version = "{0.major}.{0.minor}".format(parsed_version)
                 if version not in AVAILABLE_PYTHON_VERSIONS:
                     # Do not handle the unavailable python versions, like 2, 3, 2.4 etc
