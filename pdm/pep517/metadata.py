@@ -237,7 +237,7 @@ class Metadata:
 
             # check corner cases
             specifier: Specifier
-            for specifier in python_constraint:
+            for idx, specifier in enumerate(python_constraint):
                 version = origin = specifier.version
                 is_wildcard = False
                 if version.endswith(".*"):
@@ -259,11 +259,25 @@ class Metadata:
                     continue
                 if specifier.operator in ("~=", "==", "===", "<=", ">="):
                     add_python_classifers(version)
-                elif specifier.operator == "!=":
+                else:
                     if is_wildcard:
                         # e.g. exclude all version of 3.8 if version is 3.8.*
                         continue
-                    add_python_classifers(version)
+                    if specifier.operator == "!=":
+                        add_python_classifers(version)
+                    elif (
+                        specifier.operator in ("<", ">")
+                        and len(parsed_version.release) > 2
+                    ):
+                        # Handle cases like ">3.9.1,<3.9.2" or ">3.9.1,<3.9.1"
+                        specifiers = list(python_constraint)
+                        specifiers = specifiers[:idx] + specifiers[idx + 1 :]
+                        specifiers.append(
+                            Specifier(f"{specifier.operator}={specifier.version}")
+                        )
+                        new_constraint = SpecifierSet(",".join(map(str, specifiers)))
+                        if new_constraint.contains(origin):
+                            add_python_classifers(version)
 
             if self.license_type:
                 classifers.add(get_license_classifier(self.license_type))
