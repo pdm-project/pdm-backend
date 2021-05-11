@@ -28,10 +28,15 @@ def test_parse_module():
         (">=3.6.1,<3.10", ["3", "3.6", "3.7", "3.8", "3.9"]),
         (">=3.6,!=3.8,<3.10", ["3", "3.6", "3.8", "3.7", "3.9"]),  # !=3.8 means !=3.8.0
         (">=3.6,!=3.8.*,<3.10", ["3", "3.6", "3.7", "3.9"]),
+        (">3.8,!=3.9.*", []),
         ("~=3.6", ["3", "3.6", "3.7", "3.8", "3.9"]),
+        ("~=3.6.1", ["3", "3.6"]),
         ("==3.6.1", ["3", "3.6"]),
         ("===3.6.1", ["3", "3.6"]),
-    ],
+        # invalid version does not generate classifiers
+        ("==3", []),
+        ("==2", []),
+    ],  # it only needs to work on released version "(?P<release>[0-9]+(?:\.[0-9]+)*)"
 )
 def test_autogen_classifiers(requires_python, expect):
     metadata = Metadata(FIXTURES / "projects/demo-module/pyproject.toml")
