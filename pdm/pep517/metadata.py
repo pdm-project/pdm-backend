@@ -18,7 +18,7 @@ from typing import (
 
 from pdm.pep517._vendor import toml
 from pdm.pep517._vendor.packaging.requirements import Requirement
-from pdm.pep517._vendor.packaging.specifiers import SpecifierSet
+from pdm.pep517._vendor.packaging.specifiers import Specifier, SpecifierSet
 from pdm.pep517._vendor.packaging.version import Version
 from pdm.pep517.license import get_license_classifier, license_lookup
 from pdm.pep517.scm import get_version_from_scm
@@ -220,6 +220,10 @@ class Metadata:
     def classifiers(self) -> List[str]:
         classifers = set(self._metadata.get("classifiers", []))
 
+        def add_python_classifers(version: str) -> None:
+            classifers.add(f"Programming Language :: Python :: {version[0]}")
+            classifers.add(f"Programming Language :: Python :: {version}")
+
         if self.dynamic and "classifiers" in self.dynamic:
             python_constraint = (
                 SpecifierSet(self.requires_python)
@@ -229,8 +233,30 @@ class Metadata:
 
             for version in AVAILABLE_PYTHON_VERSIONS:
                 if python_constraint.contains(Version(version)):
-                    classifers.add(f"Programming Language :: Python :: {version[0]}")
-                    classifers.add(f"Programming Language :: Python :: {version}")
+                    add_python_classifers(version)
+
+            # check corner cases
+            specifier: Specifier
+            for specifier in python_constraint:
+                version = specifier.version
+                is_wildcard = False
+                if version.endswith(".*"):
+                    version = version[:-2]
+                    is_wildcard = True
+                # Parse and get the prefix of version
+                # because we only need first two version digits
+                parsed_version = Version(version)
+                version = "{0.major}.{0.minor}".format(parsed_version)
+                if version not in AVAILABLE_PYTHON_VERSIONS:
+                    # Do not handle the unavailable python versions, like 2, 3, 2.4 etc
+                    continue
+                if specifier.operator in ("~=", "==", "===", "<=", ">="):
+                    add_python_classifers(version)
+                elif specifier.operator == "!=":
+                    if is_wildcard:
+                        # e.g. exclude all version of 3.8 if version is 3.8.*
+                        continue
+                    add_python_classifers(version)
 
             if self.license_type:
                 classifers.add(get_license_classifier(self.license_type))
