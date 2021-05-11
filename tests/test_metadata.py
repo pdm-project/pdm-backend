@@ -33,9 +33,9 @@ def test_parse_module():
         ("~=3.6.1", ["3", "3.6"]),
         ("==3.6.1", ["3", "3.6"]),
         ("===3.6.1", ["3", "3.6"]),
-        # invalid version does not generate classifiers
-        ("==3", []),
-        ("==2", []),
+        # unavailable Python version does not generate classifiers
+        ("==3", []),  # 3.0
+        ("==2", []),  # 2.0
     ],  # it only needs to work on released version "(?P<release>[0-9]+(?:\.[0-9]+)*)"
 )
 def test_autogen_classifiers(requires_python, expect):
