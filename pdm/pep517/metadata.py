@@ -19,7 +19,7 @@ from typing import (
 from pdm.pep517._vendor import toml
 from pdm.pep517._vendor.packaging.requirements import Requirement
 from pdm.pep517._vendor.packaging.specifiers import Specifier, SpecifierSet
-from pdm.pep517._vendor.packaging.version import Version
+from pdm.pep517._vendor.packaging.version import InvalidVersion, Version
 from pdm.pep517.license import get_license_classifier, license_lookup
 from pdm.pep517.scm import get_version_from_scm
 from pdm.pep517.utils import (
@@ -238,11 +238,14 @@ class Metadata:
             # check corner cases
             specifier: Specifier
             for specifier in python_constraint:
-                version = specifier.version
+                version = origin = specifier.version
                 is_wildcard = False
                 if version.endswith(".*"):
                     version = version[:-2]
                     is_wildcard = True
+                if "*" in version:
+                    # Only supports the suffix of version is wildcard
+                    raise InvalidVersion(origin)
                 # Parse and get the prefix of version
                 # because we only need first two version digits
                 parsed_version = Version(version)
