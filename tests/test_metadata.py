@@ -19,12 +19,60 @@ def test_parse_module():
     assert paths["package_dir"] == {}
 
 
-def test_autogen_classifiers():
+@pytest.mark.parametrize(
+    "requires_python, expect",
+    [
+        (
+            ">=2.7",
+            [
+                "2",
+                "2.7",
+                "3",
+                "3.1",
+                "3.2",
+                "3.3",
+                "3.4",
+                "3.5",
+                "3.6",
+                "3.7",
+                "3.8",
+                "3.9",
+            ],
+        ),
+        (">=3.5", ["3", "3.5", "3.6", "3.7", "3.8", "3.9"]),
+        ("<3.8,>=3.5", ["3", "3.5", "3.6", "3.7"]),
+        (">=3.6.1,<3.10", ["3", "3.6", "3.7", "3.8", "3.9"]),
+        (">=3.6,!=3.8,<3.10", ["3", "3.6", "3.8", "3.7", "3.9"]),  # !=3.8 means !=3.8.0
+        (">=3.6,!=3.8.*,<3.10", ["3", "3.6", "3.7", "3.9"]),
+        (">3.8,!=3.9.*", ["3", "3.8"]),
+        (">3.9.1", ["3", "3.9"]),
+        (">3.4.10,<3.5", []),  # no versions in 3.4 are larger than 3.4.10
+        (">3.9.1,<3.9.1", []),
+        (">3.9.1,<3.9.2", []),
+        ("~=3.6", ["3", "3.6", "3.7", "3.8", "3.9"]),
+        ("~=3.6.1", ["3", "3.6"]),
+        ("==3.6.1", ["3", "3.6"]),
+        ("===3.6.1", ["3", "3.6"]),
+        # unavailable Python version does not generate classifiers
+        ("==3", ["3"]),  # ==3.0 exists
+        ("==2", []),  # ==2.0 not exists
+    ],  # it only needs to work on released version "(?P<release>[0-9]+(?:\.[0-9]+)*)"
+)
+def test_autogen_classifiers(requires_python, expect):
     metadata = Metadata(FIXTURES / "projects/demo-module/pyproject.toml")
+    metadata._metadata["requires-python"] = requires_python
     classifiers = metadata.classifiers
-    for python_version in ("3", "3.5", "3.6", "3.7", "3.8", "3.9"):
-        assert f"Programming Language :: Python :: {python_version}" in classifiers
-    assert "Programming Language :: Python :: 2.7" not in classifiers
+    expect_classifiers = [
+        f"Programming Language :: Python :: {python_version}"
+        for python_version in expect
+    ]
+    assert sorted(
+        [
+            classifier
+            for classifier in classifiers
+            if "Programming Language :: Python :: " in classifier
+        ]
+    ) == sorted(expect_classifiers)
     assert "License :: OSI Approved :: MIT License" in classifiers
 
 
