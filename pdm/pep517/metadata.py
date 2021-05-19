@@ -30,18 +30,9 @@ from pdm.pep517.utils import (
     safe_name,
 )
 from pdm.pep517.validator import validate_pep621
+from pdm.pep517.versions import AVAILABLE_PYTHON_VERSIONS
 
 T = TypeVar("T")
-
-AVAILABLE_PYTHON_VERSIONS = (
-    "2.7",
-    "3.4",
-    "3.5",
-    "3.6",
-    "3.7",
-    "3.8",
-    "3.9",
-)
 
 
 class ProjectError(ValueError):
@@ -65,6 +56,20 @@ class MetaField(Generic[T]):
             return rv
         except KeyError:
             return None
+
+
+def _make_version_collections(python_versions: List[str]) -> Dict[str, List[Version]]:
+    rv: Dict[str, List[Version]] = {}
+    for raw in python_versions:
+        version = Version(raw)
+        if version.minor == 0:
+            key = str(version.major)
+        else:
+            key = "{0.major}.{0.minor}".format(version)
+
+        rv.setdefault(key, []).append(version)
+
+    return rv
 
 
 class Metadata:
@@ -227,8 +232,12 @@ class Metadata:
                 else SpecifierSet()
             )
 
-            for version in AVAILABLE_PYTHON_VERSIONS:
-                if python_constraint.contains(Version(version)):
+            version_collections = _make_version_collections(AVAILABLE_PYTHON_VERSIONS)
+            for version, micro_versions in version_collections.items():
+                if any(
+                    python_constraint.contains(micro_version)
+                    for micro_version in micro_versions
+                ):
                     classifers.add(f"Programming Language :: Python :: {version[0]}")
                     classifers.add(f"Programming Language :: Python :: {version}")
 
