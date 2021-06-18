@@ -84,6 +84,11 @@ class EditableBuilder(WheelBuilder):
                 continue
             self.editables.map(module, os.path.join(package_dir, module + ".py"))
 
+        if not self.editables.redirections:
+            # For implicit namespace packages, modules cannot be mapped.
+            # Fallback to .pth method in this case.
+            self.editables.add_to_path(package_dir)
+
         super()._copy_module(wheel)
 
     def find_files_to_add(self, for_sdist: bool = False) -> List[Path]:
