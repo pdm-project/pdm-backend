@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple, Union
 
 from pdm.pep517.base import BuildError
+from pdm.pep517.utils import to_filename
 from pdm.pep517.wheel import WheelBuilder
 
 
@@ -70,7 +71,7 @@ class EditableBuilder(WheelBuilder):
     ) -> None:
         super().__init__(location, config_settings=config_settings)
         self.editables = EditableProject(
-            self.meta.project_name, self.location.as_posix()
+            to_filename(self.meta.project_name), self.location.as_posix()
         )
 
     def _build(self, wheel: zipfile.ZipFile) -> None:
