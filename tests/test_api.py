@@ -1,4 +1,5 @@
 import contextlib
+import email
 import tarfile
 import zipfile
 
@@ -235,6 +236,11 @@ def test_build_wheel_for_editable(tmp_path):
             assert "demo_package.pth" in namelist
             assert "_demo_package.py" in namelist
 
+            metadata = email.message_from_bytes(
+                zf.read("demo_package-0.1.0.dist-info/METADATA")
+            )
+            assert "editables" in metadata.get_all("Requires-Dist", [])
+
             pth_content = zf.read("demo_package.pth").decode("utf-8").strip()
             assert pth_content == "import _demo_package"
 
@@ -278,6 +284,11 @@ def test_build_wheel_for_editable_pep420(tmp_path):
             namelist = zf.namelist()
             assert "demo_package.pth" in namelist
             assert "_demo_package.py" not in namelist
+
+            metadata = email.message_from_bytes(
+                zf.read("demo_package-0.1.0.dist-info/METADATA")
+            )
+            assert "editables" not in metadata.get_all("Requires-Dist", [])
 
             pth_content = zf.read("demo_package.pth").decode("utf-8").strip()
             assert pth_content == str(project.resolve())
