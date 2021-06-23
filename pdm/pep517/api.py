@@ -27,13 +27,13 @@ def get_requires_for_build_wheel(
         return []
 
 
-# For now, we require all dependencies to build either a wheel or an sdist.
 get_requires_for_build_wheel_for_editable = get_requires_for_build_wheel
 
 
 def get_requires_for_build_sdist(
     config_settings: Optional[Mapping[str, Any]] = None
 ) -> List[str]:
+    """There isn't any requirement for building a sdist at this point."""
     return []
 
 
@@ -78,7 +78,6 @@ def build_sdist(
 
 def build_wheel_for_editable(
     wheel_directory: str,
-    scheme: Optional[Mapping[str, str]] = None,
     config_settings: Optional[Mapping[str, Any]] = None,
 ) -> str:
     with EditableBuilder(Path.cwd(), config_settings) as builder:
