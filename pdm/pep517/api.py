@@ -4,6 +4,8 @@ PEP-517 compliant buildsystem API
 from pathlib import Path
 from typing import Any, List, Mapping, Optional
 
+from pdm.pep517.editable import EditableBuilder
+from pdm.pep517.metadata import Metadata
 from pdm.pep517.sdist import SdistBuilder
 from pdm.pep517.wheel import WheelBuilder
 
@@ -15,15 +17,24 @@ def get_requires_for_build_wheel(
     Returns an additional list of requirements for building, as PEP508 strings,
     above and beyond those specified in the pyproject.toml file.
 
-    This implementation is optional. At the moment it only returns an empty list,
-    which would be the same as if not define. So this is just for completeness
-    for future implementation.
+    When C-extension build is needed, setuptools should be required, otherwise
+    just return an empty list.
     """
-    return []
+    meta = Metadata(Path("pyproject.toml"))
+    if meta.build:
+        return ["setuptools>=40.8.0"]
+    else:
+        return []
 
 
 # For now, we require all dependencies to build either a wheel or an sdist.
-get_requires_for_build_sdist = get_requires_for_build_wheel
+get_requires_for_build_wheel_for_editable = get_requires_for_build_wheel
+
+
+def get_requires_for_build_sdist(
+    config_settings: Optional[Mapping[str, Any]] = None
+) -> List[str]:
+    return []
 
 
 def prepare_metadata_for_build_wheel(
@@ -63,3 +74,12 @@ def build_sdist(
     """Builds an sdist, places it in sdist_directory"""
     with SdistBuilder(Path.cwd(), config_settings) as builder:
         return Path(builder.build(sdist_directory)).name
+
+
+def build_wheel_for_editable(
+    wheel_directory: str,
+    scheme: Optional[Mapping[str, str]] = None,
+    config_settings: Optional[Mapping[str, Any]] = None,
+) -> str:
+    with EditableBuilder(Path.cwd(), config_settings) as builder:
+        return Path(builder.build(wheel_directory)).name
