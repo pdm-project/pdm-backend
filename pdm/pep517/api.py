@@ -27,9 +27,6 @@ def get_requires_for_build_wheel(
         return []
 
 
-get_requires_for_build_wheel_for_editable = get_requires_for_build_wheel
-
-
 def get_requires_for_build_sdist(
     config_settings: Optional[Mapping[str, Any]] = None
 ) -> List[str]:
@@ -76,9 +73,14 @@ def build_sdist(
         return Path(builder.build(sdist_directory)).name
 
 
-def build_wheel_for_editable(
+get_requires_for_build_editable = get_requires_for_build_wheel
+prepare_metadata_for_build_editable = get_requires_for_build_wheel
+
+
+def build_editable(
     wheel_directory: str,
     config_settings: Optional[Mapping[str, Any]] = None,
+    metadata_directory: Optional[str] = None,
 ) -> str:
     with EditableBuilder(Path.cwd(), config_settings) as builder:
         return Path(builder.build(wheel_directory)).name

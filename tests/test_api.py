@@ -227,10 +227,10 @@ def test_build_with_cextension_in_src(tmp_path):
         ), 'Not collect c files in temporary directory "./build"'
 
 
-def test_build_wheel_for_editable(tmp_path):
+def test_build_editable(tmp_path):
     with build_fixture_project("demo-package") as project:
-        wheel_name = api.build_wheel_for_editable(tmp_path.as_posix())
-        assert api.get_requires_for_build_wheel_for_editable() == []
+        wheel_name = api.build_editable(tmp_path.as_posix())
+        assert api.get_requires_for_build_editable() == []
         with zipfile.ZipFile(tmp_path / wheel_name) as zf:
             namelist = zf.namelist()
             assert "demo_package.pth" in namelist
@@ -254,9 +254,9 @@ def test_build_wheel_for_editable(tmp_path):
             )
 
 
-def test_build_wheel_for_editable_src(tmp_path):
+def test_build_editable_src(tmp_path):
     with build_fixture_project("demo-src-package") as project:
-        wheel_name = api.build_wheel_for_editable(tmp_path.as_posix())
+        wheel_name = api.build_editable(tmp_path.as_posix())
 
         with zipfile.ZipFile(tmp_path / wheel_name) as zf:
             namelist = zf.namelist()
@@ -276,9 +276,9 @@ def test_build_wheel_for_editable_src(tmp_path):
             )
 
 
-def test_build_wheel_for_editable_pep420(tmp_path):
+def test_build_editable_pep420(tmp_path):
     with build_fixture_project("demo-pep420-package") as project:
-        wheel_name = api.build_wheel_for_editable(tmp_path.as_posix())
+        wheel_name = api.build_editable(tmp_path.as_posix())
 
         with zipfile.ZipFile(tmp_path / wheel_name) as zf:
             namelist = zf.namelist()
