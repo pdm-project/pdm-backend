@@ -1,3 +1,13 @@
+Release v0.8.0 (2021-06-29)
+### Features & Improvements
+
+- Add new hooks for building editable, which implements [PEP 660](https://www.python.org/dev/peps/pep-0660/). [#33](https://github.com/frostming/pdm-pep517/issues/33)
+
+### Bug Fixes
+
+- Retrieve all Python versions from python.org for classifiers generation. [#29](https://github.com/frostming/pdm-pep517/issues/29)
+
+
 Release v0.7.4 (2021-05-10)
 ---------------------------
 
