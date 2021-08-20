@@ -325,7 +325,8 @@ class Metadata:
 
     @property
     def requires_python(self) -> str:
-        return self._metadata.get("requires-python", "")
+        result = self._metadata.get("requires-python", "")
+        return "" if result == "*" else result
 
     @property
     def entry_points(self) -> Dict[str, List[str]]:
