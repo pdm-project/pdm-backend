@@ -22,4 +22,4 @@ repos:
     rev: v0.910
     hooks:
       - id: mypy
-        files: pdm/pep517/(?!_vendor).*.py
+        files: pdm/pep517/(?!_vendor|setuptools).*.py
