@@ -59,6 +59,18 @@ python -m build --sdist --wheel --outdir dist/ --config-setting="--python-tag=cp
 
 `pip` doesn't support passing `config_settings` yet, please stick to `build` as the recommended frontend.
 
+## Support PEP 660 for setuptools backend
+
+If your project need to support editable wheel build([PEP 660](https://www.python.org/dev/peps/pep-0660/)) and is backed by `setuptools`, you can write the following in `pyproject.toml`:
+
+```toml
+[build-system]
+requires = ["pdm-pep517[setuptools]"]
+build-backend = "pdm.pep517.setuptools"
+```
+
+PDM will infer the backend correctly so you don't need to do it.
+
 ## License
 
 This project is licensed under [MIT license](/LICENSE).
