@@ -3,7 +3,7 @@ ci:
 
 repos:
   - repo: https://github.com/psf/black
-    rev: 21.6b0
+    rev: 21.7b0
     hooks:
       - id: black
         exclude: ^pdm/pep517/_vendor
@@ -13,7 +13,7 @@ repos:
       - id: flake8
 
   - repo: https://github.com/PyCQA/isort
-    rev: 5.9.1
+    rev: 5.9.3
     hooks:
       - id: isort
         exclude: ^.*/?setup\.py$
