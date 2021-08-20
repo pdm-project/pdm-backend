@@ -1,3 +1,13 @@
+Release v0.8.1 (2021-08-20)
+### Features & Improvements
+
+- Provide a compatibility layer for setuptools to support PEP 660. The backend is exposed as `pdm.pep517.setuptools`. [#41](https://github.com/frostming/pdm-pep517/issues/41)
+
+### Bug Fixes
+
+- Convert "*" to empty string for `requires-python` metadata. [#40](https://github.com/frostming/pdm-pep517/issues/40)
+
+
 Release v0.8.0 (2021-06-29)
 ---------------------------
 
