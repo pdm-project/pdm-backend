@@ -289,6 +289,14 @@ class Metadata:
             return "src"
         return ""
 
+    @property
+    def editable_backend(self) -> str:
+        """Currently only two backends are supported:
+        - editables: Proxy modules via editables(default)
+        - path: the legacy .pth file method
+        """
+        return self._tool_settings.get("editable-backend", "editables")
+
     def _convert_dependencies(self, deps: List[str]) -> List[str]:
         return list(filter(None, map(ensure_pep440_req, deps)))
 

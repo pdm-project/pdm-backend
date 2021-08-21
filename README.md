@@ -7,7 +7,6 @@ Yet another [PEP 517][1] backend.
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/pdm-project/pdm-pep517/master.svg)](https://results.pre-commit.ci/latest/github/pdm-project/pdm-pep517/master)
 [![pdm-managed](https://img.shields.io/badge/pdm-managed-blueviolet)](https://pdm.fming.dev)
 
-
 This is the backend for [PDM](https://pdm.fming.dev) projects, while you can also use it alone.
 It reads the metadata of [PEP 621][2] format and coverts it to [Core metadata][3].
 
@@ -36,6 +35,7 @@ includes = []        # File patterns to include, the paths are relative to the p
 excludes = []        # File patterns to exclude, the paths are relative to the project root.
 source-includes = [] # File patterns to include in source distribution and exclude in wheel distribution
 ```
+
 You don't have to specify all of them, PDM-PEP517 can also derive these fields smartly, based on some best practices of Python packaging.
 
 ## Supported config settings
@@ -58,18 +58,6 @@ python -m build --sdist --wheel --outdir dist/ --config-setting="--python-tag=cp
 ```
 
 `pip` doesn't support passing `config_settings` yet, please stick to `build` as the recommended frontend.
-
-## Support PEP 660 for setuptools backend
-
-If your project need to support editable wheel build([PEP 660](https://www.python.org/dev/peps/pep-0660/)) and is backed by `setuptools`, you can write the following in `pyproject.toml`:
-
-```toml
-[build-system]
-requires = ["pdm-pep517[setuptools]"]
-build-backend = "pdm.pep517.setuptools"
-```
-
-PDM will infer the backend correctly so you don't need to do it.
 
 ## License
 

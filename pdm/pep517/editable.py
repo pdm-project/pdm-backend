@@ -115,25 +115,26 @@ class EditableBuilder(WheelBuilder):
     def _write_metadata(self, wheel: zipfile.ZipFile) -> None:
         package_paths = self.meta.convert_package_paths()
         package_dir = self.meta.package_dir
-        for package in package_paths.get("packages", []):
-            if "." in package:
-                continue
-            self.editables.map(package, os.path.join(package_dir, package))
+        if self.meta.editable_backend == "editables":
+            for package in package_paths.get("packages", []):
+                if "." in package:
+                    continue
+                self.editables.map(package, os.path.join(package_dir, package))
 
-        for module in package_paths.get("py_modules", []):
-            if "." in module:
-                continue
+            for module in package_paths.get("py_modules", []):
+                if "." in module:
+                    continue
 
-            patterns: Tuple[str, ...] = (f"{module}.py",)
-            if os.name == "nt":
-                patterns += (f"{module}.*.pyd",)
-            else:
-                patterns += (f"{module}.*.so",)
-            for pattern in patterns:
-                path = next(Path(package_dir).glob(pattern), None)
-                if path:
-                    self.editables.map(module, path.as_posix())
-                    break
+                patterns: Tuple[str, ...] = (f"{module}.py",)
+                if os.name == "nt":
+                    patterns += (f"{module}.*.pyd",)
+                else:
+                    patterns += (f"{module}.*.so",)
+                for pattern in patterns:
+                    path = next(Path(package_dir).glob(pattern), None)
+                    if path:
+                        self.editables.map(module, path.as_posix())
+                        break
 
         if not self.editables.redirections:
             # For implicit namespace packages, modules cannot be mapped.
