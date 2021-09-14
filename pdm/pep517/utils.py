@@ -5,6 +5,7 @@ import sys
 import warnings
 from contextlib import contextmanager
 from fnmatch import fnmatchcase
+from pathlib import Path
 from sysconfig import get_config_var
 from typing import Callable, Generator, Iterable, Optional
 
@@ -189,3 +190,12 @@ def ensure_pep440_req(req: str) -> Optional[str]:
     if req.strip().startswith("-e"):
         return None
     return req
+
+
+def is_relative_path(target: Path, other: Path) -> bool:
+    try:
+        target.relative_to(other)
+    except ValueError:
+        return False
+    else:
+        return True

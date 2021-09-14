@@ -20,4 +20,5 @@ homepage = ""
 [project.optional-dependencies]
 
 [tool.pdm]
-includes = ["sub"]
+includes = ["sub", "data_out.json"]
+package-dir = "sub"

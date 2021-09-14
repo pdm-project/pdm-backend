@@ -379,7 +379,7 @@ class Metadata:
                     py_modules = [path.name[:-3] for path in src_dir.glob("*.py")]
             else:
                 packages_set = set()
-                includes = self.includes
+                includes = self.includes[:]
                 for include in includes[:]:
                     if include.replace("\\", "/").endswith("/*"):
                         include = include[:-2]
