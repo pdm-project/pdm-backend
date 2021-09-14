@@ -110,11 +110,11 @@ def test_parse_src_package():
     assert paths["package_dir"] == {"": "src"}
 
 
-def test_parse_src_package_by_include():
-    metadata = Metadata(FIXTURES / "projects/demo-src-package-include/pyproject.toml")
+def test_parse_pep420_namespace_package():
+    metadata = Metadata(FIXTURES / "projects/demo-pep420-package/pyproject.toml")
     paths = metadata.convert_package_paths()
     assert paths["package_dir"] == {}
-    assert paths["packages"] == ["sub.my_package"]
+    assert paths["packages"] == ["foo.my_package"]
     assert paths["py_modules"] == []
 
 

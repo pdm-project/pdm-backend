@@ -92,7 +92,7 @@ def test_build_package_include(tmp_path):
 
 
 def test_namespace_package_by_include(tmp_path):
-    with build_fixture_project("demo-src-package-include"):
+    with build_fixture_project("demo-pep420-package"):
         wheel_name = api.build_wheel(tmp_path.as_posix())
         sdist_name = api.build_sdist(tmp_path.as_posix())
         assert sdist_name == "demo-package-0.1.0.tar.gz"
@@ -100,11 +100,11 @@ def test_namespace_package_by_include(tmp_path):
 
         tar_names = get_tarball_names(tmp_path / sdist_name)
         zip_names = get_wheel_names(tmp_path / wheel_name)
-        assert "demo-package-0.1.0/sub/my_package/__init__.py" in tar_names
-        assert "demo-package-0.1.0/sub/my_package/data.json" in tar_names
+        assert "demo-package-0.1.0/foo/my_package/__init__.py" in tar_names
+        assert "demo-package-0.1.0/foo/my_package/data.json" in tar_names
 
-        assert "sub/my_package/__init__.py" in zip_names
-        assert "sub/my_package/data.json" in zip_names
+        assert "foo/my_package/__init__.py" in zip_names
+        assert "foo/my_package/data.json" in zip_names
 
 
 def test_build_explicit_package_dir(tmp_path):
@@ -236,13 +236,15 @@ def test_build_editable(tmp_path):
 
 
 def test_build_editable_src(tmp_path):
-    with build_fixture_project("demo-src-package") as project:
+    with build_fixture_project("demo-src-package-include") as project:
         wheel_name = api.build_editable(tmp_path.as_posix())
 
         with zipfile.ZipFile(tmp_path / wheel_name) as zf:
             namelist = zf.namelist()
             assert "demo_package.pth" in namelist
             assert "_demo_package.py" in namelist
+            assert "my_package/data.json" not in namelist
+            assert "data_out.json" in namelist
 
             pth_content = zf.read("demo_package.pth").decode("utf-8").strip()
             assert pth_content == "import _demo_package"
@@ -252,7 +254,7 @@ def test_build_editable_src(tmp_path):
                 "from editables.redirector import RedirectingFinder as F\n"
                 "F.install()\n"
                 "F.map_module('my_package', {0!r})".format(
-                    str((project / "src" / "my_package" / "__init__.py").resolve())
+                    str((project / "sub" / "my_package" / "__init__.py").resolve())
                 )
             )
 

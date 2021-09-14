@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple, Union
 
 from pdm.pep517.base import BuildError
-from pdm.pep517.utils import to_filename
+from pdm.pep517.utils import is_relative_path, to_filename
 from pdm.pep517.wheel import WheelBuilder
 
 
@@ -90,10 +90,16 @@ class EditableBuilder(WheelBuilder):
             raise BuildError(f"Error occurs when running {build_args}:\n{e}")
 
     def find_files_to_add(self, for_sdist: bool = False) -> List[Path]:
+        package_paths = self.meta.convert_package_paths()
+        package_dir = self.meta.package_dir
+        redirections = [
+            Path(package_dir, p.replace(".", "/")) for p in package_paths["packages"]
+        ]
         return [
             p
             for p in super().find_files_to_add(for_sdist=for_sdist)
-            if p.suffix != ".py"
+            if p.suffix not in (".py", ".pyc", ".pyo")
+            and not any(is_relative_path(p, package) for package in redirections)
         ]
 
     def _add_file_content(
