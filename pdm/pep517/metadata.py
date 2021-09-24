@@ -315,6 +315,8 @@ class Metadata:
 
     @property
     def project_name(self) -> str:
+        if self.name is None:
+            return self.filepath.parent.name
         return safe_name(self.name)
 
     @property
