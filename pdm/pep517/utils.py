@@ -24,7 +24,7 @@ def safe_name(name: str) -> str:
     return re.sub("[^A-Za-z0-9.]+", "-", name)
 
 
-def safe_version(version: str) -> str:
+def safe_version(version: Optional[str]) -> str:
     """
     Convert an arbitrary string to a standard version string
     """

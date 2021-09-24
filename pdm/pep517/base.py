@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Tuple, Union
 
 from pdm.pep517.metadata import Metadata
-from pdm.pep517.utils import is_python_package
+from pdm.pep517.utils import is_python_package, safe_version, to_filename
 
 OPEN_README = """import codecs
 
@@ -144,6 +144,13 @@ class Builder:
             # Open the validation for next release
             self._meta.validate(False)
         return self._meta
+
+    @property
+    def meta_version(self) -> str:
+        meta_version = self.meta.version
+        if meta_version is None:
+            return "0.0.0"
+        return to_filename(safe_version(meta_version))
 
     def __enter__(self) -> "Builder":
         self._old_cwd = os.getcwd()
