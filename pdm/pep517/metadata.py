@@ -51,11 +51,11 @@ class MetaField(Generic[T]):
             return self
         try:
             rv = instance._metadata[self.name]
-            if self.fget is not None:
-                rv = self.fget(instance, rv)
-            return rv
         except KeyError:
             return None
+        if self.fget is not None:
+            rv = self.fget(instance, rv)
+        return rv
 
 
 def _make_version_collections(python_versions: List[str]) -> Dict[str, List[Version]]:
