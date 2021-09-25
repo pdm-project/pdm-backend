@@ -51,11 +51,11 @@ class MetaField(Generic[T]):
             return self
         try:
             rv = instance._metadata[self.name]
-            if self.fget is not None:
-                rv = self.fget(instance, rv)
-            return rv
         except KeyError:
             return None
+        if self.fget is not None:
+            rv = self.fget(instance, rv)
+        return rv
 
 
 def _make_version_collections(python_versions: List[str]) -> Dict[str, List[Version]]:
@@ -114,7 +114,7 @@ class Metadata:
             return value
         if not self.dynamic or "version" not in self.dynamic:
             raise ProjectError(
-                "'value' must be in 'dynamic' field to let pdm-pep517 fill in the value"
+                "'version' missing from 'dynamic' fields (to let pdm-pep517 fill it)"
             )
         version_source = value.get("from")
         if version_source:
