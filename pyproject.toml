@@ -88,7 +88,8 @@ drop = [
     "*.so",
     "typing.*",
     "*/tests/",
-    "spdx/data/*.txt"
+    "spdx/data/*.txt",
+    "cerberus/benchmarks/"
 ]
 
 [tool.vendoring.typing-stubs]
