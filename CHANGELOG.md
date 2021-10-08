@@ -1,3 +1,15 @@
+Release v0.8.5 (2021-10-07)
+### Bug Fixes
+
+- Fix the editable wheel building to exclude files inside a package. [#45](https://github.com/frostming/pdm-pep517/issues/45)
+
+### Dependencies
+
+- Update vendors:
+  - Update `packaging` from `20.4` to `21.0`.
+  - Update `cerberus` from `1.3.2` to `1.3.4`. [#52](https://github.com/frostming/pdm-pep517/issues/52)
+
+
 Release v0.8.4 (2021-09-14)
 No significant changes.
 
