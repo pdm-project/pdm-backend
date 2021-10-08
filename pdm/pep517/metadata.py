@@ -315,9 +315,13 @@ class Metadata:
 
     @property
     def project_name(self) -> str:
-        if self.name is None:
-            return self.filepath.parent.name
         return safe_name(self.name)
+
+    @property
+    def project_filename(self) -> str:
+        if self.name is None:
+            return "UNKNOWN"
+        return self.project_name
 
     @property
     def requires_extra(self) -> Dict[str, List[str]]:
