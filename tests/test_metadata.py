@@ -145,6 +145,14 @@ def test_project_version_use_scm(project_with_scm):
     assert "0.1.1.dev1+g" in metadata.version
 
 
+def test_project_name_and_version_missing():
+    metadata = Metadata(FIXTURES / "projects/demo-no-name-nor-version/pyproject.toml")
+    assert metadata.version is None
+    assert metadata.name is None
+    assert metadata.project_name is None
+    assert metadata.project_filename == "UNKNOWN"
+
+
 def test_explicit_package_dir():
     metadata = Metadata(FIXTURES / "projects/demo-explicit-package-dir/pyproject.toml")
     paths = metadata.convert_package_paths()

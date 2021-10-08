@@ -18,7 +18,7 @@ from pdm.pep517 import __version__
 from pdm.pep517._vendor.packaging import tags
 from pdm.pep517._vendor.packaging.specifiers import SpecifierSet
 from pdm.pep517.base import Builder, BuildError
-from pdm.pep517.utils import get_abi_tag, get_platform, safe_version, to_filename
+from pdm.pep517.utils import get_abi_tag, get_platform
 
 WHEEL_FILE_FORMAT = (
     """\
@@ -84,8 +84,8 @@ class WheelBuilder(Builder):
 
     @property
     def wheel_filename(self) -> str:
-        name = to_filename(self.meta.project_name)
-        version = to_filename(safe_version(self.meta.version))
+        name = self.meta.project_filename
+        version = self.meta_version
         return f"{name}-{version}-{self.tag}.whl"
 
     @property
@@ -125,8 +125,8 @@ class WheelBuilder(Builder):
 
     @property
     def dist_info_name(self) -> str:
-        name = to_filename(self.meta.project_name)
-        version = to_filename(safe_version(self.meta.version))
+        name = self.meta.project_filename
+        version = self.meta_version
         return f"{name}-{version}.dist-info"
 
     def _write_record(self, fp: TextIO) -> None:

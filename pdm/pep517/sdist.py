@@ -7,7 +7,6 @@ from typing import Any
 
 from pdm.pep517._vendor import toml
 from pdm.pep517.base import Builder
-from pdm.pep517.utils import safe_version, to_filename
 
 
 def normalize_file_permissions(st_mode: int) -> int:
@@ -52,7 +51,7 @@ class SdistBuilder(Builder):
         if not os.path.exists(build_dir):
             os.makedirs(build_dir, exist_ok=True)
 
-        version = to_filename(safe_version(self.meta.version))
+        version = self.meta_version
 
         target = os.path.join(
             build_dir, "{}-{}.tar.gz".format(self.meta.project_name, version)
