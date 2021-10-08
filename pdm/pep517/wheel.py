@@ -18,7 +18,7 @@ from pdm.pep517 import __version__
 from pdm.pep517._vendor.packaging import tags
 from pdm.pep517._vendor.packaging.specifiers import SpecifierSet
 from pdm.pep517.base import Builder, BuildError
-from pdm.pep517.utils import get_abi_tag, get_platform, to_filename
+from pdm.pep517.utils import get_abi_tag, get_platform
 
 WHEEL_FILE_FORMAT = (
     """\
