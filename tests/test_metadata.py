@@ -149,7 +149,8 @@ def test_project_name_and_version_missing():
     metadata = Metadata(FIXTURES / "projects/demo-no-name-nor-version/pyproject.toml")
     assert metadata.version is None
     assert metadata.name is None
-    assert metadata.project_name == "demo-no-name-nor-version"
+    assert metadata.project_name is None
+    assert metadata.project_filename == "UNKNOWN"
 
 
 def test_explicit_package_dir():

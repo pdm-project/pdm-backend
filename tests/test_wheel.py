@@ -14,5 +14,5 @@ def test_override_tags_in_wheel_filename() -> None:
 def test_dist_info_name_with_no_name_nor_version() -> None:
     project = FIXTURES / "projects/demo-no-name-nor-version"
     builder = wheel.WheelBuilder(project)
-    assert builder.dist_info_name == "demo_no_name_nor_version-0.0.0.dist-info"
-    assert builder.wheel_filename == "demo_no_name_nor_version-0.0.0-py3-none-any.whl"
+    assert builder.dist_info_name == "UNKNOWN-0.0.0.dist-info"
+    assert builder.wheel_filename == "UNKNOWN-0.0.0-py3-none-any.whl"

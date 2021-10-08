@@ -84,7 +84,7 @@ class WheelBuilder(Builder):
 
     @property
     def wheel_filename(self) -> str:
-        name = to_filename(self.meta.project_name)
+        name = self.meta.project_filename
         version = self.meta_version
         return f"{name}-{version}-{self.tag}.whl"
 
@@ -125,7 +125,7 @@ class WheelBuilder(Builder):
 
     @property
     def dist_info_name(self) -> str:
-        name = to_filename(self.meta.project_name)
+        name = self.meta.project_filename
         version = self.meta_version
         return f"{name}-{version}.dist-info"
 

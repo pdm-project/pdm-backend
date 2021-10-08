@@ -28,6 +28,7 @@ from pdm.pep517.utils import (
     find_packages_iter,
     merge_marker,
     safe_name,
+    to_filename,
 )
 from pdm.pep517.validator import validate_pep621
 from pdm.pep517.versions import AVAILABLE_PYTHON_VERSIONS
@@ -314,14 +315,16 @@ class Metadata:
     dynamic: MetaField[List[str]] = MetaField("dynamic")
 
     @property
-    def project_name(self) -> str:
+    def project_name(self) -> Optional[str]:
+        if self.name is None:
+            return None
         return safe_name(self.name)
 
     @property
     def project_filename(self) -> str:
         if self.name is None:
             return "UNKNOWN"
-        return self.project_name
+        return to_filename(self.project_name)
 
     @property
     def requires_extra(self) -> Dict[str, List[str]]:
