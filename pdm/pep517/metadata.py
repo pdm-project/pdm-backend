@@ -82,16 +82,12 @@ class Metadata:
     DEFAULT_ENCODING = "utf-8"
     SUPPORTED_CONTENT_TYPES = ("text/markdown", "text/x-rst", "text/plain")
 
-    def __init__(
-        self, filepath: Union[str, Path], data: Optional[Mapping[str, Any]] = None
-    ) -> None:
+    def __init__(self, filepath: Union[str, Path], parse: bool = True) -> None:
         self.filepath = Path(filepath).absolute()
         self._tool_settings: Dict[str, Any] = {}
-        if data is not None:
-            self._metadata = dict(data)
-        else:
-            self._metadata = {}
-        self._read_pyproject()
+        self._metadata: Dict[str, Any] = {}
+        if parse:
+            self._read_pyproject()
 
     def _read_pyproject(self) -> None:
         try:
@@ -104,8 +100,7 @@ class Metadata:
             if "tool" in data and "pdm" in data["tool"]:
                 self._tool_settings = data["tool"]["pdm"]
             if "project" in data:
-                if not self._metadata:
-                    self._metadata = data["project"]
+                self._metadata = data["project"]
             else:
                 raise ProjectError("No [project] config in pyproject.toml")
 
