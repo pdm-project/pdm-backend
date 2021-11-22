@@ -7,7 +7,6 @@ authors = [
     {name = "frostming", email = "mianghong@gmail.com"},
 ]
 dynamic = ["version"]
-version = { from = "my_package/__init__.py" }
 requires-python = ">=2.7"
 license = {text = "MIT"}
 dependencies = ["flask"]
@@ -21,6 +20,7 @@ homepage = ""
 [project.optional-dependencies]
 
 [tool.pdm]
+version = { from = "my_package/__init__.py" }
 source-includes = ["data_out.json"]
 
 [[tool.pdm.source]]

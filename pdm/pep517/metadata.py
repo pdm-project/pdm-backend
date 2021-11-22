@@ -15,12 +15,12 @@ from typing import (
     TypeVar,
     Union,
 )
+import warnings
 
 from pdm.pep517._vendor import toml
 from pdm.pep517._vendor.packaging.requirements import Requirement
-from pdm.pep517._vendor.packaging.specifiers import SpecifierSet
 from pdm.pep517._vendor.packaging.version import Version
-from pdm.pep517.license import get_license_classifier, license_lookup
+from pdm.pep517.license import license_lookup
 from pdm.pep517.scm import get_version_from_scm
 from pdm.pep517.utils import (
     cd,
@@ -31,12 +31,15 @@ from pdm.pep517.utils import (
     to_filename,
 )
 from pdm.pep517.validator import validate_pep621
-from pdm.pep517.versions import AVAILABLE_PYTHON_VERSIONS
 
 T = TypeVar("T")
 
 
 class ProjectError(ValueError):
+    pass
+
+
+class PDMDeprecatedWarning(Warning):
     pass
 
 
@@ -88,7 +91,7 @@ class Metadata:
             self._metadata = dict(data)
         else:
             self._metadata = {}
-            self._read_pyproject()
+        self._read_pyproject()
 
     def _read_pyproject(self) -> None:
         try:
@@ -101,7 +104,8 @@ class Metadata:
             if "tool" in data and "pdm" in data["tool"]:
                 self._tool_settings = data["tool"]["pdm"]
             if "project" in data:
-                self._metadata = data["project"]
+                if not self._metadata:
+                    self._metadata = data["project"]
             else:
                 raise ProjectError("No [project] config in pyproject.toml")
 
@@ -110,28 +114,41 @@ class Metadata:
 
     name: MetaField[str] = MetaField("name")
 
-    def _get_version(self, value: Union[Mapping[str, str], str]) -> str:
-        if isinstance(value, str):
-            return value
+    @property
+    def version(self) -> Optional[str]:
+        static_version = self._metadata.get("version")
+        if isinstance(static_version, str):
+            return static_version
+        dynamic_version = self._tool_settings.get("version")
+        if isinstance(static_version, dict):
+            warnings.warn(
+                "`version` in [project] no longer supports dynamic filling. "
+                "Move it to [tool.pdm] to change it to static string.",
+                PDMDeprecatedWarning,
+                stacklevel=2,
+            )
+            if not dynamic_version:
+                dynamic_version = static_version
+
+        if not dynamic_version:
+            return None
         if not self.dynamic or "version" not in self.dynamic:
             raise ProjectError(
                 "'version' missing from 'dynamic' fields (to let pdm-pep517 fill it)"
             )
-        version_source = value.get("from")
+        version_source = dynamic_version.get("from")
         if version_source:
             with self.filepath.parent.joinpath(version_source).open(
                 encoding="utf-8"
             ) as fp:
-                version = re.findall(
+                return re.findall(
                     r"^__version__\s*=\s*[\"'](.+?)[\"']\s*$", fp.read(), re.M
                 )[0]
-        elif value.get("use_scm", False):
-            version = get_version_from_scm(self.filepath.parent)
+        elif dynamic_version.get("use_scm", False):
+            return get_version_from_scm(self.filepath.parent)
         else:
-            version = None
-        return version
+            return None
 
-    version: MetaField[str] = MetaField("version", _get_version)
     description: MetaField[str] = MetaField("description")
 
     def _get_readme_file(self, value: Union[Mapping[str, str], str]) -> str:
@@ -227,23 +244,13 @@ class Metadata:
         classifers = set(self._metadata.get("classifiers", []))
 
         if self.dynamic and "classifiers" in self.dynamic:
-            python_constraint = (
-                SpecifierSet(self.requires_python)
-                if self.requires_python
-                else SpecifierSet()
+            warnings.warn(
+                "`classifiers` no longer supports dynamic filling, "
+                "please remove it from `dynamic` fields and manually "
+                "supply all the classifiers",
+                PDMDeprecatedWarning,
+                stacklevel=2,
             )
-
-            version_collections = _make_version_collections(AVAILABLE_PYTHON_VERSIONS)
-            for version, micro_versions in version_collections.items():
-                if any(
-                    python_constraint.contains(micro_version)
-                    for micro_version in micro_versions
-                ):
-                    classifers.add(f"Programming Language :: Python :: {version[0]}")
-                    classifers.add(f"Programming Language :: Python :: {version}")
-
-            if self.license_type:
-                classifers.add(get_license_classifier(self.license_type))
 
         return sorted(classifers)
 

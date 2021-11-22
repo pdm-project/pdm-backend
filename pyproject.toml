@@ -2,7 +2,6 @@
 # PEP 621 project metadata
 # https://www.python.org/dev/peps/pep-0621
 name = "pdm-pep517"
-version = {from = "pdm/pep517/__init__.py"}
 description = "A PEP 517 backend for PDM that supports PEP 621 metadata"
 authors = [
   {name = "Frost Ming", email = "mianghong@gmail.com"}
@@ -11,11 +10,18 @@ license = {text = "MIT"}
 requires-python = ">=3.6"
 readme = "README.md"
 keywords = ["packaging", "PEP 517", "build"]
-dynamic = ["version", "classifiers"]
+dynamic = ["version"]
 
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Topic :: Software Development :: Build Tools",
+    "License :: OSI Approved :: MIT License",
+    "Programming Lanuguage :: Python :: Python :: 3",
+    "Programming Lanuguage :: Python :: Python :: 3.6",
+    "Programming Lanuguage :: Python :: Python :: 3.7",
+    "Programming Lanuguage :: Python :: Python :: 3.8",
+    "Programming Lanuguage :: Python :: Python :: 3.9",
+    "Programming Lanuguage :: Python :: Python :: 3.10",
 ]
 
 dependencies = []
@@ -37,6 +43,7 @@ setuptools = [
 ]
 
 [tool.pdm]
+version = {from = "pdm/pep517/__init__.py"}
 includes = ["pdm"]
 source-includes = ["tests"]
 
@@ -139,3 +146,6 @@ underlines = "-~^"
 
 [tool.pytest.ini-options]
 norecursedirs = ["fixtures", "__pypackages__"]
+filterwarnings = [
+    "ignore::DeprecationWarning"
+]

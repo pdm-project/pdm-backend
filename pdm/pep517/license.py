@@ -122,7 +122,3 @@ TROVE_CLASSIFIERS = {
 DEFAULT_LICENSE = "License :: Other/Proprietary License"
 
 license_lookup = {k: v for keys, v in TROVE_CLASSIFIERS.items() for k in keys}
-
-
-def get_license_classifier(key: str) -> str:
-    return license_lookup.get(key, DEFAULT_LICENSE)

@@ -15,13 +15,13 @@ VALID_DATA = [
     },
     {
         "name": "foo",
-        "version": {"from": "path/to/my.py"},
+        "version": "0.1.0",
         "readme": {"file": "REAME.md", "content-type": "text/markdown"},
         "license": {"text": "MIT license"},
     },
     {
         "name": "foo",
-        "version": {"use_scm": True},
+        "version": "0.1.0",
         "readme": {"text": "Awesome project", "content-type": "text/plain"},
         "license": {"file": "LICENSE"},
     },
@@ -40,6 +40,7 @@ INVALID_DATA = [
             "content-type": "text/markdown",
         },
     },  # mutually exclusive fields
+    {"name": "foo", "version": {"from": "foo.py"}},
 ]
 
 
