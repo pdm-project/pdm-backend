@@ -7,7 +7,6 @@ authors = [
     {name = "frostming", email = "mianghong@gmail.com"},
 ]
 dynamic = ["version"]
-version = { from = "foo/my_package/__init__.py" }
 requires-python = ">=3.5"
 license = {text = "MIT"}
 dependencies = []
@@ -20,4 +19,5 @@ homepage = ""
 [project.optional-dependencies]
 
 [tool.pdm]
+version = { from = "foo/my_package/__init__.py" }
 package-dir = "foo"

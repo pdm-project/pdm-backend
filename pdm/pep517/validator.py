@@ -2,14 +2,6 @@ from typing import List, Mapping
 
 from pdm.pep517._vendor import cerberus
 
-VERSION_RULE = [
-    {"type": "string"},
-    {
-        "type": "dict",
-        "schema": {"from": {"type": "string"}, "use_scm": {"type": "boolean"}},
-    },
-]
-
 README_RULE = [
     {"type": "string"},
     {
@@ -44,7 +36,7 @@ AUTHOR_RULE = {
 
 PEP621_SCHEMA = {
     "name": {"type": "string", "required": True},
-    "version": {"anyof": VERSION_RULE},
+    "version": {"type": "string"},
     "description": {"type": "string"},
     "readme": {"oneof": README_RULE},
     "requires-python": {"type": "string"},
