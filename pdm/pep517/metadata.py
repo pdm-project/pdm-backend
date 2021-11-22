@@ -1,6 +1,7 @@
 import glob
 import os
 import re
+import warnings
 from pathlib import Path
 from typing import (
     Any,
@@ -15,7 +16,6 @@ from typing import (
     TypeVar,
     Union,
 )
-import warnings
 
 from pdm.pep517._vendor import toml
 from pdm.pep517._vendor.packaging.requirements import Requirement
