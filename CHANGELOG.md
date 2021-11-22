@@ -1,3 +1,7 @@
+## Release v0.9.2 (2021-11-22)
+No significant changes.
+
+
 ## Release v0.9.1 (2021-11-22)
 No significant changes.
 
