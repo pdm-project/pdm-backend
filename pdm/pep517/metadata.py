@@ -123,7 +123,7 @@ class Metadata:
         if isinstance(static_version, dict):
             warnings.warn(
                 "`version` in [project] no longer supports dynamic filling. "
-                "Move it to [tool.pdm] to change it to static string.\n"
+                "Move it to [tool.pdm] or change it to static string.\n"
                 "It will raise an error in the next minor release.",
                 PDMDeprecatedWarning,
                 stacklevel=2,
