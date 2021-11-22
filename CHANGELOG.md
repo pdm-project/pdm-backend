@@ -1,3 +1,9 @@
+## Release v0.9.0 (2021-11-22)
+### Features & Improvements
+
+- To be compliant with PEP 621, `version` is not allowed in the `[project]` table when it is dynamic. Warning users against that usage and suggest to move to the `[tool.pdm]` table. `classifiers` field no longer supports dynamic filling. [#53](https://github.com/frostming/pdm-pep517/issues/53)
+
+
 ## Release v0.8.6 (2021-10-26)
 ### Bug Fixes
 
