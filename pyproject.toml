@@ -16,12 +16,12 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Topic :: Software Development :: Build Tools",
     "License :: OSI Approved :: MIT License",
-    "Programming Lanuguage :: Python :: Python :: 3",
-    "Programming Lanuguage :: Python :: Python :: 3.6",
-    "Programming Lanuguage :: Python :: Python :: 3.7",
-    "Programming Lanuguage :: Python :: Python :: 3.8",
-    "Programming Lanuguage :: Python :: Python :: 3.9",
-    "Programming Lanuguage :: Python :: Python :: 3.10",
+    "Programming Lanuguage :: Python :: 3",
+    "Programming Lanuguage :: Python :: 3.6",
+    "Programming Lanuguage :: Python :: 3.7",
+    "Programming Lanuguage :: Python :: 3.8",
+    "Programming Lanuguage :: Python :: 3.9",
+    "Programming Lanuguage :: Python :: 3.10",
 ]
 
 dependencies = []
