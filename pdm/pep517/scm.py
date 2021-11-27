@@ -163,17 +163,17 @@ def tags_to_versions(tags: Iterable[str]) -> List[Union[Version, LegacyVersion]]
 
 
 def git_parse_version(root: os.PathLike) -> Optional[VersionInfo]:
-    GIT = shutil.which("git")
-    if not GIT:
+    git = shutil.which("git")
+    if not git:
         return None
 
-    ret, repo, _ = _subprocess_call([GIT, "rev-parse", "--show-toplevel"], root)
+    ret, repo, _ = _subprocess_call([git, "rev-parse", "--show-toplevel"], root)
     if ret or not os.path.samefile(root, repo):
         return None
 
     if os.path.isfile(os.path.join(root, ".git/shallow")):
         warnings.warn(f'"{root}" is shallow and may cause errors')
-    describe_cmd = [GIT, "describe", "--dirty", "--tags", "--long", "--match", "*.*"]
+    describe_cmd = [git, "describe", "--dirty", "--tags", "--long", "--match", "*.*"]
     ret, output, err = _subprocess_call(describe_cmd, root)
     branch = _git_get_branch(root)
 

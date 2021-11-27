@@ -232,16 +232,16 @@ def get_base_class_and_magic_number(
     # Handle wrong byte order
     if magic_number in [FAT_CIGAM, FAT_CIGAM_64, MH_CIGAM, MH_CIGAM_64]:
         if sys.byteorder == "little":
-            BaseClass: Type[ctypes.Structure] = ctypes.BigEndianStructure
+            base_class: Type[ctypes.Structure] = ctypes.BigEndianStructure
         else:
-            BaseClass = ctypes.LittleEndianStructure
+            base_class = ctypes.LittleEndianStructure
 
         magic_number = swap32(magic_number)
     else:
-        BaseClass = ctypes.Structure
+        base_class = ctypes.Structure
 
     lib_file.seek(seek)
-    return BaseClass, magic_number
+    return base_class, magic_number
 
 
 S = TypeVar("S", bound=ctypes.Structure)
@@ -254,24 +254,24 @@ def read_data(struct_class: Type[S], lib_file: BinaryIO) -> S:
 @no_type_check
 def extract_macosx_min_system_version(path_to_lib: str) -> Optional[Version]:
     with open(path_to_lib, "rb") as lib_file:
-        BaseClass, magic_number = get_base_class_and_magic_number(lib_file, 0)
+        base_class, magic_number = get_base_class_and_magic_number(lib_file, 0)
         if magic_number not in [FAT_MAGIC, FAT_MAGIC_64, MH_MAGIC, MH_MAGIC_64]:
             return None
 
         if magic_number in [FAT_MAGIC, FAT_CIGAM_64]:
 
-            class FatHeader(BaseClass):
+            class FatHeader(base_class):
                 _fields_ = fat_header_fields
 
             fat_header = read_data(FatHeader, lib_file)
             if magic_number == FAT_MAGIC:
 
-                class FatArch(BaseClass):
+                class FatArch(base_class):
                     _fields_ = fat_arch_fields
 
             else:
 
-                class FatArch(BaseClass):
+                class FatArch(base_class):
                     _fields_ = fat_arch_64_fields
 
             fat_arch_list = [
