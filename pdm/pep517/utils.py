@@ -84,7 +84,7 @@ def find_packages_iter(
         return lambda name: any(fnmatchcase(name, pat=pat) for pat in patterns)
 
     fexclude, finclude = _build_filter(exclude), _build_filter(include)
-    for root, dirs, files in os.walk(where, followlinks=True):
+    for root, dirs, _files in os.walk(where, followlinks=True):
         # Copy dirs to iterate over it, then empty dirs.
         all_dirs = dirs[:]
         dirs[:] = []
