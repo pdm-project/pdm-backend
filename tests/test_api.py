@@ -229,7 +229,7 @@ def test_build_editable(tmp_path):
             assert proxy_module == (
                 "from editables.redirector import RedirectingFinder as F\n"
                 "F.install()\n"
-                "F.map_module('my_package', {0!r})".format(
+                "F.map_module('my_package', {!r})".format(
                     str((project / "my_package" / "__init__.py").resolve())
                 )
             )
@@ -253,7 +253,7 @@ def test_build_editable_src(tmp_path):
             assert proxy_module == (
                 "from editables.redirector import RedirectingFinder as F\n"
                 "F.install()\n"
-                "F.map_module('my_package', {0!r})".format(
+                "F.map_module('my_package', {!r})".format(
                     str((project / "sub" / "my_package" / "__init__.py").resolve())
                 )
             )

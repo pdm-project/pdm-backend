@@ -146,7 +146,7 @@ def get_flag(
     if val is None:
         if warn:
             warnings.warn(
-                "Config variable '{0}' is unset, Python ABI tag may "
+                "Config variable '{}' is unset, Python ABI tag may "
                 "be incorrect".format(var),
                 RuntimeWarning,
                 2,
@@ -175,7 +175,7 @@ def get_abi_tag() -> Optional[str]:
             "Py_UNICODE_SIZE", sys.maxunicode == 0x10FFFF, expected=4, warn=is_cpython
         ):
             u = "u"
-        return "%s%s%s%s%s" % (impl, tags.interpreter_version(), d, m, u)
+        return f"{impl}{tags.interpreter_version()}{d}{m}{u}"
     elif soabi and soabi.startswith("cpython-"):
         return "cp" + soabi.split("-")[1]
     elif soabi:

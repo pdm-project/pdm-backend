@@ -23,3 +23,11 @@ repos:
     hooks:
       - id: mypy
         files: pdm/pep517/(?!_vendor|setuptools).*.py
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v2.29.1
+    hooks:
+      - id: pyupgrade
+        exclude: ^pdm/pep517/_vendor
+        args:
+          - --py37-plus
