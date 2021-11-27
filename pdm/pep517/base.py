@@ -318,13 +318,9 @@ class Builder:
         if meta.keywords:
             extra.append(f"    'keywords': {meta.keywords!r},\n")
         if meta.classifiers:
-            extra.append(
-                f"    'classifiers': {_format_list(meta.classifiers, 8)},\n"
-            )
+            extra.append(f"    'classifiers': {_format_list(meta.classifiers, 8)},\n")
         if meta.dependencies:
-            before.append(
-                f"INSTALL_REQUIRES = {_format_list(meta.dependencies)}\n"
-            )
+            before.append(f"INSTALL_REQUIRES = {_format_list(meta.dependencies)}\n")
             extra.append("    'install_requires': INSTALL_REQUIRES,\n")
         if meta.optional_dependencies:
             before.append(
@@ -336,9 +332,7 @@ class Builder:
         if meta.requires_python:
             extra.append(f"    'python_requires': {meta.requires_python!r},\n")
         if meta.entry_points:
-            before.append(
-                f"ENTRY_POINTS = {_format_dict_list(meta.entry_points)}\n"
-            )
+            before.append(f"ENTRY_POINTS = {_format_dict_list(meta.entry_points)}\n")
             extra.append("    'entry_points': ENTRY_POINTS,\n")
         return SETUP_FORMAT.format(
             before="".join(before), after="".join(after), extra="".join(extra), **kwargs

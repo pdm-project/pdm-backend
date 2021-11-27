@@ -146,9 +146,7 @@ def tag_to_version(tag: str) -> Union[Version, LegacyVersion]:
     version = tagdict.version
 
     if tagdict.suffix:
-        warnings.warn(
-            f"tag {tag!r} will be stripped of its suffix '{tagdict.suffix}'"
-        )
+        warnings.warn(f"tag {tag!r} will be stripped of its suffix '{tagdict.suffix}'")
 
     version = parse_version(version)
 

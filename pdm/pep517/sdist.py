@@ -53,9 +53,7 @@ class SdistBuilder(Builder):
 
         version = self.meta_version
 
-        target = os.path.join(
-            build_dir, f"{self.meta.project_name}-{version}.tar.gz"
-        )
+        target = os.path.join(build_dir, f"{self.meta.project_name}-{version}.tar.gz")
         tar = tarfile.open(target, mode="w:gz", format=tarfile.PAX_FORMAT)
 
         try:
