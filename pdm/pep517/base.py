@@ -250,7 +250,7 @@ class Builder:
         If for_sdist is True, will include files like LICENSE, README and pyproject
         Produce a paths list relative to the source dir.
         """
-        return sorted(set(Path(p) for p in self._find_files_iter(for_sdist)))
+        return sorted(Path(p) for p in self._find_files_iter(for_sdist))
 
     def format_setup_py(self) -> str:
         before, extra, after = [], [], []
