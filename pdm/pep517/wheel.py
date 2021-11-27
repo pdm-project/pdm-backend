@@ -10,6 +10,7 @@ import sys
 import tempfile
 import zipfile
 from base64 import urlsafe_b64encode
+from contextlib import suppress
 from io import StringIO
 from pathlib import Path
 from typing import Any, Generator, List, Mapping, Optional, TextIO, Tuple, Union
@@ -216,10 +217,8 @@ class WheelBuilder(Builder):
         for path in self.find_files_to_add():
             rel_path = None
             if self.meta.package_dir:
-                try:
+                with suppress(ValueError):
                     rel_path = path.relative_to(self.meta.package_dir).as_posix()
-                except ValueError:
-                    pass
             self._add_file(wheel, str(path), rel_path)
 
     def _add_file(

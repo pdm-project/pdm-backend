@@ -283,7 +283,11 @@ def extract_macosx_min_system_version(path_to_lib: str) -> Optional[Version]:
                 try:
                     version = read_mach_header(lib_file, el.offset)
                     if version is not None:
-                        if el.cputype == CPU_TYPE_ARM64 and len(fat_arch_list) != 1:
+                        if (
+                            el.cputype == CPU_TYPE_ARM64
+                            and len(fat_arch_list) != 1
+                            and version == (11, 0, 0)
+                        ):
                             # Xcode will not set the deployment target below 11.0.0
                             # for the arm64 architecture. Ignore the arm64 deployment
                             # in fat binaries when the target is 11.0.0, that way
@@ -291,8 +295,7 @@ def extract_macosx_min_system_version(path_to_lib: str) -> Optional[Version]:
                             # target.
                             # This is safe because there is no arm64 variant for
                             # macOS 10.15 or earlier.
-                            if version == (11, 0, 0):
-                                continue
+                            continue
                         versions_list.append(version)
                 except ValueError:
                     pass

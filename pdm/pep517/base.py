@@ -2,6 +2,7 @@ import atexit
 import glob
 import os
 import textwrap
+from contextlib import suppress
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Tuple, Union
 
@@ -409,10 +410,8 @@ class Builder:
 
         # Clean this temp file when process exits
         def cleanup() -> None:
-            try:
+            with suppress(OSError):
                 setup_py_path.unlink()
-            except OSError:
-                pass
 
         if clean:
             atexit.register(cleanup)
