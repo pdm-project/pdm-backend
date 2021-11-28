@@ -1,5 +1,6 @@
 import email
 import zipfile
+from pathlib import Path
 
 import pytest
 
@@ -7,7 +8,7 @@ from pdm.pep517 import api
 from tests.testutils import build_fixture_project, get_tarball_names, get_wheel_names
 
 
-def test_build_single_module(tmp_path):
+def test_build_single_module(tmp_path: Path) -> None:
     with build_fixture_project("demo-module"):
         wheel_name = api.build_wheel(tmp_path.as_posix())
         sdist_name = api.build_sdist(tmp_path.as_posix())
@@ -34,7 +35,7 @@ def test_build_single_module(tmp_path):
             assert name not in zip_names
 
 
-def test_build_package(tmp_path):
+def test_build_package(tmp_path: Path) -> None:
     with build_fixture_project("demo-package"):
         wheel_name = api.build_wheel(tmp_path.as_posix())
         sdist_name = api.build_sdist(tmp_path.as_posix())
@@ -54,7 +55,7 @@ def test_build_package(tmp_path):
         assert "data_out.json" not in zip_names
 
 
-def test_build_src_package(tmp_path):
+def test_build_src_package(tmp_path: Path) -> None:
     with build_fixture_project("demo-src-package"):
         wheel_name = api.build_wheel(tmp_path.as_posix())
         sdist_name = api.build_sdist(tmp_path.as_posix())
@@ -70,7 +71,7 @@ def test_build_src_package(tmp_path):
         assert "my_package/data.json" in zip_names
 
 
-def test_build_package_include(tmp_path):
+def test_build_package_include(tmp_path: Path) -> None:
     with build_fixture_project("demo-package-include"):
         wheel_name = api.build_wheel(tmp_path.as_posix())
         sdist_name = api.build_sdist(tmp_path.as_posix())
@@ -91,7 +92,7 @@ def test_build_package_include(tmp_path):
         assert "data_out.json" in zip_names
 
 
-def test_namespace_package_by_include(tmp_path):
+def test_namespace_package_by_include(tmp_path: Path) -> None:
     with build_fixture_project("demo-pep420-package"):
         wheel_name = api.build_wheel(tmp_path.as_posix())
         sdist_name = api.build_sdist(tmp_path.as_posix())
@@ -107,7 +108,7 @@ def test_namespace_package_by_include(tmp_path):
         assert "foo/my_package/data.json" in zip_names
 
 
-def test_build_explicit_package_dir(tmp_path):
+def test_build_explicit_package_dir(tmp_path: Path) -> None:
     with build_fixture_project("demo-explicit-package-dir"):
         wheel_name = api.build_wheel(tmp_path.as_posix())
         sdist_name = api.build_sdist(tmp_path.as_posix())
@@ -123,7 +124,7 @@ def test_build_explicit_package_dir(tmp_path):
         assert "my_package/data.json" in zip_names
 
 
-def test_prepare_metadata(tmp_path):
+def test_prepare_metadata(tmp_path: Path) -> None:
     with build_fixture_project("demo-package"):
         dist_info = api.prepare_metadata_for_build_wheel(tmp_path.as_posix())
         assert dist_info == "demo_package-0.1.0.dist-info"
@@ -132,7 +133,7 @@ def test_prepare_metadata(tmp_path):
 
 
 @pytest.mark.xfail
-def test_build_legacypackage(tmp_path):
+def test_build_legacypackage(tmp_path: Path) -> None:
     with build_fixture_project("demo-legacy"):
         wheel_name = api.build_wheel(tmp_path.as_posix())
         sdist_name = api.build_sdist(tmp_path.as_posix())
@@ -152,7 +153,7 @@ def test_build_legacypackage(tmp_path):
         assert "data_out.json" not in zip_names
 
 
-def test_build_package_with_modules_in_src(tmp_path):
+def test_build_package_with_modules_in_src(tmp_path: Path) -> None:
     with build_fixture_project("demo-src-pymodule"):
         wheel_name = api.build_wheel(tmp_path.as_posix())
         sdist_name = api.build_sdist(tmp_path.as_posix())
@@ -164,7 +165,7 @@ def test_build_package_with_modules_in_src(tmp_path):
         assert "foo_module.py" in zip_names
 
 
-def test_build_with_cextension(tmp_path):
+def test_build_with_cextension(tmp_path: Path) -> None:
     with build_fixture_project("demo-cextension"):
         wheel_name = api.build_wheel(tmp_path.as_posix())
         sdist_name = api.build_sdist(tmp_path.as_posix())
@@ -187,7 +188,7 @@ def test_build_with_cextension(tmp_path):
         ), 'Not collect c files in temporary directory "./build"'
 
 
-def test_build_with_cextension_in_src(tmp_path):
+def test_build_with_cextension_in_src(tmp_path: Path) -> None:
     with build_fixture_project("demo-cextension-in-src"):
         wheel_name = api.build_wheel(tmp_path.as_posix())
         sdist_name = api.build_sdist(tmp_path.as_posix())
@@ -208,7 +209,7 @@ def test_build_with_cextension_in_src(tmp_path):
         ), 'Not collect c files in temporary directory "./build"'
 
 
-def test_build_editable(tmp_path):
+def test_build_editable(tmp_path: Path) -> None:
     with build_fixture_project("demo-package") as project:
         wheel_name = api.build_editable(tmp_path.as_posix())
         assert api.get_requires_for_build_editable() == []
@@ -235,7 +236,7 @@ def test_build_editable(tmp_path):
             )
 
 
-def test_build_editable_src(tmp_path):
+def test_build_editable_src(tmp_path: Path) -> None:
     with build_fixture_project("demo-src-package-include") as project:
         wheel_name = api.build_editable(tmp_path.as_posix())
 
@@ -259,7 +260,7 @@ def test_build_editable_src(tmp_path):
             )
 
 
-def test_build_editable_pep420(tmp_path):
+def test_build_editable_pep420(tmp_path: Path) -> None:
     with build_fixture_project("demo-pep420-package") as project:
         wheel_name = api.build_editable(tmp_path.as_posix())
 

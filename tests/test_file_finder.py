@@ -8,7 +8,7 @@ from pdm.pep517.metadata import Metadata
 from tests import FIXTURES
 
 
-def test_auto_include_tests_for_sdist():
+def test_auto_include_tests_for_sdist() -> None:
     builder = Builder(FIXTURES / "projects/demo-package-with-tests")
     with utils.cd(builder.location):
         sdist_files = builder.find_files_to_add(True)
@@ -37,11 +37,11 @@ def test_auto_include_tests_for_sdist():
         ("a", "b/c", False),
     ],
 )
-def test_is_same_or_descendant_path(target, path, expect):
+def test_is_same_or_descendant_path(target, path, expect) -> None:
     assert is_same_or_descendant_path(target, path) == expect
 
 
-def test_recursive_glob_patterns_in_includes():
+def test_recursive_glob_patterns_in_includes() -> None:
     builder = Builder(FIXTURES / "projects/demo-package-with-deep-path")
     with builder:
         sdist_files = builder.find_files_to_add(True)
@@ -77,8 +77,8 @@ def test_recursive_glob_patterns_in_includes():
     ],
 )
 def test_merge_includes_and_excludes(
-    monkeypatch, includes, excludes, data_a_exist, data_b_exist
-):
+    monkeypatch, includes, excludes, data_a_exist: bool, data_b_exist: bool
+) -> None:
     builder = Builder(FIXTURES / "projects/demo-package-with-deep-path")
     data_a, data_b = Path("my_package/data/data_a.json"), Path(
         "my_package/data/data_inner/data_b.json"

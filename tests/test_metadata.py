@@ -7,7 +7,7 @@ from pdm.pep517.metadata import Metadata
 from tests import FIXTURES
 
 
-def test_parse_module():
+def test_parse_module() -> None:
     metadata = Metadata(FIXTURES / "projects/demo-module/pyproject.toml")
     assert metadata.name == "demo-module"
     assert metadata.version == "0.1.0"
@@ -19,7 +19,7 @@ def test_parse_module():
     assert paths["package_dir"] == {}
 
 
-def test_parse_package():
+def test_parse_package() -> None:
     metadata = Metadata(FIXTURES / "projects/demo-package-include/pyproject.toml")
     paths = metadata.convert_package_paths()
     assert paths["py_modules"] == []
@@ -29,7 +29,7 @@ def test_parse_package():
     assert not metadata.classifiers
 
 
-def test_package_with_old_include():
+def test_package_with_old_include() -> None:
     metadata = Metadata(FIXTURES / "projects/demo-package-include-old/pyproject.toml")
     paths = metadata.convert_package_paths()
     assert paths["py_modules"] == []
@@ -39,13 +39,13 @@ def test_package_with_old_include():
     assert not metadata.classifiers
 
 
-def test_parse_error_package():
+def test_parse_error_package() -> None:
     metadata = Metadata(FIXTURES / "projects/demo-package-include-error/pyproject.toml")
     with pytest.raises(ValueError):
         metadata.convert_package_paths()
 
 
-def test_parse_src_package():
+def test_parse_src_package() -> None:
     metadata = Metadata(FIXTURES / "projects/demo-src-package/pyproject.toml")
     paths = metadata.convert_package_paths()
     assert paths["packages"] == ["my_package"]
@@ -53,7 +53,7 @@ def test_parse_src_package():
     assert paths["package_dir"] == {"": "src"}
 
 
-def test_parse_pep420_namespace_package():
+def test_parse_pep420_namespace_package() -> None:
     metadata = Metadata(FIXTURES / "projects/demo-pep420-package/pyproject.toml")
     paths = metadata.convert_package_paths()
     assert paths["package_dir"] == {}
@@ -61,7 +61,7 @@ def test_parse_pep420_namespace_package():
     assert paths["py_modules"] == []
 
 
-def test_parse_package_with_extras():
+def test_parse_package_with_extras() -> None:
     metadata = Metadata(FIXTURES / "projects/demo-combined-extras/pyproject.toml")
     assert metadata.dependencies == ["urllib3"]
     assert metadata.optional_dependencies == {
@@ -76,7 +76,7 @@ def test_parse_package_with_extras():
     }
 
 
-def test_project_version_use_scm(project_with_scm):
+def test_project_version_use_scm(project_with_scm) -> None:
     metadata = Metadata(project_with_scm / "pyproject.toml")
     assert metadata.version == "0.1.0"
     project_with_scm.joinpath("test.txt").write_text("hello\n")
@@ -87,7 +87,7 @@ def test_project_version_use_scm(project_with_scm):
     assert "0.1.1.dev1+g" in metadata.version
 
 
-def test_project_name_and_version_missing():
+def test_project_name_and_version_missing() -> None:
     metadata = Metadata(FIXTURES / "projects/demo-no-name-nor-version/pyproject.toml")
     assert metadata.version is None
     assert metadata.name is None
@@ -95,7 +95,7 @@ def test_project_name_and_version_missing():
     assert metadata.project_filename == "UNKNOWN"
 
 
-def test_explicit_package_dir():
+def test_explicit_package_dir() -> None:
     metadata = Metadata(FIXTURES / "projects/demo-explicit-package-dir/pyproject.toml")
     paths = metadata.convert_package_paths()
     assert paths["packages"] == ["my_package"]
@@ -103,7 +103,7 @@ def test_explicit_package_dir():
     assert paths["package_dir"] == {"": "foo"}
 
 
-def test_implicit_namespace_package():
+def test_implicit_namespace_package() -> None:
     metadata = Metadata(FIXTURES / "projects/demo-pep420-package/pyproject.toml")
     paths = metadata.convert_package_paths()
     assert paths["packages"] == ["foo.my_package"]
@@ -111,7 +111,7 @@ def test_implicit_namespace_package():
     assert paths["package_dir"] == {}
 
 
-def test_src_dir_containing_modules():
+def test_src_dir_containing_modules() -> None:
     metadata = Metadata(FIXTURES / "projects/demo-src-pymodule/pyproject.toml")
     paths = metadata.convert_package_paths()
     assert paths["package_dir"] == {"": "src"}

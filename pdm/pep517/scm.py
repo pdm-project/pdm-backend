@@ -9,7 +9,7 @@ import shutil
 import subprocess
 import warnings
 from datetime import datetime
-from typing import Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
 
 from pdm.pep517._vendor.packaging.version import LegacyVersion, Version
 from pdm.pep517._vendor.packaging.version import parse as parse_version
@@ -69,26 +69,26 @@ def meta(
     return VersionInfo(tag, distance, dirty, node, branch)
 
 
-def _git_get_branch(root: os.PathLike) -> Optional[str]:
+def _git_get_branch(root: "os.PathLike[Any]") -> Optional[str]:
     ret, out, _ = _subprocess_call("git rev-parse --abbrev-ref HEAD", root)
     if not ret:
         return out
     return None
 
 
-def _git_is_dirty(root: os.PathLike) -> bool:
+def _git_is_dirty(root: "os.PathLike[Any]") -> bool:
     _, out, _ = _subprocess_call("git status --porcelain --untracked-files=no", root)
     return bool(out)
 
 
-def _git_get_node(root: os.PathLike) -> Optional[str]:
+def _git_get_node(root: "os.PathLike[Any]") -> Optional[str]:
     ret, out, _ = _subprocess_call("git rev-parse --verify --quiet HEAD", root)
     if not ret:
         return out[:7]
     return None
 
 
-def _git_count_all_nodes(root: os.PathLike) -> int:
+def _git_count_all_nodes(root: "os.PathLike[Any]") -> int:
     _, out, _ = _subprocess_call("git rev-list HEAD", root)
     return out.count("\n") + 1
 
@@ -162,7 +162,7 @@ def tags_to_versions(tags: Iterable[str]) -> List[Union[Version, LegacyVersion]]
     return [tag_to_version(tag) for tag in tags if tag]
 
 
-def git_parse_version(root: os.PathLike) -> Optional[VersionInfo]:
+def git_parse_version(root: "os.PathLike[Any]") -> Optional[VersionInfo]:
     GIT = shutil.which("git")
     if not GIT:
         return None
@@ -188,7 +188,7 @@ def git_parse_version(root: os.PathLike) -> Optional[VersionInfo]:
         return meta(tag, number or None, dirty, node, branch)
 
 
-def get_latest_normalizable_tag(root: os.PathLike) -> str:
+def get_latest_normalizable_tag(root: "os.PathLike[Any]") -> str:
     # Gets all tags containing a '.' from oldest to newest
     cmd = [
         "hg",
@@ -206,14 +206,14 @@ def get_latest_normalizable_tag(root: os.PathLike) -> str:
     return tag
 
 
-def hg_get_graph_distance(root: os.PathLike, rev1: str, rev2: str = ".") -> int:
+def hg_get_graph_distance(root: "os.PathLike[Any]", rev1: str, rev2: str = ".") -> int:
     cmd = ["hg", "log", "-q", "-r", f"{rev1}::{rev2}"]
     _, out, _ = _subprocess_call(cmd, root)
     return len(out.strip().splitlines()) - 1
 
 
 def _hg_tagdist_normalize_tagcommit(
-    root: os.PathLike, tag: str, dist: int, node: str, branch: str
+    root: "os.PathLike[Any]", tag: str, dist: int, node: str, branch: str
 ) -> VersionInfo:
     dirty = node.endswith("+")
     node = "h" + node.strip("+")
@@ -266,7 +266,7 @@ def _bump_regex(version: str) -> str:
     return "%s%d" % (prefix, int(tail) + 1)
 
 
-def hg_parse_version(root: os.PathLike) -> Optional[VersionInfo]:
+def hg_parse_version(root: "os.PathLike[Any]") -> Optional[VersionInfo]:
     if not shutil.which("hg"):
         return None
     _, output, _ = _subprocess_call("hg id -i -b -t", root)
@@ -315,7 +315,7 @@ def format_version(version: VersionInfo) -> str:
     return main_version + local_version
 
 
-def get_version_from_scm(root: os.PathLike) -> str:
+def get_version_from_scm(root: "os.PathLike[Any]") -> str:
     for func in (git_parse_version, hg_parse_version):
         version = func(root)
         if version:
