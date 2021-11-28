@@ -250,7 +250,7 @@ class Builder:
         If for_sdist is True, will include files like LICENSE, README and pyproject
         Produce a paths list relative to the source dir.
         """
-        return sorted(set(Path(p) for p in self._find_files_iter(for_sdist)))
+        return sorted({Path(p) for p in self._find_files_iter(for_sdist)})
 
     def format_setup_py(self) -> str:
         before, extra, after = [], [], []
@@ -316,15 +316,11 @@ class Builder:
             )
 
         if meta.keywords:
-            extra.append("    'keywords': {!r},\n".format(meta.keywords))
+            extra.append(f"    'keywords': {meta.keywords!r},\n")
         if meta.classifiers:
-            extra.append(
-                "    'classifiers': {},\n".format(_format_list(meta.classifiers, 8))
-            )
+            extra.append(f"    'classifiers': {_format_list(meta.classifiers, 8)},\n")
         if meta.dependencies:
-            before.append(
-                "INSTALL_REQUIRES = {}\n".format(_format_list(meta.dependencies))
-            )
+            before.append(f"INSTALL_REQUIRES = {_format_list(meta.dependencies)}\n")
             extra.append("    'install_requires': INSTALL_REQUIRES,\n")
         if meta.optional_dependencies:
             before.append(
@@ -334,11 +330,9 @@ class Builder:
             )
             extra.append("    'extras_require': EXTRAS_REQUIRE,\n")
         if meta.requires_python:
-            extra.append("    'python_requires': {!r},\n".format(meta.requires_python))
+            extra.append(f"    'python_requires': {meta.requires_python!r},\n")
         if meta.entry_points:
-            before.append(
-                "ENTRY_POINTS = {}\n".format(_format_dict_list(meta.entry_points))
-            )
+            before.append(f"ENTRY_POINTS = {_format_dict_list(meta.entry_points)}\n")
             extra.append("    'entry_points': ENTRY_POINTS,\n")
         return SETUP_FORMAT.format(
             before="".join(before), after="".join(after), extra="".join(extra), **kwargs
@@ -358,35 +352,35 @@ class Builder:
             content += "Keywords: {}\n".format(",".join(meta.keywords))
 
         if meta.author:
-            content += "Author: {}\n".format(meta.author)
+            content += f"Author: {meta.author}\n"
 
         if meta.author_email:
-            content += "Author-email: {}\n".format(meta.author_email)
+            content += f"Author-email: {meta.author_email}\n"
 
         if meta.maintainer:
-            content += "Maintainer: {}\n".format(meta.maintainer)
+            content += f"Maintainer: {meta.maintainer}\n"
 
         if meta.maintainer_email:
-            content += "Maintainer-email: {}\n".format(meta.maintainer_email)
+            content += f"Maintainer-email: {meta.maintainer_email}\n"
 
         if meta.requires_python:
-            content += "Requires-Python: {}\n".format(meta.requires_python)
+            content += f"Requires-Python: {meta.requires_python}\n"
 
         for classifier in meta.classifiers or []:
-            content += "Classifier: {}\n".format(classifier)
+            content += f"Classifier: {classifier}\n"
 
         if full:
             for dep in sorted(meta.dependencies):
-                content += "Requires-Dist: {}\n".format(dep)
+                content += f"Requires-Dist: {dep}\n"
 
         for extra, reqs in sorted(meta.requires_extra.items()):
-            content += "Provides-Extra: {}\n".format(extra)
+            content += f"Provides-Extra: {extra}\n"
             if full:
                 for dep in reqs:
-                    content += "Requires-Dist: {}\n".format(dep)
+                    content += f"Requires-Dist: {dep}\n"
 
         for url in sorted(meta.project_urls or {}):
-            content += "Project-URL: {}, {}\n".format(url, meta.project_urls[url])
+            content += f"Project-URL: {url}, {meta.project_urls[url]}\n"
 
         if meta.long_description_content_type:
             content += "Description-Content-Type: {}\n".format(

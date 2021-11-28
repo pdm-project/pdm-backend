@@ -140,15 +140,13 @@ def tag_to_version(tag: str) -> Union[Version, LegacyVersion]:
     """
     tagdict = _parse_version_tag(tag)
     if not tagdict or not tagdict.version:
-        warnings.warn("tag {!r} no version found".format(tag))
+        warnings.warn(f"tag {tag!r} no version found")
         return None
 
     version = tagdict.version
 
     if tagdict.suffix:
-        warnings.warn(
-            "tag {!r} will be stripped of its suffix '{}'".format(tag, tagdict.suffix)
-        )
+        warnings.warn(f"tag {tag!r} will be stripped of its suffix '{tagdict.suffix}'")
 
     version = parse_version(version)
 
@@ -174,7 +172,7 @@ def git_parse_version(root: os.PathLike) -> Optional[VersionInfo]:
         return None
 
     if os.path.isfile(os.path.join(root, ".git/shallow")):
-        warnings.warn('"{}" is shallow and may cause errors'.format(root))
+        warnings.warn(f'"{root}" is shallow and may cause errors')
     describe_cmd = [GIT, "describe", "--dirty", "--tags", "--long", "--match", "*.*"]
     ret, output, err = _subprocess_call(describe_cmd, root)
     branch = _git_get_branch(root)
@@ -209,7 +207,7 @@ def get_latest_normalizable_tag(root: os.PathLike) -> str:
 
 
 def hg_get_graph_distance(root: os.PathLike, rev1: str, rev2: str = ".") -> int:
-    cmd = ["hg", "log", "-q", "-r", "{}::{}".format(rev1, rev2)]
+    cmd = ["hg", "log", "-q", "-r", f"{rev1}::{rev2}"]
     _, out, _ = _subprocess_call(cmd, root)
     return len(out.strip().splitlines()) - 1
 

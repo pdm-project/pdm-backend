@@ -53,13 +53,11 @@ class SdistBuilder(Builder):
 
         version = self.meta_version
 
-        target = os.path.join(
-            build_dir, "{}-{}.tar.gz".format(self.meta.project_name, version)
-        )
+        target = os.path.join(build_dir, f"{self.meta.project_name}-{version}.tar.gz")
         tar = tarfile.open(target, mode="w:gz", format=tarfile.PAX_FORMAT)
 
         try:
-            tar_dir = "{}-{}".format(self.meta.project_name, version)
+            tar_dir = f"{self.meta.project_name}-{version}"
 
             files_to_add = self.find_files_to_add(True)
 

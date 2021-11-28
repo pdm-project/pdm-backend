@@ -269,7 +269,7 @@ class WheelBuilder(Builder):
     def _write_entry_points(self, fp: TextIO) -> None:
         entry_points = self.meta.entry_points
         for group_name in sorted(entry_points):
-            fp.write("[{}]\n".format(group_name))
+            fp.write(f"[{group_name}]\n")
             for ep in sorted(entry_points[group_name]):
                 fp.write(ep.replace(" ", "") + "\n")
 
