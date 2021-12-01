@@ -276,3 +276,12 @@ def test_build_editable_pep420(tmp_path: Path) -> None:
 
             pth_content = zf.read("demo_package.pth").decode("utf-8").strip()
             assert pth_content == str(project.resolve())
+
+
+def test_prepare_metadata_for_editable(tmp_path: Path) -> None:
+    with build_fixture_project("demo-package"):
+        dist_info = api.prepare_metadata_for_build_editable(tmp_path.as_posix())
+        assert dist_info == "demo_package-0.1.0.dist-info"
+        with (tmp_path / dist_info / "METADATA").open("rb") as metadata:
+            deps = email.message_from_binary_file(metadata).get_all("Requires-Dist")
+        assert "editables" in deps

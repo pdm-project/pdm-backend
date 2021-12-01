@@ -3,7 +3,7 @@ import glob
 import os
 import textwrap
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Tuple, Union
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Tuple, TypeVar, Union
 
 from pdm.pep517.metadata import Metadata
 from pdm.pep517.utils import is_python_package, safe_version, to_filename
@@ -44,6 +44,8 @@ Version: {version}
 Summary: {description}
 License: {license}
 """
+
+T = TypeVar("T", bound="Builder")
 
 
 class BuildError(RuntimeError):
@@ -152,7 +154,7 @@ class Builder:
             return "0.0.0"
         return to_filename(safe_version(meta_version))
 
-    def __enter__(self) -> "Builder":
+    def __enter__(self: T) -> T:
         self._old_cwd = os.getcwd()
         os.chdir(self.location)
         return self
