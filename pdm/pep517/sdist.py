@@ -90,8 +90,9 @@ class SdistBuilder(Builder):
         This is mainly aiming at fixing the version number in pyproject.toml
         """
         pyproject = toml.loads(self.meta.filepath.read_text("utf-8"))
-        if not isinstance(self.meta._metadata.get("version", ""), str):
+        if self.meta.dynamic and "version" in self.meta.dynamic:
             self.meta._metadata["version"] = self.meta.version
+            self.meta._metadata["dynamic"].remove("version")
         pyproject["project"] = self.meta._metadata
         name = self.meta.filepath.name
         tarinfo = tar.gettarinfo(name, os.path.join(tar_dir, name))
