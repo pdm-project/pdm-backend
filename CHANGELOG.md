@@ -1,3 +1,9 @@
+## Release v0.9.4 (2021-12-03)
+### Bug Fixes
+
+- Fix a bug that version is not frozen in sdist build. [#63](https://github.com/frostming/pdm-pep517/issues/63)
+
+
 ## Release v0.9.3 (2021-12-01)
 ### Bug Fixes
 
