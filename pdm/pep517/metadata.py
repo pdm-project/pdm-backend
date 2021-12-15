@@ -324,6 +324,15 @@ class Metadata:
         return safe_name(self.name)
 
     @property
+    def is_purelib(self) -> bool:
+        """If not explicitly set, the project is considered to be non-pure
+        if `build` exists.
+        """
+        if "is-purelib" in self._tool_settings:
+            return self._tool_settings["is-purelib"]
+        return self.build is None
+
+    @property
     def project_filename(self) -> str:
         if self.name is None:
             return "UNKNOWN"

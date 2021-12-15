@@ -285,3 +285,15 @@ def test_prepare_metadata_for_editable(tmp_path: Path) -> None:
         with (tmp_path / dist_info / "METADATA").open("rb") as metadata:
             deps = email.message_from_binary_file(metadata).get_all("Requires-Dist")
         assert "editables" in deps
+
+
+def test_build_purelib_project_with_build(tmp_path: Path) -> None:
+    with build_fixture_project("demo-purelib-with-build"):
+        wheel_name = api.build_wheel(tmp_path.as_posix())
+        assert wheel_name == "demo_package-0.1.0-py3-none-any.whl"
+
+        with zipfile.ZipFile(tmp_path / wheel_name) as zf:
+            wheel_metadata = email.message_from_bytes(
+                zf.read("demo_package-0.1.0.dist-info/WHEEL")
+            )
+            assert wheel_metadata["Root-Is-Purelib"] == "True"
