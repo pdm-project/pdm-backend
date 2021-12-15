@@ -24,7 +24,7 @@ WHEEL_FILE_FORMAT = (
     """\
 Wheel-Version: 1.0
 Generator: pdm-pep517 %s
-Root-Is-Purelib: {pure_lib}
+Root-Is-Purelib: {is_purelib}
 Tag: {tag}
 """
     % __version__
@@ -92,7 +92,7 @@ class WheelBuilder(Builder):
     def tag(self) -> str:
         platform = self.plat_name
         impl = self.python_tag
-        if self.meta.build:
+        if not self.meta.is_purelib:
             if not platform:
                 platform = get_platform(self.location / "build")
             if not impl:
@@ -116,7 +116,7 @@ class WheelBuilder(Builder):
 
         platform = platform.lower().replace("-", "_").replace(".", "_")
         tag = (impl, abi_tag, platform)
-        if self.meta.build:
+        if not self.meta.is_purelib:
             supported_tags = [(t.interpreter, t.abi, platform) for t in tags.sys_tags()]
             assert (
                 tag in supported_tags
@@ -260,10 +260,7 @@ class WheelBuilder(Builder):
 
     def _write_wheel_file(self, fp: TextIO) -> None:
         fp.write(
-            WHEEL_FILE_FORMAT.format(
-                pure_lib=self.meta.build is None,
-                tag=self.tag,
-            )
+            WHEEL_FILE_FORMAT.format(is_purelib=self.meta.is_purelib, tag=self.tag)
         )
 
     def _write_entry_points(self, fp: TextIO) -> None:
