@@ -1,3 +1,9 @@
+## Release v0.10.0 (2021-12-16)
+### Features & Improvements
+
+- Add a tool setting `is-purelib` to override the default behavior of determining whether a package is a pure Python library. [#64](https://github.com/frostming/pdm-pep517/issues/64)
+
+
 ## Release v0.9.4 (2021-12-03)
 ### Bug Fixes
 
