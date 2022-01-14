@@ -1,3 +1,9 @@
+## Release v0.10.1 (2022-01-14)
+### Bug Fixes
+
+- Fix a bug that the proxy module of `editables` backend shadows the extension module with the same name. [#67](https://github.com/frostming/pdm-pep517/issues/67)
+
+
 ## Release v0.10.0 (2021-12-16)
 ### Features & Improvements
 
