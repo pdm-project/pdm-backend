@@ -41,7 +41,7 @@ class EditableProject:
     def files(self) -> Iterable[Tuple[str, str]]:
         yield f"{self.project_name}.pth", self.pth_file()
         if self.redirections:
-            yield f"_{self.project_name}.py", self.bootstrap_file()
+            yield f"__editables_{self.project_name}.py", self.bootstrap_file()
 
     def dependencies(self) -> Iterable[str]:
         if self.redirections:
@@ -50,7 +50,7 @@ class EditableProject:
     def pth_file(self) -> str:
         lines: List[str] = []
         if self.redirections:
-            lines.append(f"import _{self.project_name}")
+            lines.append(f"import __editables_{self.project_name}")
         for entry in self.path_entries:
             lines.append(str(entry))
         return "\n".join(lines)
