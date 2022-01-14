@@ -216,7 +216,7 @@ def test_build_editable(tmp_path: Path) -> None:
         with zipfile.ZipFile(tmp_path / wheel_name) as zf:
             namelist = zf.namelist()
             assert "demo_package.pth" in namelist
-            assert "_demo_package.py" in namelist
+            assert "__editables_demo_package.py" in namelist
 
             metadata = email.message_from_bytes(
                 zf.read("demo_package-0.1.0.dist-info/METADATA")
@@ -224,9 +224,11 @@ def test_build_editable(tmp_path: Path) -> None:
             assert "editables" in metadata.get_all("Requires-Dist", [])
 
             pth_content = zf.read("demo_package.pth").decode("utf-8").strip()
-            assert pth_content == "import _demo_package"
+            assert pth_content == "import __editables_demo_package"
 
-            proxy_module = zf.read("_demo_package.py").decode("utf-8").strip()
+            proxy_module = (
+                zf.read("__editables_demo_package.py").decode("utf-8").strip()
+            )
             assert proxy_module == (
                 "from editables.redirector import RedirectingFinder as F\n"
                 "F.install()\n"
@@ -243,14 +245,16 @@ def test_build_editable_src(tmp_path: Path) -> None:
         with zipfile.ZipFile(tmp_path / wheel_name) as zf:
             namelist = zf.namelist()
             assert "demo_package.pth" in namelist
-            assert "_demo_package.py" in namelist
+            assert "__editables_demo_package.py" in namelist
             assert "my_package/data.json" not in namelist
             assert "data_out.json" in namelist
 
             pth_content = zf.read("demo_package.pth").decode("utf-8").strip()
-            assert pth_content == "import _demo_package"
+            assert pth_content == "import __editables_demo_package"
 
-            proxy_module = zf.read("_demo_package.py").decode("utf-8").strip()
+            proxy_module = (
+                zf.read("__editables_demo_package.py").decode("utf-8").strip()
+            )
             assert proxy_module == (
                 "from editables.redirector import RedirectingFinder as F\n"
                 "F.install()\n"
@@ -267,7 +271,7 @@ def test_build_editable_pep420(tmp_path: Path) -> None:
         with zipfile.ZipFile(tmp_path / wheel_name) as zf:
             namelist = zf.namelist()
             assert "demo_package.pth" in namelist
-            assert "_demo_package.py" not in namelist
+            assert "__editables_demo_package.py" not in namelist
 
             metadata = email.message_from_bytes(
                 zf.read("demo_package-0.1.0.dist-info/METADATA")
