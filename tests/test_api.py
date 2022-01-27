@@ -301,3 +301,12 @@ def test_build_purelib_project_with_build(tmp_path: Path) -> None:
                 zf.read("demo_package-0.1.0.dist-info/WHEEL")
             )
             assert wheel_metadata["Root-Is-Purelib"] == "True"
+
+
+def test_build_wheel_preserve_permission(tmp_path: Path) -> None:
+    with build_fixture_project("demo-package"):
+        wheel_name = api.build_wheel(tmp_path.as_posix())
+        with zipfile.ZipFile(tmp_path / wheel_name) as zf:
+            info = zf.getinfo("my_package/executable")
+            filemode = info.external_attr >> 16
+            assert filemode & 0o111

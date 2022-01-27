@@ -231,7 +231,7 @@ class WheelBuilder(Builder):
             # We always want to have /-separated paths in the zip file and in RECORD
             rel_path = rel_path.replace(os.sep, "/")
         print(f" - Adding {rel_path}")
-        zinfo = zipfile.ZipInfo(rel_path)
+        zinfo = zipfile.ZipInfo.from_file(full_path, rel_path)
 
         # Normalize permission bits to either 755 (executable) or 644
         st_mode = os.stat(full_path).st_mode
