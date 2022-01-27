@@ -1,7 +1,12 @@
+import sys
+
+import pytest
+
 from pdm.pep517 import wheel
 from tests import FIXTURES
 
 
+@pytest.mark.skipif(hasattr(sys, "pypy_version_info"), reason="invalid on PyPy3")
 def test_override_tags_in_wheel_filename() -> None:
     project = FIXTURES / "projects/demo-cextension"
     builder = wheel.WheelBuilder(
