@@ -1,4 +1,5 @@
 import email
+import sys
 import zipfile
 from pathlib import Path
 
@@ -303,6 +304,9 @@ def test_build_purelib_project_with_build(tmp_path: Path) -> None:
             assert wheel_metadata["Root-Is-Purelib"] == "True"
 
 
+@pytest.mark.skipif(
+    sys.platform.startswith("win"), reason="Check file mode on Unix only"
+)
 def test_build_wheel_preserve_permission(tmp_path: Path) -> None:
     with build_fixture_project("demo-package"):
         wheel_name = api.build_wheel(tmp_path.as_posix())
