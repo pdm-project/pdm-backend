@@ -1,12 +1,11 @@
-import distutils.util
 import os
 import re
 import sys
+import sysconfig
 import warnings
 from contextlib import contextmanager
 from fnmatch import fnmatchcase
 from pathlib import Path
-from sysconfig import get_config_var
 from typing import Any, Callable, Generator, Iterable, Optional
 
 from pdm.pep517._vendor.packaging import tags
@@ -128,7 +127,7 @@ def normalize_path(filename: "os.PathLike[Any]") -> str:
 
 def get_platform(build_dir: "os.PathLike[Any]") -> str:
     """Return our platform name 'win32', 'linux_x86_64'"""
-    result = distutils.util.get_platform()
+    result = sysconfig.get_platform()
     if result.startswith("macosx") and os.path.exists(build_dir):
         result = calculate_macosx_platform_tag(build_dir, result)
     if result in ("linux_x86_64", "linux-x86_64") and sys.maxsize == 2147483647:
@@ -142,7 +141,7 @@ def get_flag(
 ) -> bool:
     """Use a fallback value for determining SOABI flags if the needed config
     var is unset or unavailable."""
-    val = get_config_var(var)
+    val = sysconfig.get_config_var(var)
     if val is None:
         if warn:
             warnings.warn(
@@ -158,7 +157,7 @@ def get_flag(
 def get_abi_tag() -> Optional[str]:
     """Return the ABI tag based on SOABI (if available) or emulate SOABI
     (CPython 2, PyPy)."""
-    soabi = get_config_var("SOABI")
+    soabi = sysconfig.get_config_var("SOABI")
     impl = tags.interpreter_name()
     is_cpython = impl == "cp"
     if not soabi and impl in ("cp", "pp") and hasattr(sys, "maxunicode"):
