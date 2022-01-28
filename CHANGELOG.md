@@ -1,3 +1,13 @@
+## Release v0.10.2 (2022-01-28)
+### Bug Fixes
+
+- Preserve the file mode when building a wheel, also correct the datetime. [#69](https://github.com/frostming/pdm-pep517/issues/69)
+
+### Miscellany
+
+- Use alternatives to replace the deprecated usage of `distutils`. [#69](https://github.com/frostming/pdm-pep517/issues/69)
+
+
 ## Release v0.10.1 (2022-01-14)
 ### Bug Fixes
 
