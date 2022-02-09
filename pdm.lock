@@ -243,6 +243,7 @@ dependencies = [
     "colorama<0.5.0,>=0.4.0",
     "commonmark<0.10.0,>=0.9.0",
     "pygments<3.0.0,>=2.6.0",
+    "typing-extensions<5.0,>=3.7.4; python_version < \"3.8\"",
 ]
 
 [[package]]
@@ -308,7 +309,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "3.1"
-content_hash = "sha256:6a57cc2a07f48bd606088aa09874fbc21d26001b630e602550820234a413017a"
+content_hash = "sha256:577a7bbfb455b1d92d602fb7477cd4181bc6f4a186d646db13ab3ee8915d60cc"
 
 [metadata.files]
 "arpeggio 1.10.2" = [
