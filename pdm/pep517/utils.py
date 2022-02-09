@@ -6,7 +6,7 @@ import warnings
 from contextlib import contextmanager
 from fnmatch import fnmatchcase
 from pathlib import Path
-from typing import Any, Callable, Generator, Iterable, Optional
+from typing import Callable, Generator, Iterable, Optional, Union
 
 from pdm.pep517._vendor.packaging import tags
 from pdm.pep517._vendor.packaging.markers import Marker
@@ -119,13 +119,13 @@ def cd(path: str) -> Generator[None, None, None]:
         os.chdir(_old_cwd)
 
 
-def normalize_path(filename: "os.PathLike[Any]") -> str:
+def normalize_path(filename: Union[str, Path]) -> str:
     """Normalize a file/dir name for comparison purposes"""
     filename = os.path.abspath(filename) if sys.platform == "cygwin" else filename
     return os.path.normcase(os.path.realpath(os.path.normpath(filename)))
 
 
-def get_platform(build_dir: "os.PathLike[Any]") -> str:
+def get_platform(build_dir: Union[str, Path]) -> str:
     """Return our platform name 'win32', 'linux_x86_64'"""
     result = sysconfig.get_platform()
     if result.startswith("macosx") and os.path.exists(build_dir):

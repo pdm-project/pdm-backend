@@ -11,7 +11,8 @@ https://github.com/pypa/wheel/blob/6e86e6b886/src/wheel/macosx_libfile.py
 import ctypes
 import os
 import sys
-from typing import BinaryIO, List, Optional, Tuple, Type, TypeVar, no_type_check
+from pathlib import Path
+from typing import BinaryIO, List, Optional, Tuple, Type, TypeVar, Union, no_type_check
 
 """here the needed const and struct from mach-o header files"""
 
@@ -369,7 +370,9 @@ def parse_version(version: int) -> Version:
     return x, y, z
 
 
-def calculate_macosx_platform_tag(archive_root: os.PathLike, platform_tag: str) -> str:
+def calculate_macosx_platform_tag(
+    archive_root: Union[str, Path], platform_tag: str
+) -> str:
     """
     Calculate proper macosx platform tag basing on files which are included to wheel
 
