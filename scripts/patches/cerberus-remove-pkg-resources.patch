@@ -1,5 +1,5 @@
 diff --git a/pdm/pep517/_vendor/cerberus/__init__.py b/pdm/pep517/_vendor/cerberus/__init__.py
-index b313a90..fb59095 100644
+index 0c3687c..d996d20 100644
 --- a/pdm/pep517/_vendor/cerberus/__init__.py
 +++ b/pdm/pep517/_vendor/cerberus/__init__.py
 @@ -10,17 +10,12 @@
@@ -8,9 +8,9 @@ index b313a90..fb59095 100644
  
 -from pkg_resources import get_distribution, DistributionNotFound
 -
- from pdm.pep517._vendor.cerberus.validator import DocumentError, Validator
- from pdm.pep517._vendor.cerberus.schema import rules_set_registry, schema_registry, SchemaError
- from pdm.pep517._vendor.cerberus.utils import TypeDefinition
+ from cerberus.validator import DocumentError, Validator
+ from cerberus.schema import rules_set_registry, schema_registry, SchemaError
+ from cerberus.utils import TypeDefinition
  
  
 -try:
