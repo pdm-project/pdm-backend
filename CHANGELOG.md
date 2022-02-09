@@ -1,3 +1,15 @@
+## Release v0.11.0 (2022-02-09)
+### Features & Improvements
+
+- Drop the support for Python < 3.7. [#72](https://github.com/frostming/pdm-pep517/issues/72)
+- Show meaningful error message when version isn't found in the specified file. [#73](https://github.com/frostming/pdm-pep517/issues/73)
+
+### Dependencies
+
+- Switch from `toml` to `tomli` + `tomli_w`. [#71](https://github.com/frostming/pdm-pep517/issues/71)
+- Update vendored dependency `pyparsing` to `3.0.7`. [#74](https://github.com/frostming/pdm-pep517/issues/74)
+
+
 ## Release v0.10.2 (2022-01-28)
 ### Bug Fixes
 
