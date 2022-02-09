@@ -17,7 +17,7 @@ from typing import (
     Union,
 )
 
-from pdm.pep517._vendor import toml
+from pdm.pep517._vendor import tomli
 from pdm.pep517._vendor.packaging.requirements import Requirement
 from pdm.pep517._vendor.packaging.version import Version
 from pdm.pep517.license import license_lookup
@@ -91,10 +91,11 @@ class Metadata:
 
     def _read_pyproject(self) -> None:
         try:
-            data = toml.loads(self.filepath.read_text(encoding="utf-8"))
+            with self.filepath.open("rb") as f:
+                data = tomli.load(f)
         except FileNotFoundError:
             raise ProjectError("pyproject.toml does not exist.")
-        except toml.TomlDecodeError:
+        except tomli.TOMLDecodeError:
             raise ProjectError("The project's pyproject.toml is not valid.")
         else:
             if "tool" in data and "pdm" in data["tool"]:

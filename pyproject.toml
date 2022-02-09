@@ -30,18 +30,6 @@ dependencies = []
 homepage = "https://pdm.fming.dev"
 repository = "https://github.com/frostming/pdm-pep517"
 
-# Support PEP660 for setuptools
-[project.entry-points."distutils.commands"]
-editable_wheel = "pdm.pep517.setuptools.editable:editable_wheel"
-
-
-[project.optional-dependencies]
-setuptools = [
-  "setuptools>=42",
-  "wheel",
-  "editables==0.2",
-]
-
 [tool.pdm]
 version = {from = "pdm/pep517/__init__.py"}
 includes = ["pdm"]
