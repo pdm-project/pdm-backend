@@ -30,10 +30,18 @@ Besides of the standard fields specified in PEP 621, PDM-PEP517 honors some othe
 
 ```toml
 [tool.pdm]
-package-dir = "src"  # Similar to setuptools package_dir option
-includes = []        # File patterns to include, the paths are relative to the project root.
-excludes = []        # File patterns to exclude, the paths are relative to the project root.
-source-includes = [] # File patterns to include in source distribution and exclude in wheel distribution
+# Specify where the Python packages live.
+package-dir = "src"
+# File patterns to include, the paths are relative to the project root.
+includes = []
+# File patterns to exclude, the paths are relative to the project root.
+excludes = []
+# File patterns to include in source distribution and exclude in wheel distribution.
+source-includes = []
+# An extra script to populate the arguments of `setup()`, one can build C extensions with this script.
+build = "build.py"
+# Override the Is-Purelib value in the wheel.
+is-purelib = true
 ```
 
 You don't have to specify all of them, PDM-PEP517 can also derive these fields smartly, based on some best practices of Python packaging.
