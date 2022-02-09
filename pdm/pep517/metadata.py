@@ -138,9 +138,15 @@ class Metadata:
             with self.filepath.parent.joinpath(version_source).open(
                 encoding="utf-8"
             ) as fp:
-                return re.findall(
+                match = re.search(
                     r"^__version__\s*=\s*[\"'](.+?)[\"']\s*$", fp.read(), re.M
-                )[0]
+                )
+                if not match:
+                    raise ProjectError(
+                        f"Can't find version in file {version_source}, "
+                        "it should appear as `__version__ = 'a.b.c'`."
+                    )
+                return match.group(1)
         elif dynamic_version.get("use_scm", False):
             return get_version_from_scm(self.filepath.parent)
         else:
