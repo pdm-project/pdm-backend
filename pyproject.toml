@@ -7,7 +7,7 @@ authors = [
   {name = "Frost Ming", email = "mianghong@gmail.com"}
 ]
 license = {text = "MIT"}
-requires-python = ">=3.6"
+requires-python = ">=3.7"
 readme = "README.md"
 keywords = ["packaging", "PEP 517", "build"]
 dynamic = ["version"]
@@ -17,7 +17,6 @@ classifiers = [
     "Topic :: Software Development :: Build Tools",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.6",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
@@ -29,18 +28,6 @@ dependencies = []
 [project.urls]
 homepage = "https://pdm.fming.dev"
 repository = "https://github.com/frostming/pdm-pep517"
-
-# Support PEP660 for setuptools
-[project.entry-points."distutils.commands"]
-editable_wheel = "pdm.pep517.setuptools.editable:editable_wheel"
-
-
-[project.optional-dependencies]
-setuptools = [
-  "setuptools>=42",
-  "wheel",
-  "editables==0.2",
-]
 
 [tool.pdm]
 version = {from = "pdm/pep517/__init__.py"}
