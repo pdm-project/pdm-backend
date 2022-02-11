@@ -1,3 +1,9 @@
+## Release v0.11.1 (2022-02-11)
+### Bug Fixes
+
+- Fix a bug that version can't be parsed if it is followed by a comment. [#75](https://github.com/frostming/pdm-pep517/issues/75)
+
+
 ## Release v0.11.0 (2022-02-09)
 ### Features & Improvements
 
