@@ -1,10 +1,17 @@
+## Release v0.11.2 (2022-02-11)
+
+### Bug Fixes
+
+- Change the default `editable-backend` to `path` until `editables` backend is stable.
+
 ## Release v0.11.1 (2022-02-11)
+
 ### Bug Fixes
 
 - Fix a bug that version can't be parsed if it is followed by a comment. [#75](https://github.com/frostming/pdm-pep517/issues/75)
 
-
 ## Release v0.11.0 (2022-02-09)
+
 ### Features & Improvements
 
 - Drop the support for Python < 3.7. [#72](https://github.com/frostming/pdm-pep517/issues/72)
@@ -15,8 +22,8 @@
 - Switch from `toml` to `tomli` + `tomli_w`. [#71](https://github.com/frostming/pdm-pep517/issues/71)
 - Update vendored dependency `pyparsing` to `3.0.7`. [#74](https://github.com/frostming/pdm-pep517/issues/74)
 
-
 ## Release v0.10.2 (2022-01-28)
+
 ### Bug Fixes
 
 - Preserve the file mode when building a wheel, also correct the datetime. [#69](https://github.com/frostming/pdm-pep517/issues/69)
@@ -25,46 +32,46 @@
 
 - Use alternatives to replace the deprecated usage of `distutils`. [#69](https://github.com/frostming/pdm-pep517/issues/69)
 
-
 ## Release v0.10.1 (2022-01-14)
+
 ### Bug Fixes
 
 - Fix a bug that the proxy module of `editables` backend shadows the extension module with the same name. [#67](https://github.com/frostming/pdm-pep517/issues/67)
 
-
 ## Release v0.10.0 (2021-12-16)
+
 ### Features & Improvements
 
 - Add a tool setting `is-purelib` to override the default behavior of determining whether a package is a pure Python library. [#64](https://github.com/frostming/pdm-pep517/issues/64)
 
-
 ## Release v0.9.4 (2021-12-03)
+
 ### Bug Fixes
 
 - Fix a bug that version is not frozen in sdist build. [#63](https://github.com/frostming/pdm-pep517/issues/63)
 
-
 ## Release v0.9.3 (2021-12-01)
+
 ### Bug Fixes
 
 - Fix a bug that extra dependencies(such as `editables`) are not written in `prepare_metadata_for_build_editable` hook. [#62](https://github.com/frostming/pdm-pep517/issues/62)
 
-
 ## Release v0.9.2 (2021-11-22)
-No significant changes.
 
+No significant changes.
 
 ## Release v0.9.1 (2021-11-22)
+
 No significant changes.
 
-
 ## Release v0.9.0 (2021-11-22)
+
 ### Features & Improvements
 
 - To be compliant with PEP 621, `version` is not allowed in the `[project]` table when it is dynamic. Warning users against that usage and suggest to move to the `[tool.pdm]` table. `classifiers` field no longer supports dynamic filling. [#53](https://github.com/frostming/pdm-pep517/issues/53)
 
-
 ## Release v0.8.6 (2021-10-26)
+
 ### Bug Fixes
 
 - Fix the editable wheel building to exclude files inside a package. [#45](https://github.com/frostming/pdm-pep517/issues/45)
@@ -74,7 +81,6 @@ No significant changes.
 - Update vendors:
   - Update `packaging` from `20.4` to `21.0`.
   - Update `cerberus` from `1.3.2` to `1.3.4`. [#52](https://github.com/frostming/pdm-pep517/issues/52)
-
 
 ## Release v0.8.5 (2021-10-07)
 
