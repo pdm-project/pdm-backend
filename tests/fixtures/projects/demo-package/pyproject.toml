@@ -22,6 +22,7 @@ homepage = ""
 [tool.pdm]
 version = { from = "my_package/__init__.py" }
 source-includes = ["data_out.json"]
+editable-backend = "editables"
 
 [[tool.pdm.source]]
 url = "https://test.pypi.org/simple"

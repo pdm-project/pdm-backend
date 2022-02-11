@@ -21,3 +21,4 @@ homepage = ""
 [tool.pdm]
 version = { from = "foo/my_package/__init__.py" }
 includes = ["foo/"]
+editable-backend = "editables"

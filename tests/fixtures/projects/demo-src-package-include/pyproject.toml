@@ -22,3 +22,4 @@ homepage = ""
 version = { from = "sub/my_package/__init__.py" }
 includes = ["sub", "data_out.json"]
 package-dir = "sub"
+editable-backend = "editables"
