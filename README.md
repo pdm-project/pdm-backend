@@ -42,6 +42,8 @@ source-includes = []
 build = "build.py"
 # Override the Is-Purelib value in the wheel.
 is-purelib = true
+# Change the editable-backend: path(default) or editables
+editable-backend = "editables"
 ```
 
 You don't have to specify all of them, PDM-PEP517 can also derive these fields smartly, based on some best practices of Python packaging.
