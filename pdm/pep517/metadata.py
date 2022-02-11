@@ -139,7 +139,7 @@ class Metadata:
                 encoding="utf-8"
             ) as fp:
                 match = re.search(
-                    r"^__version__\s*=\s*[\"'](.+?)[\"']\s*$", fp.read(), re.M
+                    r"^__version__\s*=\s*[\"'](.+?)[\"']\s*(?:#.*)?$", fp.read(), re.M
                 )
                 if not match:
                     raise ProjectError(
