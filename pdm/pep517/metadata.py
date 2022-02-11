@@ -303,10 +303,10 @@ class Metadata:
     @property
     def editable_backend(self) -> str:
         """Currently only two backends are supported:
-        - editables: Proxy modules via editables(default)
-        - path: the legacy .pth file method
+        - editables: Proxy modules via editables
+        - path: the legacy .pth file method(default)
         """
-        return self._tool_settings.get("editable-backend", "editables")
+        return self._tool_settings.get("editable-backend", "path")
 
     def _convert_dependencies(self, deps: List[str]) -> List[str]:
         return list(filter(None, map(ensure_pep440_req, deps)))
