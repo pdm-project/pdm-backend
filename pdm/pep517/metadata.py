@@ -19,6 +19,7 @@ from typing import (
 
 from pdm.pep517._vendor import tomli
 from pdm.pep517._vendor.packaging.requirements import Requirement
+from pdm.pep517.exceptions import MetadataError, PDMWarning, ProjectError
 from pdm.pep517.license import normalize_expression
 from pdm.pep517.scm import get_version_from_scm
 from pdm.pep517.utils import (
@@ -30,8 +31,6 @@ from pdm.pep517.utils import (
     to_filename,
 )
 from pdm.pep517.validator import validate_pep621
-
-from pdm.pep517.exceptions import PDMWarning, MetadataError, ProjectError
 
 T = TypeVar("T")
 

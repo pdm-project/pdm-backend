@@ -2,14 +2,13 @@ import atexit
 import glob
 import os
 import textwrap
+import warnings
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Tuple, TypeVar, Union
-import warnings
-
-from pdm.pep517.metadata import Metadata
-from pdm.pep517.utils import is_python_package, safe_version, to_filename
 
 from pdm.pep517.exceptions import MetadataError, PDMWarning
+from pdm.pep517.metadata import Metadata
+from pdm.pep517.utils import is_python_package, safe_version, to_filename
 
 OPEN_README = """import codecs
 
@@ -371,7 +370,7 @@ class Builder:
 
         # Optional fields
         for license_file in self.find_license_files():
-            content += "License-File: {}\n".format(license_file)
+            content += f"License-File: {license_file}\n"
 
         if meta.keywords:
             content += "Keywords: {}\n".format(",".join(meta.keywords))

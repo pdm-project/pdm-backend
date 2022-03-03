@@ -1,10 +1,10 @@
 import warnings
-from pdm.pep517._vendor.license_expression import (
-    get_spdx_licensing,
-    Licensing,
-    LicenseSymbol,
-)
 
+from pdm.pep517._vendor.license_expression import (
+    LicenseSymbol,
+    Licensing,
+    get_spdx_licensing,
+)
 from pdm.pep517.exceptions import MetadataError, PDMWarning
 
 

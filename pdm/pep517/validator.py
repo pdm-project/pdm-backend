@@ -1,7 +1,6 @@
 from typing import Mapping
 
 from pdm.pep517._vendor import cerberus
-
 from pdm.pep517.exceptions import PEP621ValidationError
 
 README_RULE = [
