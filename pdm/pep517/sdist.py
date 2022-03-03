@@ -1,9 +1,10 @@
 import io
+import itertools
 import os
 import tarfile
 import tempfile
 from copy import copy
-from typing import Any
+from typing import Any, Iterator
 
 from pdm.pep517._vendor import tomli, tomli_w
 from pdm.pep517.base import Builder
@@ -46,6 +47,11 @@ def clean_tarinfo(tar_info: tarfile.TarInfo) -> tarfile.TarInfo:
 
 class SdistBuilder(Builder):
     """This build should be performed for PDM project only."""
+
+    def _find_files_iter(self, for_sdist: bool = False) -> Iterator[str]:
+        return itertools.chain(
+            super()._find_files_iter(for_sdist), self.find_license_files()
+        )
 
     def build(self, build_dir: str, **kwargs: Any) -> str:
         if not os.path.exists(build_dir):

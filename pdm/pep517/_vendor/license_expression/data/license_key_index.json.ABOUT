@@ -1,0 +1,5 @@
+about_resource: scancode-licensedb-index.json
+name: scancode-licensedb-index.json
+license_expression: cc-by-4.0
+copyright: Copyright (c) nexB Inc. and others.
+homepage_url: https://scancode-licensedb.aboutcode.org/

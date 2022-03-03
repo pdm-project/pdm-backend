@@ -19,8 +19,8 @@ from typing import (
 
 from pdm.pep517._vendor import tomli
 from pdm.pep517._vendor.packaging.requirements import Requirement
-from pdm.pep517._vendor.packaging.version import Version
-from pdm.pep517.license import license_lookup
+from pdm.pep517.exceptions import MetadataError, PDMWarning, ProjectError
+from pdm.pep517.license import normalize_expression
 from pdm.pep517.scm import get_version_from_scm
 from pdm.pep517.utils import (
     cd,
@@ -33,14 +33,6 @@ from pdm.pep517.utils import (
 from pdm.pep517.validator import validate_pep621
 
 T = TypeVar("T")
-
-
-class ProjectError(ValueError):
-    pass
-
-
-class PDMDeprecatedWarning(Warning):
-    pass
 
 
 class MetaField(Generic[T]):
@@ -60,20 +52,6 @@ class MetaField(Generic[T]):
         if self.fget is not None:
             rv = self.fget(instance, rv)
         return rv
-
-
-def _make_version_collections(python_versions: List[str]) -> Dict[str, List[Version]]:
-    rv: Dict[str, List[Version]] = {}
-    for raw in python_versions:
-        version = Version(raw)
-        if version.minor == 0:
-            key = str(version.major)
-        else:
-            key = "{0.major}.{0.minor}".format(version)
-
-        rv.setdefault(key, []).append(version)
-
-    return rv
 
 
 class Metadata:
@@ -108,7 +86,11 @@ class Metadata:
     def validate(self, raising: bool = False) -> bool:
         return validate_pep621(self._metadata, raising)
 
-    name: MetaField[str] = MetaField("name")
+    @property
+    def name(self) -> str:
+        if "name" not in self._metadata:
+            raise MetadataError("name", "must be given in the project table")
+        return self._metadata["name"]
 
     @property
     def version(self) -> Optional[str]:
@@ -121,7 +103,7 @@ class Metadata:
                 "`version` in [project] no longer supports dynamic filling. "
                 "Move it to [tool.pdm] or change it to static string.\n"
                 "It will raise an error in the next minor release.",
-                PDMDeprecatedWarning,
+                PDMWarning,
                 stacklevel=2,
             )
             if not dynamic_version:
@@ -130,9 +112,7 @@ class Metadata:
         if not dynamic_version:
             return None
         if not self.dynamic or "version" not in self.dynamic:
-            raise ProjectError(
-                "'version' missing from 'dynamic' fields (to let pdm-pep517 fill it)"
-            )
+            raise MetadataError("version", "missing from 'dynamic' fields")
         version_source = dynamic_version.get("from")
         if version_source:
             with self.filepath.parent.joinpath(version_source).open(
@@ -142,9 +122,10 @@ class Metadata:
                     r"^__version__\s*=\s*[\"'](.+?)[\"']\s*(?:#.*)?$", fp.read(), re.M
                 )
                 if not match:
-                    raise ProjectError(
+                    raise MetadataError(
+                        "version",
                         f"Can't find version in file {version_source}, "
-                        "it should appear as `__version__ = 'a.b.c'`."
+                        "it should appear as `__version__ = 'a.b.c'`.",
                     )
                 return match.group(1)
         elif dynamic_version.get("use_scm", False):
@@ -163,9 +144,10 @@ class Metadata:
         if isinstance(value, str):
             return Path(value).read_text(encoding=self.DEFAULT_ENCODING)
         if "file" in value and "text" in value:
-            raise ProjectError(
+            raise MetadataError(
+                "readme",
                 "readme table shouldn't specify both 'file' "
-                "and 'text' at the same time"
+                "and 'text' at the same time",
             )
         if "text" in value:
             return value["text"]
@@ -179,12 +161,16 @@ class Metadata:
                 return "text/markdown"
             elif value.lower().endswith(".rst"):
                 return "text/x-rst"
-            raise ProjectError(f"Unsupported readme suffix: {value}")
+            raise MetadataError("readme", f"Unsupported readme suffix: {value}")
         content_type = value.get("content-type")
         if not content_type:
-            raise ProjectError("'content-type' is missing in the readme table")
+            raise MetadataError(
+                "readme", "'content-type' is missing in the readme table"
+            )
         if content_type not in self.SUPPORTED_CONTENT_TYPES:
-            raise ProjectError(f"Unsupported readme content-type: {content_type}")
+            raise MetadataError(
+                "readme", f"Unsupported readme content-type: {content_type}"
+            )
         return content_type
 
     readme: MetaField[str] = MetaField("readme", _get_readme_file)
@@ -192,30 +178,6 @@ class Metadata:
     long_description_content_type: MetaField[str] = MetaField(
         "readme", _get_content_type
     )
-
-    def _get_license(self, value: Union[Mapping[str, str], str]) -> str:
-        if isinstance(value, str):
-            return ""
-        if "file" in value and "text" in value:
-            raise ProjectError(
-                "license table shouldn't specify both 'file' "
-                "and 'text' at the same time"
-            )
-        return (
-            Path(value["file"]).read_text(encoding=self.DEFAULT_ENCODING)
-            if "file" in value
-            else value.get("text", "")
-        )
-
-    def _get_license_type(self, value: Union[Mapping[str, str], str]) -> str:
-        if isinstance(value, str):
-            return value
-        if value.get("text", "") in license_lookup:
-            return value["text"]
-        return "UNKNOWN"
-
-    license: MetaField[str] = MetaField("license", _get_license)
-    license_type: MetaField[str] = MetaField("license", _get_license_type)
 
     def _get_name(self, value: Iterable[Mapping[str, str]]) -> str:
         result = []
@@ -251,7 +213,14 @@ class Metadata:
                 "`classifiers` no longer supports dynamic filling, "
                 "please remove it from `dynamic` fields and manually "
                 "supply all the classifiers",
-                PDMDeprecatedWarning,
+                PDMWarning,
+                stacklevel=2,
+            )
+        if any(line.startswith("License :: ") for line in classifers):
+            warnings.warn(
+                "License classifiers are deprecated in favor of PEP 639 "
+                "'license-expression' field.",
+                PDMWarning,
                 stacklevel=2,
             )
 
@@ -260,14 +229,55 @@ class Metadata:
     keywords: MetaField[str] = MetaField("keywords")
     project_urls: MetaField[Dict[str, str]] = MetaField("urls")
 
-    # Deprecate legacy metadata location
+    @property
+    def license_expression(self) -> Optional[str]:
+        if "license-expression" in self._metadata:
+            if "license" in self._metadata:
+                raise MetadataError(
+                    "license-expression",
+                    "Can't specify both 'license' and 'license-expression' fields",
+                )
+            return normalize_expression(self._metadata["license-expression"])
+        elif "license" in self._metadata and "text" in self._metadata["license"]:
+            warnings.warn(
+                "'license' field is deprecated in favor of 'license-expression'",
+                PDMWarning,
+                stacklevel=2,
+            )
+            return normalize_expression(self._metadata["license"]["text"])
+        elif "license-expression" not in (self.dynamic or []):
+            warnings.warn("'license-expression' is missing", PDMWarning, stacklevel=2)
+        return None
+
+    @property
+    def license_files(self) -> Dict[str, List[str]]:
+        if "license-files" not in self._metadata:
+            if self._metadata.get("license", {}).get("file"):
+                warnings.warn(
+                    "'license.file' field is deprecated in favor of 'license-files'",
+                    PDMWarning,
+                    stacklevel=2,
+                )
+                return {"paths": [self._metadata["license"]["file"]]}
+            return {"globs": ["LICEN[CS]E*", "COPYING*", "NOTICE*", "AUTHORS*"]}
+        if "license" in self._metadata:
+            raise MetadataError(
+                "license-files",
+                "Can't specify both 'license' and 'license-files' fields",
+            )
+        rv = self._metadata["license-files"]
+        valid_keys = {"globs", "paths"} & set(rv)
+        if len(valid_keys) == 2:
+            raise MetadataError(
+                "license-files", "Can't specify both 'paths' and 'globs'"
+            )
+        if not valid_keys:
+            raise MetadataError("license-files", "Must specify 'paths' or 'globs'")
+        return rv
+
     @property
     def includes(self) -> List[str]:
-        if "includes" in self._metadata:
-            return self._metadata["includes"]
-        elif "includes" in self._tool_settings:
-            return self._tool_settings["includes"]
-        return []
+        return self._tool_settings.get("includes", [])
 
     @property
     def source_includes(self) -> List[str]:
@@ -275,26 +285,16 @@ class Metadata:
 
     @property
     def excludes(self) -> List[str]:
-        if "excludes" in self._metadata:
-            return self._metadata["excludes"]
-        elif "excludes" in self._tool_settings:
-            return self._tool_settings["excludes"]
-        return []
+        return self._tool_settings.get("excludes", [])
 
     @property
     def build(self) -> Optional[str]:
-        if "build" in self._metadata:
-            return self._metadata["build"]
-        elif "build" in self._tool_settings:
-            return self._tool_settings["build"]
-        return None
+        return self._tool_settings.get("build")
 
     @property
     def package_dir(self) -> str:
         """A directory that will be used to looking for packages."""
-        if "package-dir" in self._metadata:
-            return self._metadata["package-dir"]
-        elif "package-dir" in self._tool_settings:
+        if "package-dir" in self._tool_settings:
             return self._tool_settings["package-dir"]
         elif self.filepath.parent.joinpath("src").is_dir():
             return "src"
@@ -379,9 +379,13 @@ class Metadata:
         if "entry-points" in settings:
             for plugin, value in settings["entry-points"].items():
                 if plugin in ("console_scripts", "gui_scripts"):
-                    raise ProjectError(
-                        f"'project.entry-points.{plugin}'' should be defined "
-                        f"in 'project.{plugin.replace('_', '-')}'"
+                    correct_key = (
+                        "scripts" if plugin == "console_scripts" else "gui-scripts"
+                    )
+                    raise MetadataError(
+                        "entry-points",
+                        f"entry-points {plugin!r} should be defined in "
+                        f"[project.{correct_key}]",
                     )
                 result[plugin] = [f"{k} = {v}" for k, v in value.items()]
         return result

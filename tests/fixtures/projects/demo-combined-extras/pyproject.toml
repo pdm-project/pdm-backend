@@ -5,7 +5,7 @@ build-backend = "pdm.pep517.api"
 [project]
 authors = [{name = "frostming", email = "mianghong@gmail.com"}]
 description = ""
-license = {text = "MIT"}
+license-expression = "MIT"
 name = "demo-package-extra"
 requires-python = ">=3.5"
 version = "0.1.0"

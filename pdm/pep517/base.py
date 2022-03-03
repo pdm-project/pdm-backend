@@ -2,9 +2,11 @@ import atexit
 import glob
 import os
 import textwrap
+import warnings
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Tuple, TypeVar, Union
 
+from pdm.pep517.exceptions import MetadataError, PDMWarning
 from pdm.pep517.metadata import Metadata
 from pdm.pep517.utils import is_python_package, safe_version, to_filename
 
@@ -46,10 +48,6 @@ License: {license}
 """
 
 T = TypeVar("T", bound="Builder")
-
-
-class BuildError(RuntimeError):
-    pass
 
 
 def is_same_or_descendant_path(target: str, path: str) -> bool:
@@ -143,8 +141,7 @@ class Builder:
     def meta(self) -> Metadata:
         if not self._meta:
             self._meta = Metadata(self.location / "pyproject.toml")
-            # Open the validation for next release
-            self._meta.validate(False)
+            self._meta.validate(True)
         return self._meta
 
     @property
@@ -235,11 +232,6 @@ class Builder:
         if self.meta.build and os.path.isfile(self.meta.build):
             yield self.meta.build
 
-        for pat in ("COPYING", "LICENSE"):
-            for p in glob.glob(pat + "*"):
-                if os.path.isfile(p):
-                    yield p
-
         if self.meta.readme and os.path.isfile(self.meta.readme):
             yield self.meta.readme
 
@@ -254,6 +246,33 @@ class Builder:
         """
         return sorted({Path(p) for p in self._find_files_iter(for_sdist)})
 
+    def find_license_files(self) -> List[str]:
+        """Return a list of license files from the PEP 639 metadata."""
+        license_files = self.meta.license_files
+        if "paths" in license_files:
+            invalid_paths = [
+                p for p in license_files["paths"] if not (self.location / p).is_file()
+            ]
+            if invalid_paths:
+                raise MetadataError(
+                    "license-files", f"License files not found: {invalid_paths}"
+                )
+            return license_files["paths"]
+        else:
+            paths = [
+                p.relative_to(self.location).as_posix()
+                for pattern in license_files["globs"]
+                for p in self.location.glob(pattern)
+            ]
+            if license_files["globs"] and not paths:
+                warnings.warn(
+                    f"No license files are matched with glob patterns "
+                    f"{license_files['globs']}.",
+                    PDMWarning,
+                    stacklevel=2,
+                )
+            return paths
+
     def format_setup_py(self) -> str:
         before, extra, after = [], [], []
         meta = self.meta
@@ -261,7 +280,7 @@ class Builder:
             "name": meta.name,
             "version": meta.version,
             "author": meta.author,
-            "license": meta.license_type,
+            "license": meta.license_expression,
             "author_email": meta.author_email,
             "maintainer": meta.maintainer,
             "maintainer_email": meta.maintainer_email,
@@ -345,11 +364,15 @@ class Builder:
         content = METADATA_BASE.format(
             name=meta.name or "UNKNOWN",
             version=meta.version or "UNKNOWN",
-            license=meta.license_type or "UNKNOWN",
+            license=meta.license_expression or "UNKNOWN",
             description=meta.description or "UNKNOWN",
         )
 
         # Optional fields
+        # TODO: enable this after twine supports metadata version 2.3
+        # for license_file in self.find_license_files():
+        #     content += f"License-File: {license_file}\n"
+
         if meta.keywords:
             content += "Keywords: {}\n".format(",".join(meta.keywords))
 

@@ -6,18 +6,11 @@ build-backend = "pdm.pep517.api"
 authors = [
     {name = "frostming", email = "mianghong@gmail.com"},
 ]
-dynamic = ["version"]
+name = "demo"
 requires-python = ">=3.5"
 license-expression = "MIT"
 dependencies = []
 description = ""
-name = "demo-package"
-
-[project.urls]
-homepage = ""
+readme = "README.md"
 
 [project.optional-dependencies]
-
-[tool.pdm]
-version = { from = "foo/my_package/__init__.py" }
-package-dir = "foo"

@@ -7,7 +7,7 @@ from base64 import urlsafe_b64encode
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, TextIO, Tuple, Union
 
-from pdm.pep517.base import BuildError
+from pdm.pep517.exceptions import BuildError
 from pdm.pep517.utils import is_relative_path, to_filename
 from pdm.pep517.wheel import WheelBuilder
 

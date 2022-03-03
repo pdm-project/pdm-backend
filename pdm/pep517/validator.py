@@ -1,6 +1,7 @@
-from typing import List, Mapping
+from typing import Mapping
 
 from pdm.pep517._vendor import cerberus
+from pdm.pep517.exceptions import PEP621ValidationError
 
 README_RULE = [
     {"type": "string"},
@@ -25,6 +26,17 @@ LICENSE_RULE = [
     {"type": "dict", "schema": {"text": {"type": "string", "required": True}}},
 ]
 
+LICENSE_FILE_RULE = [
+    {
+        "type": "dict",
+        "schema": {"paths": {"type": "list", "schema": {"type": "string"}}},
+    },
+    {
+        "type": "dict",
+        "schema": {"globs": {"type": "list", "schema": {"type": "string"}}},
+    },
+]
+
 AUTHOR_RULE = {
     "type": "list",
     "schema": {
@@ -41,6 +53,8 @@ PEP621_SCHEMA = {
     "readme": {"oneof": README_RULE},
     "requires-python": {"type": "string"},
     "license": {"oneof": LICENSE_RULE},
+    "license-expression": {"type": "string"},
+    "license-files": {"oneof": LICENSE_FILE_RULE},
     "authors": AUTHOR_RULE,
     "maintainers": AUTHOR_RULE,
     "keywords": {"type": "list", "schema": {"type": "string"}},
@@ -59,12 +73,6 @@ PEP621_SCHEMA = {
     },
     "dynamic": {"type": "list", "schema": {"type": "string"}},
 }
-
-
-class PEP621ValidationError(ValueError):
-    def __init__(self, errors: List[str]) -> None:
-        super().__init__(errors)
-        self.errors = errors
 
 
 def validate_pep621(data: Mapping, raising: bool = False) -> bool:

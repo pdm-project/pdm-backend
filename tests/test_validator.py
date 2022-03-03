@@ -25,6 +25,16 @@ VALID_DATA = [
         "readme": {"text": "Awesome project", "content-type": "text/plain"},
         "license": {"file": "LICENSE"},
     },
+    {
+        "name": "foo",
+        "license-expression": "MIT",
+        "license-files": {"paths": ["LICENSE"]},
+    },
+    {
+        "name": "foo",
+        "license-expression": "MIT",
+        "license-files": {"globs": ["LICENSE*"]},
+    },
 ]
 
 
@@ -41,6 +51,11 @@ INVALID_DATA = [
         },
     },  # mutually exclusive fields
     {"name": "foo", "version": {"from": "foo.py"}},
+    {
+        "name": "foo",
+        "license-expression": "MIT",
+        "license-files": {"paths": ["LICENSE"], "globs": ["LICENSE*"]},
+    },
 ]
 
 
