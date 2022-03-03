@@ -37,6 +37,13 @@ def test_build_single_module(tmp_path: Path) -> None:
 
         assert "demo_module-0.1.0.dist-info/license_files/LICENSE" in zip_names
 
+        with zipfile.ZipFile(tmp_path / wheel_name) as zf:
+            core_metadata = email.message_from_bytes(
+                zf.read("demo_module-0.1.0.dist-info/METADATA")
+            )
+            assert core_metadata["License-Expression"] == "MIT"
+            assert core_metadata["License-File"] == "LICENSE"
+
 
 def test_build_package(tmp_path: Path) -> None:
     with build_fixture_project("demo-package"):
@@ -220,6 +227,7 @@ def test_build_editable(tmp_path: Path) -> None:
             namelist = zf.namelist()
             assert "demo_package.pth" in namelist
             assert "__editables_demo_package.py" in namelist
+            assert "demo_package-0.1.0.dist-info/license_files/LICENSE" in namelist
 
             metadata = email.message_from_bytes(
                 zf.read("demo_package-0.1.0.dist-info/METADATA")

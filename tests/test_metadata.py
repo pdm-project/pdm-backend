@@ -231,3 +231,34 @@ def test_default_license_files() -> None:
     assert metadata.license_files == {
         "globs": ["LICEN[CS]E*", "COPYING*", "NOTICE*", "AUTHORS*"]
     }
+
+
+def test_license_normalization() -> None:
+    metadata = make_metadata(
+        {
+            "description": "test package",
+            "name": "demo",
+            "version": "0.1.0",
+            "license-expression": "mIt",
+        }
+    )
+    with pytest.warns(UserWarning) as record:
+        assert metadata.license_expression == "MIT"
+
+    assert len(record) == 1
+    assert str(record.pop(UserWarning).message).startswith(
+        "License expression normalized to"
+    )
+
+
+def test_invalid_license_identifier() -> None:
+    metadata = make_metadata(
+        {
+            "description": "test package",
+            "name": "demo",
+            "version": "0.1.0",
+            "license-expression": "foo OR MIT",
+        }
+    )
+    with pytest.raises(ValueError, match=r".*Unknown license key\(s\): foo"):
+        metadata.license_expression
