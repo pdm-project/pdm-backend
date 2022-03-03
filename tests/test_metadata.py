@@ -1,10 +1,19 @@
 import subprocess
 from datetime import datetime
+from typing import Optional
 
 import pytest
 
 from pdm.pep517.metadata import Metadata
 from tests import FIXTURES
+
+
+def make_metadata(data: dict, tool_settings: Optional[dict] = None) -> Metadata:
+    metadata = Metadata("fake-path", parse=False)
+    metadata._metadata = data
+    if tool_settings:
+        metadata._tool_settings = tool_settings
+    return metadata
 
 
 def test_parse_module() -> None:
@@ -87,14 +96,6 @@ def test_project_version_use_scm(project_with_scm) -> None:
     assert "0.1.1.dev1+g" in metadata.version
 
 
-def test_project_name_and_version_missing() -> None:
-    metadata = Metadata(FIXTURES / "projects/demo-no-name-nor-version/pyproject.toml")
-    assert metadata.version is None
-    assert metadata.name is None
-    assert metadata.project_name is None
-    assert metadata.project_filename == "UNKNOWN"
-
-
 def test_explicit_package_dir() -> None:
     metadata = Metadata(FIXTURES / "projects/demo-explicit-package-dir/pyproject.toml")
     paths = metadata.convert_package_paths()
@@ -117,3 +118,116 @@ def test_src_dir_containing_modules() -> None:
     assert paths["package_dir"] == {"": "src"}
     assert not paths["packages"]
     assert paths["py_modules"] == ["foo_module"]
+
+
+def test_metadata_name_missing() -> None:
+    metadata = make_metadata({"description": "test package", "version": "0.1.0"})
+    with pytest.raises(ValueError, match="name: must be given"):
+        metadata.name
+
+
+def test_metadata_version_in_tool_but_not_dynamic() -> None:
+    metadata = make_metadata(
+        {"description": "test package", "name": "demo"}, {"version": {"use_scm": True}}
+    )
+    with pytest.raises(ValueError, match="version: missing from 'dynamic'"):
+        metadata.version
+
+
+@pytest.mark.deprecation
+def test_license_classifiers_warning(recwarn) -> None:
+    metadata = make_metadata(
+        {
+            "description": "test package",
+            "name": "demo",
+            "version": "0.1.0",
+            "classifiers": ["License :: OSI Approved :: MIT License"],
+        }
+    )
+    metadata.classifiers
+    assert len(recwarn) == 1
+    assert str(recwarn.pop(UserWarning).message).startswith(
+        "License classifiers are deprecated"
+    )
+
+
+def test_both_license_and_license_expression_error() -> None:
+    metadata = make_metadata(
+        {
+            "description": "test package",
+            "name": "demo",
+            "version": "0.1.0",
+            "license": {"text": "MIT"},
+            "license-expression": "MIT",
+        }
+    )
+    with pytest.raises(
+        ValueError,
+        match="license-expression: Can't specify both 'license' and "
+        "'license-expression' fields",
+    ):
+        metadata.license_expression
+
+
+@pytest.mark.deprecation
+def test_deprecated_license_field_warning(recwarn) -> None:
+    metadata = make_metadata(
+        {
+            "description": "test package",
+            "name": "demo",
+            "version": "0.1.0",
+            "license": {"text": "MIT"},
+        }
+    )
+    assert metadata.license_expression == "MIT"
+    assert len(recwarn) == 1
+    assert str(recwarn.pop(UserWarning).message).startswith(
+        "'license' field is deprecated"
+    )
+
+
+def test_missing_license_expression_warning(recwarn) -> None:
+    metadata = make_metadata(
+        {
+            "description": "test package",
+            "name": "demo",
+            "version": "0.1.0",
+        }
+    )
+    assert not metadata.license_expression
+    assert len(recwarn) == 1
+    assert str(recwarn.pop(UserWarning).message).startswith(
+        "'license-expression' is missing"
+    )
+
+
+@pytest.mark.deprecation
+def test_deprecated_license_file_warning(recwarn) -> None:
+    metadata = make_metadata(
+        {
+            "description": "test package",
+            "name": "demo",
+            "version": "0.1.0",
+            "license-expression": "MIT",
+            "license": {"file": "LICENSE"},
+        }
+    )
+    assert metadata.license_files == {"paths": ["LICENSE"]}
+    assert len(recwarn) == 1
+    assert str(recwarn.pop(UserWarning).message).startswith(
+        "'license.file' field is deprecated"
+    )
+
+
+def test_default_license_files() -> None:
+    metadata = make_metadata(
+        {
+            "description": "test package",
+            "name": "demo",
+            "version": "0.1.0",
+            "license-expression": "MIT",
+        }
+    )
+    assert metadata.license_files == {
+        "globs": ["LICEN[CS]E*", "COPYING*", "NOTICE*", "AUTHORS*"]
+    }

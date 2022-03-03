@@ -7,7 +7,7 @@ from pdm.pep517 import utils
 from tests import FIXTURES
 
 
-@pytest.fixture
+@pytest.fixture()
 def project_with_scm(tmp_path):
     project = FIXTURES / "projects/demo-using-scm"
     shutil.copytree(project, tmp_path / project.name)

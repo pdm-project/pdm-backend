@@ -35,6 +35,8 @@ def test_build_single_module(tmp_path: Path) -> None:
         for name in ("pyproject.toml", "LICENSE"):
             assert name not in zip_names
 
+        assert "demo_module-0.1.0.dist-info/license_files/LICENSE" in zip_names
+
 
 def test_build_package(tmp_path: Path) -> None:
     with build_fixture_project("demo-package"):

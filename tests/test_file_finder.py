@@ -14,7 +14,7 @@ def test_auto_include_tests_for_sdist() -> None:
         sdist_files = builder.find_files_to_add(True)
         wheel_files = builder.find_files_to_add(False)
 
-    sdist_only_files = ("tests/__init__.py", "LICENSE", "pyproject.toml")
+    sdist_only_files = ("tests/__init__.py", "pyproject.toml")
     include_files = ("my_package/__init__.py",)
     for file in include_files:
         path = Path(file)
@@ -90,3 +90,34 @@ def test_merge_includes_and_excludes(
         include_files = builder.find_files_to_add()
         assert (data_a in include_files) == data_a_exist
         assert (data_b in include_files) == data_b_exist
+
+
+def test_license_file_globs_no_matching() -> None:
+    builder = Builder(FIXTURES / "projects/demo-no-license")
+    with builder:
+        with pytest.warns(UserWarning) as warns:
+            license_files = builder.find_license_files()
+
+    assert not license_files
+    assert len(warns) == 1
+    assert str(warns.pop(UserWarning).message).startswith(
+        "No license files are matched with glob patterns"
+    )
+
+
+def test_license_file_paths_no_matching() -> None:
+    builder = Builder(FIXTURES / "projects/demo-no-license")
+    builder.meta._metadata["license-files"] = {"paths": ["LICENSE"]}
+    with builder:
+        with pytest.raises(ValueError, match="License files not found"):
+            builder.find_license_files()
+
+
+@pytest.mark.parametrize("key", ["paths", "globs"])
+def test_license_file_explicit_empty(recwarn, key) -> None:
+    builder = Builder(FIXTURES / "projects/demo-no-license")
+    builder.meta._metadata["license-files"] = {key: []}
+    with builder:
+        license_files = builder.find_license_files()
+    assert not license_files
+    assert len(recwarn) == 0

@@ -1,5 +1,4 @@
 import contextlib
-import glob
 import hashlib
 import os
 import re
@@ -17,7 +16,8 @@ from typing import Any, Generator, List, Mapping, Optional, TextIO, Tuple, Union
 from pdm.pep517 import __version__
 from pdm.pep517._vendor.packaging import tags
 from pdm.pep517._vendor.packaging.specifiers import SpecifierSet
-from pdm.pep517.base import Builder, BuildError
+from pdm.pep517.base import Builder
+from pdm.pep517.exceptions import BuildError
 from pdm.pep517.utils import get_abi_tag, get_platform
 
 WHEEL_FILE_FORMAT = (
@@ -146,10 +146,12 @@ class WheelBuilder(Builder):
         with self._write_to_zip(wheel, dist_info + "/METADATA") as f:
             self._write_metadata_file(f)
 
-        for pat in ("COPYING", "LICENSE"):
-            for path in glob.glob(pat + "*"):
-                if os.path.isfile(path):
-                    self._add_file(wheel, path, f"{dist_info}/{path}")
+        for license_file in self.find_license_files():
+            self._add_file(
+                wheel,
+                os.path.join(self.location, license_file),
+                f"{dist_info}/license_files/{license_file}",
+            )
 
         with self._write_to_zip(wheel, dist_info + "/RECORD") as f:
             self._write_record(f)
