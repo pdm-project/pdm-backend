@@ -40,11 +40,11 @@ setup(**setup_kwargs)
 """
 
 METADATA_BASE = """\
-Metadata-Version: 2.3
+Metadata-Version: 2.1
 Name: {name}
 Version: {version}
 Summary: {description}
-License-Expression: {license}
+License: {license}
 """
 
 T = TypeVar("T", bound="Builder")
@@ -369,8 +369,9 @@ class Builder:
         )
 
         # Optional fields
-        for license_file in self.find_license_files():
-            content += f"License-File: {license_file}\n"
+        # TODO: enable this after twine supports metadata version 2.3
+        # for license_file in self.find_license_files():
+        #     content += f"License-File: {license_file}\n"
 
         if meta.keywords:
             content += "Keywords: {}\n".format(",".join(meta.keywords))
