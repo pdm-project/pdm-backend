@@ -45,7 +45,6 @@ test = [
 
 [tool.pdm.scripts]
 build = "python scripts/build.py"
-pre_release = "python scripts/get_licenses.py"
 release = "python scripts/release.py"
 
 [build-system]

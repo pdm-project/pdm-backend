@@ -1,3 +1,13 @@
+## Release v0.12.0 (2022-03-08)
+### Features & Improvements
+
+- Implement PEP 639: Improving License Clarity in Project Metadata [#76](https://github.com/frostming/pdm-pep517/issues/76)
+
+### Removals and Deprecations
+
+- Mandates the PEP 621 metadata and raise an error if invalid. [#76](https://github.com/frostming/pdm-pep517/issues/76)
+
+
 ## Release v0.11.2 (2022-02-11)
 
 ### Bug Fixes
