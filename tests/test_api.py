@@ -270,7 +270,13 @@ def test_build_editable_src(tmp_path: Path) -> None:
 
 def test_build_editable_pep420(tmp_path: Path) -> None:
     with build_fixture_project("demo-pep420-package") as project:
-        wheel_name = api.build_editable(tmp_path.as_posix())
+        with pytest.warns(UserWarning) as recorded:
+            wheel_name = api.build_editable(tmp_path.as_posix())
+
+        assert len(recorded) == 1
+        assert str(recorded.pop().message).startswith(
+            "editables backend is not available"
+        )
 
         with zipfile.ZipFile(tmp_path / wheel_name) as zf:
             namelist = zf.namelist()

@@ -2,12 +2,13 @@ import hashlib
 import os
 import subprocess
 import sys
+import warnings
 import zipfile
 from base64 import urlsafe_b64encode
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, TextIO, Tuple, Union
 
-from pdm.pep517.exceptions import BuildError
+from pdm.pep517.exceptions import BuildError, PDMWarning
 from pdm.pep517.utils import is_relative_path, to_filename
 from pdm.pep517.wheel import WheelBuilder
 
@@ -118,6 +119,12 @@ class EditableBuilder(WheelBuilder):
         if not self.editables.redirections:
             # For implicit namespace packages, modules cannot be mapped.
             # Fallback to .pth method in this case.
+            if self.meta.editable_backend == "editables":
+                warnings.warn(
+                    "editables backend is not available for namespace packages, "
+                    "fallback to path entries",
+                    PDMWarning,
+                )
             self.editables.add_to_path(package_dir)
 
     def find_files_to_add(self, for_sdist: bool = False) -> List[Path]:
