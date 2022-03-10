@@ -1,3 +1,9 @@
+## Release v0.12.1 (2022-03-10)
+### Bug Fixes
+
+- Don't validate license text for PEP 621 `license` field for now. [#78](https://github.com/frostming/pdm-pep517/issues/78)
+
+
 ## Release v0.12.0 (2022-03-08)
 ### Features & Improvements
 
