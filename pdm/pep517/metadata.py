@@ -244,7 +244,9 @@ class Metadata:
                 PDMWarning,
                 stacklevel=2,
             )
-            return normalize_expression(self._metadata["license"]["text"])
+            # TODO: do not validate legacy license text,
+            # remove this after PEP 639 is finalized
+            return self._metadata["license"]["text"]
         elif "license-expression" not in (self.dynamic or []):
             warnings.warn("'license-expression' is missing", PDMWarning, stacklevel=2)
         return None
