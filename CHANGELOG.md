@@ -1,8 +1,4 @@
 ## Release v0.12.2 (2022-04-01)
-No significant changes.
-
-
-## Release v0.12.3 (2022-04-01)
 ### Features & Improvements
 
 - Warn about `editable` not being available for PEP 420 namespace packages. [#79](https://github.com/frostming/pdm-pep517/issues/79)
