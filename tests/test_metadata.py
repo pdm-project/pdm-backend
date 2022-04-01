@@ -170,6 +170,7 @@ def test_both_license_and_license_expression_error() -> None:
 
 
 @pytest.mark.deprecation
+@pytest.mark.xfail(reason="Don't emit warning until PEP 639 is accepted")
 def test_deprecated_license_field_warning(recwarn) -> None:
     metadata = make_metadata(
         {
@@ -202,6 +203,7 @@ def test_missing_license_expression_warning(recwarn) -> None:
 
 
 @pytest.mark.deprecation
+@pytest.mark.xfail(reason="Don't emit warning until PEP 639 is accepted")
 def test_deprecated_license_file_warning(recwarn) -> None:
     metadata = make_metadata(
         {

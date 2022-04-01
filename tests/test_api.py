@@ -135,27 +135,6 @@ def test_prepare_metadata(tmp_path: Path) -> None:
             assert (tmp_path / dist_info / filename).is_file()
 
 
-@pytest.mark.xfail
-def test_build_legacypackage(tmp_path: Path) -> None:
-    with build_fixture_project("demo-legacy"):
-        wheel_name = api.build_wheel(tmp_path.as_posix())
-        sdist_name = api.build_sdist(tmp_path.as_posix())
-        assert sdist_name == "demo-legacy-0.1.0.tar.gz"
-        assert wheel_name == "demo_legacy-0.1.0-py3-none-any.whl"
-
-        tar_names = get_tarball_names(tmp_path / sdist_name)
-        assert "demo-legacy-0.1.0/my_package/__init__.py" in tar_names
-        assert "demo-legacy-0.1.0/my_package/data.json" in tar_names
-        assert "demo-legacy-0.1.0/single_module.py" not in tar_names
-        assert "demo-legacy-0.1.0/data_out.json" not in tar_names
-
-        zip_names = get_wheel_names(tmp_path / wheel_name)
-        assert "my_package/__init__.py" in zip_names
-        assert "my_package/data.json" in zip_names
-        assert "single_module.py" not in zip_names
-        assert "data_out.json" not in zip_names
-
-
 def test_build_package_with_modules_in_src(tmp_path: Path) -> None:
     with build_fixture_project("demo-src-pymodule"):
         wheel_name = api.build_wheel(tmp_path.as_posix())

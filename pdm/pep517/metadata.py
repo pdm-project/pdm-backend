@@ -239,11 +239,11 @@ class Metadata:
                 )
             return normalize_expression(self._metadata["license-expression"])
         elif "license" in self._metadata and "text" in self._metadata["license"]:
-            warnings.warn(
-                "'license' field is deprecated in favor of 'license-expression'",
-                PDMWarning,
-                stacklevel=2,
-            )
+            # warnings.warn(
+            #     "'license' field is deprecated in favor of 'license-expression'",
+            #     PDMWarning,
+            #     stacklevel=2,
+            # )
             # TODO: do not validate legacy license text,
             # remove this after PEP 639 is finalized
             return self._metadata["license"]["text"]
@@ -255,11 +255,11 @@ class Metadata:
     def license_files(self) -> Dict[str, List[str]]:
         if "license-files" not in self._metadata:
             if self._metadata.get("license", {}).get("file"):
-                warnings.warn(
-                    "'license.file' field is deprecated in favor of 'license-files'",
-                    PDMWarning,
-                    stacklevel=2,
-                )
+                # warnings.warn(
+                #     "'license.file' field is deprecated in favor of 'license-files'",
+                #     PDMWarning,
+                #     stacklevel=2,
+                # )
                 return {"paths": [self._metadata["license"]["file"]]}
             return {"globs": ["LICEN[CS]E*", "COPYING*", "NOTICE*", "AUTHORS*"]}
         if "license" in self._metadata:
