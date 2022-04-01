@@ -1,4 +1,5 @@
 import contextlib
+import csv
 import hashlib
 import os
 import re
@@ -130,9 +131,11 @@ class WheelBuilder(Builder):
         return f"{name}-{version}.dist-info"
 
     def _write_record(self, fp: TextIO) -> None:
-        for row in self._records:
-            fp.write("{},sha256={},{}\n".format(*row))
-        fp.write(self.dist_info_name + "/RECORD,,\n")
+        writer = csv.writer(fp, lineterminator="\n")
+        writer.writerows(
+            [(path, f"sha256={hash}", size) for path, hash, size in self._records]
+        )
+        writer.writerow([self.dist_info_name + "/RECORD", "", ""])
 
     def _write_metadata(self, wheel: zipfile.ZipFile) -> None:
         dist_info = self.dist_info_name
