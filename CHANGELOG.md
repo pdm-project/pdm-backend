@@ -1,3 +1,7 @@
+## Release v0.12.2 (2022-04-01)
+No significant changes.
+
+
 ## Release v0.12.3 (2022-04-01)
 ### Features & Improvements
 
