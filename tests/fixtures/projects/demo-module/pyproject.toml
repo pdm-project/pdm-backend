@@ -8,14 +8,11 @@ authors = [
 ]
 dynamic = ["version"]
 requires-python = ">=3.5"
-license-expression = "MIT"
+license = {text = "MIT"}
 dependencies = []
 description = ""
 name = "demo-module"
 readme = "README.md"
-
-[project.urls]
-homepage = ""
 
 [project.optional-dependencies]
 

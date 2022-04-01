@@ -8,13 +8,10 @@ authors = [
 ]
 dynamic = ["version"]
 requires-python = ">=3.5"
-license-expression = "MIT"
+license = {text = "MIT"}
 dependencies = []
 description = ""
 name = "demo-package"
-
-[project.urls]
-homepage = ""
 
 [project.optional-dependencies]
 

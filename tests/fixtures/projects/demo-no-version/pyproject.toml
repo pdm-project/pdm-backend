@@ -8,7 +8,7 @@ authors = [
 ]
 name = "demo"
 requires-python = ">=3.5"
-license-expression = "MIT"
+license = {text = "MIT"}
 dependencies = []
 description = ""
 readme = "README.md"

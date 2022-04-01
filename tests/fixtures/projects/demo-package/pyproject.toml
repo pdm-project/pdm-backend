@@ -8,14 +8,11 @@ authors = [
 ]
 dynamic = ["version"]
 requires-python = ">=2.7"
-license-expression = "MIT"
+license = {text = "MIT"}
 dependencies = ["flask"]
 description = ""
 name = "demo-package"
 readme = "README.md"
-
-[project.urls]
-homepage = ""
 
 [project.optional-dependencies]
 
