@@ -1,3 +1,8 @@
+## Release v0.12.3 (2022-04-01)
+### Bug Fixes
+
+- Do not emit deprecation warnings for `license` field until PEP 639 is accepted.
+
 ## Release v0.12.2 (2022-04-01)
 ### Features & Improvements
 
