@@ -1,3 +1,13 @@
+## Release v0.12.3 (2022-04-01)
+### Features & Improvements
+
+- Warn about `editable` not being available for PEP 420 namespace packages. [#79](https://github.com/frostming/pdm-pep517/issues/79)
+
+### Bug Fixes
+
+- Construct RECORD file using `csv.writer` to ensure correct quoting on path for each entry. [#80](https://github.com/frostming/pdm-pep517/issues/80)
+
+
 ## Release v0.12.1 (2022-03-10)
 ### Bug Fixes
 
