@@ -216,12 +216,12 @@ class Builder:
                 yield include_path
                 continue
             # The path is a directory name
-            for path in path.glob("**/*"):
-                if not path.is_file():
+            for p in path.glob("**/*"):
+                if not p.is_file():
                     continue
 
-                rel_path = path.absolute().relative_to(self.location).as_posix()
-                if path.name.endswith(".pyc") or self._is_excluded(rel_path, excludes):
+                rel_path = p.absolute().relative_to(self.location).as_posix()
+                if p.name.endswith(".pyc") or self._is_excluded(rel_path, excludes):
                     continue
 
                 yield rel_path
