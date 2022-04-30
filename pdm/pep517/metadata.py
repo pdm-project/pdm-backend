@@ -161,7 +161,7 @@ class Metadata:
                 return "text/markdown"
             elif value.lower().endswith(".rst"):
                 return "text/x-rst"
-            raise MetadataError("readme", f"Unsupported readme suffix: {value}")
+            return "text/plain"
         content_type = value.get("content-type")
         if not content_type:
             raise MetadataError(
