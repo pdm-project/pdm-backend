@@ -1,3 +1,10 @@
+## Release v0.12.4 (2022-05-02)
+### Bug Fixes
+
+- Fallback the README content type to text/plain if no suffix is given. [#85](https://github.com/frostming/pdm-pep517/issues/85)
+- Write license files when preparing metadata for wheels. [#86](https://github.com/frostming/pdm-pep517/issues/86)
+
+
 ## Release v0.12.3 (2022-04-01)
 ### Bug Fixes
 
