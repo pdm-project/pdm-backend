@@ -4,7 +4,6 @@ PEP-517 compliant buildsystem API
 from pathlib import Path
 from typing import Any, List, Mapping, Optional
 
-from pdm.pep517.base import Builder
 from pdm.pep517.editable import EditableBuilder
 from pdm.pep517.metadata import Metadata
 from pdm.pep517.sdist import SdistBuilder
@@ -35,7 +34,7 @@ def get_requires_for_build_sdist(
     return []
 
 
-def _prepare_metadata(builder: Builder, metadata_directory: str) -> str:
+def _prepare_metadata(builder: WheelBuilder, metadata_directory: str) -> str:
     dist_info = Path(metadata_directory, builder.dist_info_name)
     dist_info.mkdir(exist_ok=True)
     if builder.meta.entry_points:
@@ -47,6 +46,12 @@ def _prepare_metadata(builder: Builder, metadata_directory: str) -> str:
 
     with (dist_info / "METADATA").open("w", encoding="utf-8") as f:
         builder._write_metadata_file(f)
+
+    (dist_info / "license_files").mkdir(exist_ok=True)
+    for license_file in builder.find_license_files():
+        (dist_info / "license_files" / license_file).write_bytes(
+            Path(license_file).read_bytes()
+        )
 
     return dist_info.name
 
