@@ -96,6 +96,12 @@ def test_project_version_use_scm(project_with_scm) -> None:
     assert "0.1.1.dev1+g" in metadata.version
 
 
+def test_project_version_use_scm_from_env(project_with_scm, monkeypatch) -> None:
+    monkeypatch.setenv("PDM_PEP517_SCM_VERSION", "1.0.0")
+    metadata = Metadata(project_with_scm / "pyproject.toml")
+    assert metadata.version == "1.0.0"
+
+
 def test_explicit_package_dir() -> None:
     metadata = Metadata(FIXTURES / "projects/demo-explicit-package-dir/pyproject.toml")
     paths = metadata.convert_package_paths()
