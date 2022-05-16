@@ -81,7 +81,7 @@ __version__ = "0.1.0" # Single quotes and double quotes are both OK, comments ar
 version = {use_scm = true}
 ```
 
-When building from a source tree where SCM is not available, you can use the env var `PDM_PEP517_VERSION` to pretend the version is set.
+When building from a source tree where SCM is not available, you can use the env var `PDM_PEP517_SCM_VERSION` to pretend the version is set.
 
 ```bash
 PDM_PEP517_VERSION=0.1.0 python -m build
