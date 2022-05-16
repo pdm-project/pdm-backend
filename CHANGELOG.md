@@ -1,3 +1,9 @@
+## Release v0.12.5 (2022-05-16)
+### Features & Improvements
+
+- Allow overriding SCM version with env var. This is useful to build from a source tree without SCM. [#89](https://github.com/frostming/pdm-pep517/issues/89)
+
+
 ## Release v0.12.4 (2022-05-02)
 ### Bug Fixes
 
