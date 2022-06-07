@@ -395,7 +395,7 @@ class Builder:
             content += f"Classifier: {classifier}\n"
 
         if full:
-            for dep in sorted(meta.dependencies):
+            for dep in sorted(meta.dependencies or []):
                 content += f"Requires-Dist: {dep}\n"
 
         for extra, reqs in sorted(meta.requires_extra.items()):
