@@ -1,3 +1,10 @@
+## Release v0.12.6 (2022-06-08)
+### Bug Fixes
+
+- Fix a crash issue when `dependencies` field is missing from the project metadata. [#92](https://github.com/frostming/pdm-pep517/issues/92)
+- Leave `License` and `Summary` fields out from the generated core metadata if they are not given. [#93](https://github.com/frostming/pdm-pep517/issues/93)
+
+
 ## Release v0.12.5 (2022-05-16)
 ### Features & Improvements
 
