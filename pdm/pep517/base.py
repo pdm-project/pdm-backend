@@ -359,9 +359,8 @@ class Builder:
 
     def format_pkginfo(self, full: bool = True) -> str:
         meta = self.meta
-        if not meta.name or not meta.version:
-            raise MetadataError("name/version", "Name and version are required")
-        content = METADATA_BASE.format(name=meta.name, version=meta.version)
+
+        content = METADATA_BASE.format(name=meta.name, version=meta.version or "0.0.0")
 
         if meta.description:
             content += f"Summary: {meta.description}\n"
