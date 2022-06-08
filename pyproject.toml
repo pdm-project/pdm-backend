@@ -50,7 +50,7 @@ release = "python scripts/release.py"
 [build-system]
 requires = []
 build-backend = "pdm.pep517.api"
-backend-path = "."
+backend-path = ["."]
 
 [tool.black]
 line-length = 88
