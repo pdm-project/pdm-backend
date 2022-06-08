@@ -1,3 +1,7 @@
+## Release v0.12.7 (2022-06-08)
+No significant changes.
+
+
 ## Release v0.12.6 (2022-06-08)
 ### Bug Fixes
 
