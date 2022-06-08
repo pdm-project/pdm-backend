@@ -43,8 +43,6 @@ METADATA_BASE = """\
 Metadata-Version: 2.1
 Name: {name}
 Version: {version}
-Summary: {description}
-License: {license}
 """
 
 T = TypeVar("T", bound="Builder")
@@ -361,12 +359,15 @@ class Builder:
 
     def format_pkginfo(self, full: bool = True) -> str:
         meta = self.meta
-        content = METADATA_BASE.format(
-            name=meta.name or "UNKNOWN",
-            version=meta.version or "UNKNOWN",
-            license=meta.license_expression or "UNKNOWN",
-            description=meta.description or "UNKNOWN",
-        )
+        if not meta.name or not meta.version:
+            raise MetadataError("name/version", "Name and version are required")
+        content = METADATA_BASE.format(name=meta.name, version=meta.version)
+
+        if meta.description:
+            content += f"Summary: {meta.description}\n"
+
+        if meta.license_expression:
+            content += f"License: {meta.license_expression}\n"
 
         # Optional fields
         # TODO: enable this after twine supports metadata version 2.3
