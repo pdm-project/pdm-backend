@@ -1,6 +1,5 @@
 import glob
 import os
-import re
 import warnings
 from pathlib import Path
 from typing import (
@@ -21,7 +20,6 @@ from pdm.pep517._vendor import tomli
 from pdm.pep517._vendor.packaging.requirements import Requirement
 from pdm.pep517.exceptions import MetadataError, PDMWarning, ProjectError
 from pdm.pep517.license import normalize_expression
-from pdm.pep517.scm import get_version_from_scm
 from pdm.pep517.utils import (
     cd,
     ensure_pep440_req,
@@ -31,6 +29,7 @@ from pdm.pep517.utils import (
     to_filename,
 )
 from pdm.pep517.validator import validate_pep621
+from pdm.pep517.version import DynamicVersion
 
 T = TypeVar("T")
 
@@ -97,41 +96,12 @@ class Metadata:
         static_version = self._metadata.get("version")
         if isinstance(static_version, str):
             return static_version
-        dynamic_version = self._tool_settings.get("version")
-        if isinstance(static_version, dict):
-            warnings.warn(
-                "`version` in [project] no longer supports dynamic filling. "
-                "Move it to [tool.pdm] or change it to static string.\n"
-                "It will raise an error in the next minor release.",
-                PDMWarning,
-                stacklevel=2,
-            )
-            if not dynamic_version:
-                dynamic_version = static_version
-
-        if not dynamic_version:
-            return None
-        if not self.dynamic or "version" not in self.dynamic:
-            raise MetadataError("version", "missing from 'dynamic' fields")
-        version_source = dynamic_version.get("from")
-        if version_source:
-            with self.filepath.parent.joinpath(version_source).open(
-                encoding="utf-8"
-            ) as fp:
-                match = re.search(
-                    r"^__version__\s*=\s*[\"'](.+?)[\"']\s*(?:#.*)?$", fp.read(), re.M
-                )
-                if not match:
-                    raise MetadataError(
-                        "version",
-                        f"Can't find version in file {version_source}, "
-                        "it should appear as `__version__ = 'a.b.c'`.",
-                    )
-                return match.group(1)
-        elif dynamic_version.get("use_scm", False):
-            return get_version_from_scm(self.filepath.parent)
-        else:
-            return None
+        dynamic_version = self.dynamic_version
+        return (
+            dynamic_version.evaluate_in_project(self.filepath.parent.as_posix())
+            if dynamic_version
+            else None
+        )
 
     description: MetaField[str] = MetaField("description")
 
@@ -391,6 +361,28 @@ class Metadata:
                     )
                 result[plugin] = [f"{k} = {v}" for k, v in value.items()]
         return result
+
+    @property
+    def dynamic_version(self) -> Optional[DynamicVersion]:
+        static_version = self._metadata.get("version")
+        dynamic_version = self._tool_settings.get("version")
+        if isinstance(static_version, dict):
+            warnings.warn(
+                "`version` in [project] no longer supports dynamic filling. "
+                "Move it to [tool.pdm] or change it to static string.\n"
+                "It will raise an error in the next minor release.",
+                PDMWarning,
+                stacklevel=2,
+            )
+            if not dynamic_version:
+                dynamic_version = static_version
+
+        if not dynamic_version:
+            return None
+        if not self.dynamic or "version" not in self.dynamic:
+            raise MetadataError("version", "missing from 'dynamic' fields")
+
+        return DynamicVersion.from_toml(dynamic_version)
 
     def convert_package_paths(self) -> Dict[str, Union[List, Dict]]:
         """Return a {package_dir, packages, package_data, exclude_package_data} dict."""

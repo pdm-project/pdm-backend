@@ -29,7 +29,7 @@ homepage = "https://pdm.fming.dev"
 repository = "https://github.com/frostming/pdm-pep517"
 
 [tool.pdm]
-version = {from = "pdm/pep517/__init__.py"}
+version = {source = "file", path = "pdm/pep517/__init__.py"}
 includes = ["pdm"]
 source-includes = ["tests"]
 

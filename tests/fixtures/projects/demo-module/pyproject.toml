@@ -17,4 +17,4 @@ readme = "README.md"
 [project.optional-dependencies]
 
 [tool.pdm]
-version = { from = "foo_module.py" }
+version = {source = "file", path = "foo_module.py" }

@@ -16,7 +16,7 @@ name = "demo-package"
 [project.optional-dependencies]
 
 [tool.pdm]
-version = { from = "my_package/__init__.py" }
+version = {source = "file", path = "my_package/__init__.py" }
 source-includes = ["**/*.c"]
 build = "build.py"
 is-purelib = true
