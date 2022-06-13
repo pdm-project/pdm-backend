@@ -16,6 +16,6 @@ name = "demo-package"
 [project.optional-dependencies]
 
 [tool.pdm]
-version = { from = "foo/my_package/__init__.py" }
+version = {source = "file", path = "foo/my_package/__init__.py" }
 includes = ["foo/"]
 editable-backend = "editables"

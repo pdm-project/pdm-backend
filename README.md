@@ -65,7 +65,7 @@ Then in `[tool.pdm]` table, specify how to get the version info. There are two w
 
 ```toml
 [tool.pdm]
-version = {from = "mypackage/__init__.py"}
+version = {source = "file", path = "mypackage/__init__.py"}
 ```
 
 In this way, the file MUST contain a line like:
@@ -78,7 +78,7 @@ __version__ = "0.1.0" # Single quotes and double quotes are both OK, comments ar
 
 ```toml
 [tool.pdm]
-version = {use_scm = true}
+version = {source = "scm"}
 ```
 
 When building from a source tree where SCM is not available, you can use the env var `PDM_PEP517_SCM_VERSION` to pretend the version is set.

@@ -17,4 +17,4 @@ readme = "README.md"
 [project.optional-dependencies]
 
 [tool.pdm]
-version = { use_scm = true }
+version = {source = "scm" }

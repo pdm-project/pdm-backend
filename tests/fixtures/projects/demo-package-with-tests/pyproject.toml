@@ -17,7 +17,7 @@ readme = "README.md"
 [project.optional-dependencies]
 
 [tool.pdm]
-version = { from = "my_package/__init__.py" }
+version = {source = "file", path = "my_package/__init__.py" }
 
 [[tool.pdm.source]]
 url = "https://test.pypi.org/simple"
