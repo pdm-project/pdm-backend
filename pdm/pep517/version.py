@@ -3,7 +3,7 @@ import re
 import warnings
 from typing import Any, Dict
 
-from pdm.pep517.exceptions import MetadataError, PDMWarning
+from pdm.pep517.exceptions import MetadataError
 from pdm.pep517.scm import get_version_from_scm
 
 
@@ -29,7 +29,7 @@ class DynamicVersion:
             warnings.warn(
                 "DEPRECATED: `version = {from = ...}` is replaced by "
                 '`version = {source = "file", path = ...}`',
-                PDMWarning,
+                DeprecationWarning,
                 stacklevel=2,
             )
             return cls(source, path=path)
@@ -39,7 +39,7 @@ class DynamicVersion:
             warnings.warn(
                 "DEPRECATED: `version = {use_scm = true}` is replaced by "
                 '`version = {source = "scm"}`',
-                PDMWarning,
+                DeprecationWarning,
                 stacklevel=2,
             )
             options.pop("use_scm")

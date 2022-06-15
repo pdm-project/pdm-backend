@@ -183,14 +183,14 @@ class Metadata:
                 "`classifiers` no longer supports dynamic filling, "
                 "please remove it from `dynamic` fields and manually "
                 "supply all the classifiers",
-                PDMWarning,
+                DeprecationWarning,
                 stacklevel=2,
             )
         if any(line.startswith("License :: ") for line in classifers):
             warnings.warn(
                 "License classifiers are deprecated in favor of PEP 639 "
                 "'license-expression' field.",
-                PDMWarning,
+                DeprecationWarning,
                 stacklevel=2,
             )
 
@@ -371,7 +371,7 @@ class Metadata:
                 "`version` in [project] no longer supports dynamic filling. "
                 "Move it to [tool.pdm] or change it to static string.\n"
                 "It will raise an error in the next minor release.",
-                PDMWarning,
+                DeprecationWarning,
                 stacklevel=2,
             )
             if not dynamic_version:
