@@ -140,6 +140,7 @@ def test_metadata_version_in_tool_but_not_dynamic() -> None:
         metadata.version
 
 
+@pytest.mark.xfail(reason="This will fail until PEP 639 is finalized")
 @pytest.mark.deprecation
 def test_license_classifiers_warning(recwarn) -> None:
     metadata = make_metadata(
@@ -152,7 +153,7 @@ def test_license_classifiers_warning(recwarn) -> None:
     )
     metadata.classifiers
     assert len(recwarn) == 1
-    assert str(recwarn.pop(UserWarning).message).startswith(
+    assert str(recwarn.pop(DeprecationWarning).message).startswith(
         "License classifiers are deprecated"
     )
 

@@ -186,13 +186,13 @@ class Metadata:
                 DeprecationWarning,
                 stacklevel=2,
             )
-        if any(line.startswith("License :: ") for line in classifers):
-            warnings.warn(
-                "License classifiers are deprecated in favor of PEP 639 "
-                "'license-expression' field.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
+        # if any(line.startswith("License :: ") for line in classifers):
+        #     warnings.warn(
+        #         "License classifiers are deprecated in favor of PEP 639 "
+        #         "'license-expression' field.",
+        #         DeprecationWarning,
+        #         stacklevel=2,
+        #     )
 
         return sorted(classifers)
 
