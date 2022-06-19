@@ -76,7 +76,7 @@ class EditableBuilder(WheelBuilder):
         )
 
     def _build(self, wheel: zipfile.ZipFile) -> None:
-        if self.meta.build:
+        if self.meta.config.setup_script:
             setup_py = self.ensure_setup_py()
             build_args = [
                 sys.executable,
@@ -95,7 +95,7 @@ class EditableBuilder(WheelBuilder):
     def _prepare_editable(self) -> None:
         package_paths = self.meta.convert_package_paths()
         package_dir = self.meta.package_dir
-        if self.meta.editable_backend == "editables":
+        if self.meta.config.editable_backend == "editables":
             for package in package_paths.get("packages", []):
                 if "." in package:
                     continue

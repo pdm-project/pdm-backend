@@ -180,7 +180,7 @@ class WheelBuilder(Builder):
         self._records.append((rel_path, hash_digest, str(len(b))))
 
     def _build(self, wheel: zipfile.ZipFile) -> None:
-        if not self.meta.build:
+        if not self.meta.config.setup_script:
             return
         setup_py = self.ensure_setup_py()
         build_args = [
@@ -205,9 +205,9 @@ class WheelBuilder(Builder):
                 continue
 
             whl_path = rel_path = pkg.relative_to(lib_dir).as_posix()
-            if self.meta.package_dir:
+            if self.meta.config.package_dir:
                 # act like being in the package_dir
-                rel_path = Path(self.meta.package_dir) / rel_path
+                rel_path = Path(self.meta.config.package_dir) / rel_path
 
             if self._is_excluded(rel_path, excludes):
                 continue
@@ -220,9 +220,9 @@ class WheelBuilder(Builder):
     def _copy_module(self, wheel: zipfile.ZipFile) -> None:
         for path in self.find_files_to_add():
             rel_path = None
-            if self.meta.package_dir:
+            if self.meta.config.package_dir:
                 try:
-                    rel_path = path.relative_to(self.meta.package_dir).as_posix()
+                    rel_path = path.relative_to(self.meta.config.package_dir).as_posix()
                 except ValueError:
                     pass
             self._add_file(wheel, str(path), rel_path)
@@ -265,7 +265,9 @@ class WheelBuilder(Builder):
 
     def _write_wheel_file(self, fp: TextIO) -> None:
         fp.write(
-            WHEEL_FILE_FORMAT.format(is_purelib=self.meta.is_purelib, tag=self.tag)
+            WHEEL_FILE_FORMAT.format(
+                is_purelib=self.meta.config.is_purelib, tag=self.tag
+            )
         )
 
     def _write_entry_points(self, fp: TextIO) -> None:
