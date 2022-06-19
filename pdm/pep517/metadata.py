@@ -1,6 +1,5 @@
 import glob
 import os
-import warnings
 from pathlib import Path
 from typing import (
     Any,
@@ -25,6 +24,7 @@ from pdm.pep517.utils import (
     find_packages_iter,
     merge_marker,
     safe_name,
+    show_warning,
     to_filename,
 )
 from pdm.pep517.validator import validate_pep621
@@ -80,7 +80,7 @@ class Metadata:
         if isinstance(static_version, str):
             return static_version
         elif isinstance(static_version, dict):
-            warnings.warn(
+            show_warning(
                 "`version` in [project] no longer supports dynamic filling. "
                 "Move it to [tool.pdm] or change it to static string.\n"
                 "It will raise an error in the next minor release.",
@@ -169,7 +169,7 @@ class Metadata:
         classifers = set(self.data.get("classifiers", []))
 
         if self.dynamic and "classifiers" in self.dynamic:
-            warnings.warn(
+            show_warning(
                 "`classifiers` no longer supports dynamic filling, "
                 "please remove it from `dynamic` fields and manually "
                 "supply all the classifiers",
@@ -177,7 +177,7 @@ class Metadata:
                 stacklevel=2,
             )
         # if any(line.startswith("License :: ") for line in classifers):
-        #     warnings.warn(
+        #     show_warning(
         #         "License classifiers are deprecated in favor of PEP 639 "
         #         "'license-expression' field.",
         #         DeprecationWarning,
@@ -199,7 +199,7 @@ class Metadata:
                 )
             return normalize_expression(self.data["license-expression"])
         elif "license" in self.data and "text" in self.data["license"]:
-            # warnings.warn(
+            # show_warning(
             #     "'license' field is deprecated in favor of 'license-expression'",
             #     PDMWarning,
             #     stacklevel=2,
@@ -208,14 +208,14 @@ class Metadata:
             # remove this after PEP 639 is finalized
             return self.data["license"]["text"]
         elif "license-expression" not in (self.dynamic or []):
-            warnings.warn("'license-expression' is missing", PDMWarning, stacklevel=2)
+            show_warning("'license-expression' is missing", PDMWarning, stacklevel=2)
         return None
 
     @property
     def license_files(self) -> Dict[str, List[str]]:
         if "license-files" not in self.data:
             if self.data.get("license", {}).get("file"):
-                # warnings.warn(
+                # show_warning(
                 #     "'license.file' field is deprecated in favor of 'license-files'",
                 #     PDMWarning,
                 #     stacklevel=2,
@@ -391,7 +391,7 @@ class Config:
             return self.data["build"][name]
         old_name = old_name or name
         if old_name in self.data:
-            warnings.warn(
+            show_warning(
                 f"Field `{old_name}` is renamed to `{name}` under [tool.pdm.build] "
                 "table, please update your pyproject.toml accordingly",
                 DeprecationWarning,

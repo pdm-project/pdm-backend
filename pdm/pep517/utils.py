@@ -1,3 +1,4 @@
+import functools
 import os
 import re
 import sys
@@ -6,7 +7,7 @@ import warnings
 from contextlib import contextmanager
 from fnmatch import fnmatchcase
 from pathlib import Path
-from typing import Callable, Generator, Iterable, Optional, Union
+from typing import Callable, Generator, Iterable, Optional, Type, Union
 
 from pdm.pep517._vendor.packaging import tags
 from pdm.pep517._vendor.packaging.markers import Marker
@@ -198,3 +199,9 @@ def is_relative_path(target: Path, other: Path) -> bool:
         return False
     else:
         return True
+
+
+@functools.cache
+def show_warning(message: str, category: Type[Warning], stacklevel: int = 1) -> None:
+    """A cached version of warnings.warn to avoid repeated warnings."""
+    warnings.warn(message, category, stacklevel + 1)
