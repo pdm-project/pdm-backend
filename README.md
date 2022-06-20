@@ -26,10 +26,10 @@ build-backend = "pdm.pep517.api"
 
 ## Tool specific settings
 
-Besides of the standard fields specified in PEP 621, PDM-PEP517 honors some other settings to change the build behavior. They should be defined under `[tool.pdm]` table:
+Besides of the standard fields specified in PEP 621, PDM-PEP517 honors some other settings to change the build behavior. They should be defined under `[tool.pdm.build]` table:
 
 ```toml
-[tool.pdm]
+[tool.pdm.build]
 # Specify where the Python packages live.
 package-dir = "src"
 # File patterns to include, the paths are relative to the project root.
@@ -39,7 +39,7 @@ excludes = []
 # File patterns to include in source distribution and exclude in wheel distribution.
 source-includes = []
 # An extra script to populate the arguments of `setup()`, one can build C extensions with this script.
-build = "build.py"
+setup-script = "build.py"
 # Override the Is-Purelib value in the wheel.
 is-purelib = true
 # Change the editable-backend: path(default) or editables
@@ -55,8 +55,8 @@ You don't have to specify all of them, PDM-PEP517 can also derive these fields s
 ```diff
 [project]
 ...
--version = "0.1.0" remove this line
-+dynamic = ["version"]
+- version = "0.1.0" remove this line
++ dynamic = ["version"]
 ```
 
 Then in `[tool.pdm]` table, specify how to get the version info. There are two ways supported:

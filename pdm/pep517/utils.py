@@ -201,7 +201,7 @@ def is_relative_path(target: Path, other: Path) -> bool:
         return True
 
 
-@functools.cache
+@functools.lru_cache(maxsize=None)
 def show_warning(message: str, category: Type[Warning], stacklevel: int = 1) -> None:
     """A cached version of warnings.warn to avoid repeated warnings."""
     warnings.warn(message, category, stacklevel + 1)
