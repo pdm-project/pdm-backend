@@ -18,6 +18,8 @@ readme = "README.md"
 
 [tool.pdm]
 version = {source = "file", path = "my_package/__init__.py" }
+
+[tool.pdm.build]
 includes = [
     "my_package/",
     "single_module.py",

@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Any, List, Mapping, Optional
 
 from pdm.pep517.editable import EditableBuilder
-from pdm.pep517.metadata import Metadata
 from pdm.pep517.sdist import SdistBuilder
 from pdm.pep517.wheel import WheelBuilder
 
@@ -20,10 +19,9 @@ def get_requires_for_build_wheel(
     When C-extension build is needed, setuptools should be required, otherwise
     just return an empty list.
     """
-    meta = Metadata(Path("pyproject.toml"))
-    if meta.build:
-        return ["setuptools>=40.8.0"]
-    else:
+    with WheelBuilder(Path.cwd(), config_settings) as builder:
+        if builder.meta.config.setup_script:
+            return ["setuptools>=40.8.0"]
         return []
 
 

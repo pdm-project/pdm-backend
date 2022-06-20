@@ -76,7 +76,7 @@ class EditableBuilder(WheelBuilder):
         )
 
     def _build(self, wheel: zipfile.ZipFile) -> None:
-        if self.meta.build:
+        if self.meta.config.setup_script:
             setup_py = self.ensure_setup_py()
             build_args = [
                 sys.executable,
@@ -94,8 +94,8 @@ class EditableBuilder(WheelBuilder):
 
     def _prepare_editable(self) -> None:
         package_paths = self.meta.convert_package_paths()
-        package_dir = self.meta.package_dir
-        if self.meta.editable_backend == "editables":
+        package_dir = self.meta.config.package_dir
+        if self.meta.config.editable_backend == "editables":
             for package in package_paths.get("packages", []):
                 if "." in package:
                     continue
@@ -119,7 +119,7 @@ class EditableBuilder(WheelBuilder):
         if not self.editables.redirections:
             # For implicit namespace packages, modules cannot be mapped.
             # Fallback to .pth method in this case.
-            if self.meta.editable_backend == "editables":
+            if self.meta.config.editable_backend == "editables":
                 warnings.warn(
                     "editables backend is not available for namespace packages, "
                     "fallback to path entries",
@@ -129,7 +129,7 @@ class EditableBuilder(WheelBuilder):
 
     def find_files_to_add(self, for_sdist: bool = False) -> List[Path]:
         package_paths = self.meta.convert_package_paths()
-        package_dir = self.meta.package_dir
+        package_dir = self.meta.config.package_dir
         redirections = [
             Path(package_dir, p.replace(".", "/")) for p in package_paths["packages"]
         ]
@@ -157,7 +157,7 @@ class EditableBuilder(WheelBuilder):
         self._records.append((rel_path, hash_digest, str(size)))
 
     def _write_metadata_file(self, fp: TextIO) -> None:
-        self.meta._metadata.setdefault("dependencies", []).extend(
+        self.meta.data.setdefault("dependencies", []).extend(
             self.editables.dependencies()
         )
         return super()._write_metadata_file(fp)

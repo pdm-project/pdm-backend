@@ -6,7 +6,8 @@ import warnings
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Tuple, TypeVar, Union
 
-from pdm.pep517.exceptions import MetadataError, PDMWarning
+from pdm.pep517._vendor import tomli
+from pdm.pep517.exceptions import MetadataError, PDMWarning, ProjectError
 from pdm.pep517.metadata import Metadata
 from pdm.pep517.utils import is_python_package, safe_version, to_filename
 
@@ -135,10 +136,20 @@ class Builder:
         self.config_settings = config_settings
         self._meta: Optional[Metadata] = None
 
+    def _read_pyproject_toml(self) -> Dict[str, Any]:
+        pyproject_toml = self.location / "pyproject.toml"
+        if not pyproject_toml.exists():
+            raise ProjectError("No pyproject.toml found")
+        with pyproject_toml.open("rb") as fp:
+            try:
+                return tomli.load(fp)
+            except tomli.TOMLDecodeError as e:
+                raise ProjectError(f"Invalid pyproject.toml: {e}")
+
     @property
     def meta(self) -> Metadata:
         if not self._meta:
-            self._meta = Metadata(self.location / "pyproject.toml")
+            self._meta = Metadata(self.location, self._read_pyproject_toml())
             self._meta.validate(True)
         return self._meta
 
@@ -167,20 +178,20 @@ class Builder:
         includes = set()
         excludes = set(self.DEFAULT_EXCLUDES)
 
-        meta_excludes = list(self.meta.excludes)
-        source_includes = self.meta.source_includes or ["tests"]
+        meta_excludes = list(self.meta.config.excludes)
+        source_includes = self.meta.config.source_includes or ["tests"]
         if not for_sdist:
             # exclude source-includes for non-sdist builds
             meta_excludes.extend(source_includes)
 
-        if not self.meta.includes:
-            top_packages = _find_top_packages(self.meta.package_dir or ".")
+        if not self.meta.config.includes:
+            top_packages = _find_top_packages(self.meta.config.package_dir or ".")
             if top_packages:
                 includes.update(top_packages)
             else:
-                includes.add(f"{self.meta.package_dir or '.'}/*.py")
+                includes.add(f"{self.meta.config.package_dir or '.'}/*.py")
         else:
-            includes.update(self.meta.includes)
+            includes.update(self.meta.config.includes)
 
         includes.update(source_includes)
         excludes.update(meta_excludes)
@@ -227,14 +238,16 @@ class Builder:
         if not for_sdist:
             return
 
-        if self.meta.build and os.path.isfile(self.meta.build):
-            yield self.meta.build
+        if self.meta.config.setup_script and os.path.isfile(
+            self.meta.config.setup_script
+        ):
+            yield self.meta.config.setup_script
 
         if self.meta.readme and os.path.isfile(self.meta.readme):
             yield self.meta.readme
 
-        if self.meta.filepath.exists():
-            yield self.meta.filepath.name
+        if os.path.isfile("pyproject.toml"):
+            yield "pyproject.toml"
 
     def find_files_to_add(self, for_sdist: bool = False) -> List[Path]:
         """Traverse the project path and return a list of file names
@@ -286,12 +299,13 @@ class Builder:
             "url": (meta.project_urls or {}).get("homepage", ""),
         }
 
-        if meta.build:
+        if meta.config.setup_script:
             # The build script must contain a `build(setup_kwargs)`, we just import
             # and execute it.
+            script = meta.config.setup_script
             after.extend(
                 [
-                    "from {} import build\n".format(meta.build.split(".")[0]),
+                    "from {} import build\n".format(script.split(".")[0]),
                     "build(setup_kwargs)\n",
                 ]
             )

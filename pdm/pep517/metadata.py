@@ -1,6 +1,5 @@
 import glob
 import os
-import warnings
 from pathlib import Path
 from typing import (
     Any,
@@ -16,7 +15,6 @@ from typing import (
     Union,
 )
 
-from pdm.pep517._vendor import tomli
 from pdm.pep517._vendor.packaging.requirements import Requirement
 from pdm.pep517.exceptions import MetadataError, PDMWarning, ProjectError
 from pdm.pep517.license import normalize_expression
@@ -26,6 +24,7 @@ from pdm.pep517.utils import (
     find_packages_iter,
     merge_marker,
     safe_name,
+    show_warning,
     to_filename,
 )
 from pdm.pep517.validator import validate_pep621
@@ -45,7 +44,7 @@ class MetaField(Generic[T]):
         if instance is None:
             return self
         try:
-            rv = instance._metadata[self.name]
+            rv = instance.data[self.name]
         except KeyError:
             return None
         if self.fget is not None:
@@ -59,49 +58,42 @@ class Metadata:
     DEFAULT_ENCODING = "utf-8"
     SUPPORTED_CONTENT_TYPES = ("text/markdown", "text/x-rst", "text/plain")
 
-    def __init__(self, filepath: Union[str, Path], parse: bool = True) -> None:
-        self.filepath = Path(filepath).absolute()
-        self._tool_settings: Dict[str, Any] = {}
-        self._metadata: Dict[str, Any] = {}
-        if parse:
-            self._read_pyproject()
-
-    def _read_pyproject(self) -> None:
-        try:
-            with self.filepath.open("rb") as f:
-                data = tomli.load(f)
-        except FileNotFoundError:
-            raise ProjectError("pyproject.toml does not exist.")
-        except tomli.TOMLDecodeError:
-            raise ProjectError("The project's pyproject.toml is not valid.")
-        else:
-            if "tool" in data and "pdm" in data["tool"]:
-                self._tool_settings = data["tool"]["pdm"]
-            if "project" in data:
-                self._metadata = data["project"]
-            else:
-                raise ProjectError("No [project] config in pyproject.toml")
+    def __init__(self, root: Union[str, Path], pyproject: Dict[str, Any]) -> None:
+        self.root = Path(root).absolute()
+        if "project" not in pyproject:
+            raise ProjectError("No [project] config in pyproject.toml")
+        self.data = pyproject["project"]
+        self.config = Config(self.root, pyproject.get("tool", {}).get("pdm", {}))
 
     def validate(self, raising: bool = False) -> bool:
-        return validate_pep621(self._metadata, raising)
+        return validate_pep621(self.data, raising)
 
     @property
     def name(self) -> str:
-        if "name" not in self._metadata:
+        if "name" not in self.data:
             raise MetadataError("name", "must be given in the project table")
-        return self._metadata["name"]
+        return self.data["name"]
 
     @property
     def version(self) -> Optional[str]:
-        static_version = self._metadata.get("version")
+        static_version = self.data.get("version")
         if isinstance(static_version, str):
             return static_version
-        dynamic_version = self.dynamic_version
-        return (
-            dynamic_version.evaluate_in_project(self.filepath.parent.as_posix())
-            if dynamic_version
-            else None
-        )
+        elif isinstance(static_version, dict):
+            show_warning(
+                "`version` in [project] no longer supports dynamic filling. "
+                "Move it to [tool.pdm] or change it to static string.\n"
+                "It will raise an error in the next minor release.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            if "version" not in self.config.data:
+                self.config.data["version"] = static_version
+        if "version" in self.config.data and not (
+            self.dynamic and "version" in self.dynamic
+        ):
+            raise MetadataError("version", "missing from 'dynamic' fields")
+        return self.config.dynamic_version
 
     description: MetaField[str] = MetaField("description")
 
@@ -176,10 +168,10 @@ class Metadata:
 
     @property
     def classifiers(self) -> List[str]:
-        classifers = set(self._metadata.get("classifiers", []))
+        classifers = set(self.data.get("classifiers", []))
 
         if self.dynamic and "classifiers" in self.dynamic:
-            warnings.warn(
+            show_warning(
                 "`classifiers` no longer supports dynamic filling, "
                 "please remove it from `dynamic` fields and manually "
                 "supply all the classifiers",
@@ -187,7 +179,7 @@ class Metadata:
                 stacklevel=2,
             )
         # if any(line.startswith("License :: ") for line in classifers):
-        #     warnings.warn(
+        #     show_warning(
         #         "License classifiers are deprecated in favor of PEP 639 "
         #         "'license-expression' field.",
         #         DeprecationWarning,
@@ -201,43 +193,43 @@ class Metadata:
 
     @property
     def license_expression(self) -> Optional[str]:
-        if "license-expression" in self._metadata:
-            if "license" in self._metadata:
+        if "license-expression" in self.data:
+            if "license" in self.data:
                 raise MetadataError(
                     "license-expression",
                     "Can't specify both 'license' and 'license-expression' fields",
                 )
-            return normalize_expression(self._metadata["license-expression"])
-        elif "license" in self._metadata and "text" in self._metadata["license"]:
-            # warnings.warn(
+            return normalize_expression(self.data["license-expression"])
+        elif "license" in self.data and "text" in self.data["license"]:
+            # show_warning(
             #     "'license' field is deprecated in favor of 'license-expression'",
             #     PDMWarning,
             #     stacklevel=2,
             # )
             # TODO: do not validate legacy license text,
             # remove this after PEP 639 is finalized
-            return self._metadata["license"]["text"]
+            return self.data["license"]["text"]
         elif "license-expression" not in (self.dynamic or []):
-            warnings.warn("'license-expression' is missing", PDMWarning, stacklevel=2)
+            show_warning("'license-expression' is missing", PDMWarning, stacklevel=2)
         return None
 
     @property
     def license_files(self) -> Dict[str, List[str]]:
-        if "license-files" not in self._metadata:
-            if self._metadata.get("license", {}).get("file"):
-                # warnings.warn(
+        if "license-files" not in self.data:
+            if self.data.get("license", {}).get("file"):
+                # show_warning(
                 #     "'license.file' field is deprecated in favor of 'license-files'",
                 #     PDMWarning,
                 #     stacklevel=2,
                 # )
-                return {"paths": [self._metadata["license"]["file"]]}
+                return {"paths": [self.data["license"]["file"]]}
             return {"globs": ["LICEN[CS]E*", "COPYING*", "NOTICE*", "AUTHORS*"]}
-        if "license" in self._metadata:
+        if "license" in self.data:
             raise MetadataError(
                 "license-files",
                 "Can't specify both 'license' and 'license-files' fields",
             )
-        rv = self._metadata["license-files"]
+        rv = self.data["license-files"]
         valid_keys = {"globs", "paths"} & set(rv)
         if len(valid_keys) == 2:
             raise MetadataError(
@@ -246,39 +238,6 @@ class Metadata:
         if not valid_keys:
             raise MetadataError("license-files", "Must specify 'paths' or 'globs'")
         return rv
-
-    @property
-    def includes(self) -> List[str]:
-        return self._tool_settings.get("includes", [])
-
-    @property
-    def source_includes(self) -> List[str]:
-        return self._tool_settings.get("source-includes", [])
-
-    @property
-    def excludes(self) -> List[str]:
-        return self._tool_settings.get("excludes", [])
-
-    @property
-    def build(self) -> Optional[str]:
-        return self._tool_settings.get("build")
-
-    @property
-    def package_dir(self) -> str:
-        """A directory that will be used to looking for packages."""
-        if "package-dir" in self._tool_settings:
-            return self._tool_settings["package-dir"]
-        elif self.filepath.parent.joinpath("src").is_dir():
-            return "src"
-        return ""
-
-    @property
-    def editable_backend(self) -> str:
-        """Currently only two backends are supported:
-        - editables: Proxy modules via editables
-        - path: the legacy .pth file method(default)
-        """
-        return self._tool_settings.get("editable-backend", "path")
 
     def _convert_dependencies(self, deps: List[str]) -> List[str]:
         return list(filter(None, map(ensure_pep440_req, deps)))
@@ -303,15 +262,6 @@ class Metadata:
         return safe_name(self.name)
 
     @property
-    def is_purelib(self) -> bool:
-        """If not explicitly set, the project is considered to be non-pure
-        if `build` exists.
-        """
-        if "is-purelib" in self._tool_settings:
-            return self._tool_settings["is-purelib"]
-        return self.build is None
-
-    @property
     def project_filename(self) -> str:
         if self.name is None:
             return "UNKNOWN"
@@ -333,13 +283,13 @@ class Metadata:
 
     @property
     def requires_python(self) -> str:
-        result = self._metadata.get("requires-python", "")
+        result = self.data.get("requires-python", "")
         return "" if result == "*" else result
 
     @property
     def entry_points(self) -> Dict[str, List[str]]:
         result = {}
-        settings = self._metadata
+        settings = self.data
         if "scripts" in settings:
             result["console_scripts"] = [
                 f"{key} = {value}" for key, value in settings["scripts"].items()
@@ -362,41 +312,22 @@ class Metadata:
                 result[plugin] = [f"{k} = {v}" for k, v in value.items()]
         return result
 
-    @property
-    def dynamic_version(self) -> Optional[DynamicVersion]:
-        static_version = self._metadata.get("version")
-        dynamic_version = self._tool_settings.get("version")
-        if isinstance(static_version, dict):
-            warnings.warn(
-                "`version` in [project] no longer supports dynamic filling. "
-                "Move it to [tool.pdm] or change it to static string.\n"
-                "It will raise an error in the next minor release.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            if not dynamic_version:
-                dynamic_version = static_version
-
-        if not dynamic_version:
-            return None
-        if not self.dynamic or "version" not in self.dynamic:
-            raise MetadataError("version", "missing from 'dynamic' fields")
-
-        return DynamicVersion.from_toml(dynamic_version)
-
     def convert_package_paths(self) -> Dict[str, Union[List, Dict]]:
         """Return a {package_dir, packages, package_data, exclude_package_data} dict."""
         packages = []
         py_modules = []
         package_data = {"": ["*"]}
         exclude_package_data: Dict[str, List[str]] = {}
+        package_dir = self.config.package_dir
+        includes = self.config.includes
+        excludes = self.config.excludes
 
-        with cd(self.filepath.parent.as_posix()):
-            src_dir = Path(self.package_dir or ".")
-            if not self.includes:
+        with cd(self.root.as_posix()):
+            src_dir = Path(package_dir or ".")
+            if not includes:
                 packages = list(
                     find_packages_iter(
-                        self.package_dir or ".",
+                        package_dir or ".",
                         exclude=["tests", "tests.*"],
                         src=src_dir,
                     )
@@ -405,14 +336,14 @@ class Metadata:
                     py_modules = [path.name[:-3] for path in src_dir.glob("*.py")]
             else:
                 packages_set = set()
-                includes = self.includes[:]
+                includes = includes[:]
                 for include in includes[:]:
                     if include.replace("\\", "/").endswith("/*"):
                         include = include[:-2]
                     if "*" not in include and os.path.isdir(include):
                         dir_name = include.rstrip("/\\")
                         temp = list(
-                            find_packages_iter(dir_name, src=self.package_dir or ".")
+                            find_packages_iter(dir_name, src=package_dir or ".")
                         )
                         if os.path.isfile(os.path.join(dir_name, "__init__.py")):
                             temp.insert(0, dir_name)
@@ -430,7 +361,7 @@ class Metadata:
                         relpath = os.path.relpath(include, package)
                         if not relpath.startswith(".."):
                             package_data.setdefault(package, []).append(relpath)
-                for exclude in self.excludes or []:
+                for exclude in excludes:
                     for package in packages:
                         relpath = os.path.relpath(exclude, package)
                         if not relpath.startswith(".."):
@@ -440,9 +371,88 @@ class Metadata:
                     "Can't specify packages and py_modules at the same time."
                 )
         return {
-            "package_dir": {"": self.package_dir} if self.package_dir else {},
+            "package_dir": {"": package_dir} if package_dir else {},
             "packages": packages,
             "py_modules": py_modules,
             "package_data": package_data,
             "exclude_package_data": exclude_package_data,
         }
+
+
+class Config:
+    """The [tool.pdm] table"""
+
+    def __init__(self, root: Path, data: Dict[str, Any]) -> None:
+        self.root = root
+        self.data = data
+
+    def _compatible_get(
+        self, name: str, default: Any = None, old_name: Optional[str] = None
+    ) -> Any:
+        if name in self.data.get("build", {}):
+            return self.data["build"][name]
+        old_name = old_name or name
+        if old_name in self.data:
+            show_warning(
+                f"Field `{old_name}` is renamed to `{name}` under [tool.pdm.build] "
+                "table, please update your pyproject.toml accordingly",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return self.data[old_name]
+        return default
+
+    @property
+    def includes(self) -> List[str]:
+        return self._compatible_get("includes", [])
+
+    @property
+    def source_includes(self) -> List[str]:
+        return self._compatible_get("source-includes", [])
+
+    @property
+    def excludes(self) -> List[str]:
+        return self._compatible_get("excludes", [])
+
+    @property
+    def setup_script(self) -> Optional[str]:
+        build_table = self.data.get("build", {})
+        if "setup-script" in build_table:
+            return build_table["setup-script"]
+        if isinstance(build_table, str):
+            show_warning(
+                "Field `build` is renamed to `setup-script` under [tool.pdm.build] "
+                "table, please update your pyproject.toml accordingly",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return build_table
+        return None
+
+    @property
+    def package_dir(self) -> str:
+        """A directory that will be used to looking for packages."""
+        default = "src" if self.root.joinpath("src").exists() else ""
+        return self._compatible_get("package-dir", default)
+
+    @property
+    def is_purelib(self) -> bool:
+        """If not explicitly set, the project is considered to be non-pure
+        if `build` exists.
+        """
+        return self._compatible_get("is-purelib", not bool(self.setup_script))
+
+    @property
+    def editable_backend(self) -> str:
+        """Currently only two backends are supported:
+        - editables: Proxy modules via editables
+        - path: the legacy .pth file method(default)
+        """
+        return self._compatible_get("editable-backend", "path")
+
+    @property
+    def dynamic_version(self) -> Optional[str]:
+        dynamic_version = self.data.get("version")
+        if not dynamic_version:
+            return None
+        return DynamicVersion.from_toml(dynamic_version).evaluate_in_project(self.root)

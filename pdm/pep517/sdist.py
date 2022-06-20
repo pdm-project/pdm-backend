@@ -95,13 +95,13 @@ class SdistBuilder(Builder):
         """Rewrites the pyproject.toml before adding to tarball.
         This is mainly aiming at fixing the version number in pyproject.toml
         """
-        with self.meta.filepath.open("rb") as f:
+        with open(self.location / "pyproject.toml", "rb") as f:
             pyproject = tomli.load(f)
         if self.meta.dynamic and "version" in self.meta.dynamic:
-            self.meta._metadata["version"] = self.meta.version
-            self.meta._metadata["dynamic"].remove("version")
-        pyproject["project"] = self.meta._metadata
-        name = self.meta.filepath.name
+            self.meta.data["version"] = self.meta.version
+            self.meta.data["dynamic"].remove("version")
+        pyproject["project"] = self.meta.data
+        name = "pyproject.toml"
         tarinfo = tar.gettarinfo(name, os.path.join(tar_dir, name))
         bio = io.BytesIO()
         tomli_w.dump(pyproject, bio)

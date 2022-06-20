@@ -4,7 +4,6 @@ import pytest
 
 from pdm.pep517 import utils
 from pdm.pep517.base import Builder, is_same_or_descendant_path
-from pdm.pep517.metadata import Metadata
 from tests import FIXTURES
 
 
@@ -77,16 +76,16 @@ def test_recursive_glob_patterns_in_includes() -> None:
     ],
 )
 def test_merge_includes_and_excludes(
-    monkeypatch, includes, excludes, data_a_exist: bool, data_b_exist: bool
+    includes, excludes, data_a_exist: bool, data_b_exist: bool
 ) -> None:
     builder = Builder(FIXTURES / "projects/demo-package-with-deep-path")
     data_a, data_b = Path("my_package/data/data_a.json"), Path(
         "my_package/data/data_inner/data_b.json"
     )
     with builder:
-        monkeypatch.setattr(Metadata, "source_includes", [])
-        monkeypatch.setattr(Metadata, "includes", includes)
-        monkeypatch.setattr(Metadata, "excludes", excludes)
+        builder.meta.config.data.setdefault("build", {})["includes"] = includes
+        builder.meta.config.data.setdefault("build", {})["excludes"] = excludes
+        builder.meta.config.data.setdefault("build", {})["source-includes"] = []
         include_files = builder.find_files_to_add()
         assert (data_a in include_files) == data_a_exist
         assert (data_b in include_files) == data_b_exist
@@ -107,7 +106,7 @@ def test_license_file_globs_no_matching() -> None:
 
 def test_license_file_paths_no_matching() -> None:
     builder = Builder(FIXTURES / "projects/demo-no-license")
-    builder.meta._metadata["license-files"] = {"paths": ["LICENSE"]}
+    builder.meta.data["license-files"] = {"paths": ["LICENSE"]}
     with builder:
         with pytest.raises(ValueError, match="License files not found"):
             builder.find_license_files()
@@ -116,7 +115,7 @@ def test_license_file_paths_no_matching() -> None:
 @pytest.mark.parametrize("key", ["paths", "globs"])
 def test_license_file_explicit_empty(recwarn, key) -> None:
     builder = Builder(FIXTURES / "projects/demo-no-license")
-    builder.meta._metadata["license-files"] = {key: []}
+    builder.meta.data["license-files"] = {key: []}
     with builder:
         license_files = builder.find_license_files()
     assert not license_files
