@@ -138,5 +138,6 @@ markers = [
     "deprecation: Test old features are deprecated",
 ]
 filterwarnings = [
-    "ignore::DeprecationWarning"
+    "ignore::DeprecationWarning",
+    "ignore::RuntimeWarning"
 ]

@@ -89,7 +89,9 @@ class Metadata:
             )
             if "version" not in self.config.data:
                 self.config.data["version"] = static_version
-        if not self.dynamic or "version" not in self.dynamic:
+        if "version" in self.config.data and not (
+            self.dynamic and "version" in self.dynamic
+        ):
             raise MetadataError("version", "missing from 'dynamic' fields")
         return self.config.dynamic_version
 
@@ -414,7 +416,18 @@ class Config:
 
     @property
     def setup_script(self) -> Optional[str]:
-        return self._compatible_get("setup-script", None, "build")
+        build_table = self.data.get("build", {})
+        if "setup-script" in build_table:
+            return build_table["setup-script"]
+        if isinstance(build_table, str):
+            show_warning(
+                "Field `build` is renamed to `setup-script` under [tool.pdm.build] "
+                "table, please update your pyproject.toml accordingly",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return build_table
+        return None
 
     @property
     def package_dir(self) -> str:

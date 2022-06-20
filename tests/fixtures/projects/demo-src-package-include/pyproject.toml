@@ -17,6 +17,8 @@ name = "demo-package"
 
 [tool.pdm]
 version = {source = "file", path = "sub/my_package/__init__.py" }
+
+[tool.pdm.build]
 includes = ["sub", "data_out.json"]
 package-dir = "sub"
 editable-backend = "editables"

@@ -17,4 +17,6 @@ name = "demo-package"
 
 [tool.pdm]
 version = {source = "file", path = "foo/my_package/__init__.py" }
+
+[tool.pdm.build]
 package-dir = "foo"

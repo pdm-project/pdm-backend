@@ -246,8 +246,8 @@ class Builder:
         if self.meta.readme and os.path.isfile(self.meta.readme):
             yield self.meta.readme
 
-        if self.meta.filepath.exists():
-            yield self.meta.filepath.name
+        if os.path.isfile("pyproject.toml"):
+            yield "pyproject.toml"
 
     def find_files_to_add(self, for_sdist: bool = False) -> List[Path]:
         """Traverse the project path and return a list of file names

@@ -93,7 +93,7 @@ class WheelBuilder(Builder):
     def tag(self) -> str:
         platform = self.plat_name
         impl = self.python_tag
-        if not self.meta.is_purelib:
+        if not self.meta.config.is_purelib:
             if not platform:
                 platform = get_platform(self.location / "build")
             if not impl:
@@ -117,7 +117,7 @@ class WheelBuilder(Builder):
 
         platform = platform.lower().replace("-", "_").replace(".", "_")
         tag = (impl, abi_tag, platform)
-        if not self.meta.is_purelib:
+        if not self.meta.config.is_purelib:
             supported_tags = [(t.interpreter, t.abi, platform) for t in tags.sys_tags()]
             assert (
                 tag in supported_tags
@@ -183,39 +183,39 @@ class WheelBuilder(Builder):
         if not self.meta.config.setup_script:
             return
         setup_py = self.ensure_setup_py()
-        build_args = [
-            sys.executable,
-            str(setup_py),
-            "build",
-            "-b",
-            str(self.location / "build"),
-        ]
-        try:
-            subprocess.check_call(build_args)
-        except subprocess.CalledProcessError as e:
-            raise BuildError(f"Error occurs when running {build_args}:\n{e}")
-        build_dir = self.location / "build"
-        lib_dir = next(build_dir.glob("lib.*"), None)
-        if not lib_dir:
-            return
+        with tempfile.TemporaryDirectory(prefix="pdm-pep517-") as build_dir:
+            build_args = [
+                sys.executable,
+                str(setup_py),
+                "build",
+                "-b",
+                build_dir,
+            ]
+            try:
+                subprocess.check_call(build_args)
+            except subprocess.CalledProcessError as e:
+                raise BuildError(f"Error occurs when running {build_args}:\n{e}")
+            lib_dir = next(Path(build_dir).glob("lib.*"), None)
+            if not lib_dir:
+                return
 
-        _, excludes = self._get_include_and_exclude_paths(for_sdist=False)
-        for pkg in lib_dir.glob("**/*"):
-            if pkg.is_dir():
-                continue
+            _, excludes = self._get_include_and_exclude_paths(for_sdist=False)
+            for pkg in lib_dir.glob("**/*"):
+                if pkg.is_dir():
+                    continue
 
-            whl_path = rel_path = pkg.relative_to(lib_dir).as_posix()
-            if self.meta.config.package_dir:
-                # act like being in the package_dir
-                rel_path = Path(self.meta.config.package_dir) / rel_path
+                whl_path = rel_path = pkg.relative_to(lib_dir).as_posix()
+                if self.meta.config.package_dir:
+                    # act like being in the package_dir
+                    rel_path = os.path.join(self.meta.config.package_dir, rel_path)
 
-            if self._is_excluded(rel_path, excludes):
-                continue
+                if self._is_excluded(rel_path, excludes):
+                    continue
 
-            if whl_path in wheel.namelist():
-                continue
+                if whl_path in wheel.namelist():
+                    continue
 
-            self._add_file(wheel, pkg, whl_path)
+                self._add_file(wheel, pkg.as_posix(), whl_path)
 
     def _copy_module(self, wheel: zipfile.ZipFile) -> None:
         for path in self.find_files_to_add():

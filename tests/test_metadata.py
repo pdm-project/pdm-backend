@@ -1,23 +1,29 @@
 import subprocess
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
 import pytest
 
+from pdm.pep517._vendor import tomli
 from pdm.pep517.metadata import Metadata
 from tests import FIXTURES
 
 
 def make_metadata(data: dict, tool_settings: Optional[dict] = None) -> Metadata:
-    metadata = Metadata("fake-path", parse=False)
-    metadata._metadata = data
+    pyproject = {"project": data}
     if tool_settings:
-        metadata._tool_settings = tool_settings
+        pyproject["tool"] = {"pdm": tool_settings}
+    metadata = Metadata("fake-path", pyproject)
     return metadata
 
 
+def path_metadata(path: Path) -> Metadata:
+    return Metadata(path.parent, tomli.load(path.open("rb")))
+
+
 def test_parse_module() -> None:
-    metadata = Metadata(FIXTURES / "projects/demo-module/pyproject.toml")
+    metadata = path_metadata(FIXTURES / "projects/demo-module/pyproject.toml")
     assert metadata.name == "demo-module"
     assert metadata.version == "0.1.0"
     assert metadata.author == ""
@@ -29,17 +35,7 @@ def test_parse_module() -> None:
 
 
 def test_parse_package() -> None:
-    metadata = Metadata(FIXTURES / "projects/demo-package-include/pyproject.toml")
-    paths = metadata.convert_package_paths()
-    assert paths["py_modules"] == []
-    assert paths["packages"] == ["my_package"]
-    assert paths["package_dir"] == {}
-    assert paths["package_data"] == {"": ["*"]}
-    assert not metadata.classifiers
-
-
-def test_package_with_old_include() -> None:
-    metadata = Metadata(FIXTURES / "projects/demo-package-include-old/pyproject.toml")
+    metadata = path_metadata(FIXTURES / "projects/demo-package-include/pyproject.toml")
     paths = metadata.convert_package_paths()
     assert paths["py_modules"] == []
     assert paths["packages"] == ["my_package"]
@@ -49,13 +45,15 @@ def test_package_with_old_include() -> None:
 
 
 def test_parse_error_package() -> None:
-    metadata = Metadata(FIXTURES / "projects/demo-package-include-error/pyproject.toml")
+    metadata = path_metadata(
+        FIXTURES / "projects/demo-package-include-error/pyproject.toml"
+    )
     with pytest.raises(ValueError):
         metadata.convert_package_paths()
 
 
 def test_parse_src_package() -> None:
-    metadata = Metadata(FIXTURES / "projects/demo-src-package/pyproject.toml")
+    metadata = path_metadata(FIXTURES / "projects/demo-src-package/pyproject.toml")
     paths = metadata.convert_package_paths()
     assert paths["packages"] == ["my_package"]
     assert paths["py_modules"] == []
@@ -63,7 +61,7 @@ def test_parse_src_package() -> None:
 
 
 def test_parse_pep420_namespace_package() -> None:
-    metadata = Metadata(FIXTURES / "projects/demo-pep420-package/pyproject.toml")
+    metadata = path_metadata(FIXTURES / "projects/demo-pep420-package/pyproject.toml")
     paths = metadata.convert_package_paths()
     assert paths["package_dir"] == {}
     assert paths["packages"] == ["foo.my_package"]
@@ -71,7 +69,7 @@ def test_parse_pep420_namespace_package() -> None:
 
 
 def test_parse_package_with_extras() -> None:
-    metadata = Metadata(FIXTURES / "projects/demo-combined-extras/pyproject.toml")
+    metadata = path_metadata(FIXTURES / "projects/demo-combined-extras/pyproject.toml")
     assert metadata.dependencies == ["urllib3"]
     assert metadata.optional_dependencies == {
         "be": ["idna"],
@@ -86,7 +84,7 @@ def test_parse_package_with_extras() -> None:
 
 
 def test_project_version_use_scm(project_with_scm) -> None:
-    metadata = Metadata(project_with_scm / "pyproject.toml")
+    metadata = path_metadata(project_with_scm / "pyproject.toml")
     assert metadata.version == "0.1.0"
     project_with_scm.joinpath("test.txt").write_text("hello\n")
     subprocess.check_call(["git", "add", "test.txt"])
@@ -98,12 +96,14 @@ def test_project_version_use_scm(project_with_scm) -> None:
 
 def test_project_version_use_scm_from_env(project_with_scm, monkeypatch) -> None:
     monkeypatch.setenv("PDM_PEP517_SCM_VERSION", "1.0.0")
-    metadata = Metadata(project_with_scm / "pyproject.toml")
+    metadata = path_metadata(project_with_scm / "pyproject.toml")
     assert metadata.version == "1.0.0"
 
 
 def test_explicit_package_dir() -> None:
-    metadata = Metadata(FIXTURES / "projects/demo-explicit-package-dir/pyproject.toml")
+    metadata = path_metadata(
+        FIXTURES / "projects/demo-explicit-package-dir/pyproject.toml"
+    )
     paths = metadata.convert_package_paths()
     assert paths["packages"] == ["my_package"]
     assert paths["py_modules"] == []
@@ -111,7 +111,7 @@ def test_explicit_package_dir() -> None:
 
 
 def test_implicit_namespace_package() -> None:
-    metadata = Metadata(FIXTURES / "projects/demo-pep420-package/pyproject.toml")
+    metadata = path_metadata(FIXTURES / "projects/demo-pep420-package/pyproject.toml")
     paths = metadata.convert_package_paths()
     assert paths["packages"] == ["foo.my_package"]
     assert paths["py_modules"] == []
@@ -119,7 +119,7 @@ def test_implicit_namespace_package() -> None:
 
 
 def test_src_dir_containing_modules() -> None:
-    metadata = Metadata(FIXTURES / "projects/demo-src-pymodule/pyproject.toml")
+    metadata = path_metadata(FIXTURES / "projects/demo-src-pymodule/pyproject.toml")
     paths = metadata.convert_package_paths()
     assert paths["package_dir"] == {"": "src"}
     assert not paths["packages"]
@@ -271,3 +271,31 @@ def test_invalid_license_identifier() -> None:
     )
     with pytest.raises(ValueError, match=r".*Unknown license key\(s\): foo"):
         metadata.license_expression
+
+
+@pytest.mark.deprecation
+@pytest.mark.parametrize(
+    "attr_name, field_name, value",
+    [
+        ("includes", "includes", ["foo"]),
+        ("excludes", "excludes", ["foo"]),
+        ("source_includes", "source-includes", ["foo"]),
+        ("setup_script", "build", "build.py"),
+        ("package_dir", "package-dir", "src"),
+        ("is_purelib", "is-purelib", True),
+        ("editable_backend", "editable-backend", "path"),
+    ],
+)
+def test_renamed_tool_table_fields(attr_name, field_name, value):
+    metadata = make_metadata(
+        {
+            "description": "test package",
+            "name": "demo",
+            "version": "0.1.0",
+        },
+        {field_name: value},
+    )
+    with pytest.warns(DeprecationWarning) as record:
+        assert getattr(metadata.config, attr_name) == value
+
+    assert str(record[0].message).startswith(f"Field `{field_name}` is renamed to")
