@@ -38,8 +38,10 @@ includes = []
 excludes = []
 # File patterns to include in source distribution and exclude in wheel distribution.
 source-includes = []
-# An extra script to populate the arguments of `setup()`, one can build C extensions with this script.
+# An extra script to populate the arguments of `setup()`, one can build C extensions with this script. Or a custom build() function to generate files.
 setup-script = "build.py"
+# If true, the setup-script will run in a generated `setup.py` file.
+run-setuptools = false
 # Override the Is-Purelib value in the wheel.
 is-purelib = true
 # Change the editable-backend: path(default) or editables
@@ -86,6 +88,50 @@ When building from a source tree where SCM is not available, you can use the env
 ```bash
 PDM_PEP517_VERSION=0.1.0 python -m build
 ```
+
+## Custom Build Script
+
+With custom build script, you can call other tools to generates files to be included in the wheel.
+Just set the `setup-script` field under `[tool.pdm.build]` table to the path of the script.
+
+In the script, you expose a function named `build`, which takes two arguments:
+
+- `src`(str): the path of the source directory
+- `dst`(str): the path of the destination directory
+
+Example:
+
+```python
+
+def build(src, dst):
+    with open(os.path.join(dst, "myfile.txt"), "w") as f:
+        # Put a file in the wheel
+        f.write("Hello World!")
+```
+Note that the generated file hierarchy will be preserved in the wheel: `$dst/myfile.txt` -> `$wheel_root/myfile.txt`.
+
+When `run-setuptools` is `true`, the `build` function will be called in a generated `setup.py` file, with the setup parameters as the only argument.
+
+Example:
+
+```python
+
+def build(setup_params):
+    # add ext_modules to the setup() arguments
+    setup_parms.update(ext_modules=[Extension("myextension", ["myextension.c"])])
+```
+
+The will result in a `setup()` call like following:
+
+```python
+setup(
+    name="mypackage",
+    # Other metadata fields
+    ext_modules=[Extension("myextension", ["myextension.c"])],
+)
+```
+
+**By default, when `setup-script` is set, the resulted wheel will be platform-specific, but you can override this behavior by setting `is-purelib` to `false`**
 
 ## Supported config settings
 

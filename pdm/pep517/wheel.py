@@ -8,18 +8,19 @@ import stat
 import subprocess
 import sys
 import tempfile
+import tokenize
 import zipfile
 from base64 import urlsafe_b64encode
 from io import StringIO
 from pathlib import Path
-from typing import Any, Generator, List, Mapping, Optional, TextIO, Tuple, Union
+from typing import Any, Dict, Generator, List, Mapping, Optional, TextIO, Tuple, Union
 
 from pdm.pep517 import __version__
 from pdm.pep517._vendor.packaging import tags
 from pdm.pep517._vendor.packaging.specifiers import SpecifierSet
 from pdm.pep517.base import Builder
-from pdm.pep517.exceptions import BuildError
-from pdm.pep517.utils import get_abi_tag, get_platform
+from pdm.pep517.exceptions import BuildError, PDMWarning
+from pdm.pep517.utils import get_abi_tag, get_platform, show_warning
 
 WHEEL_FILE_FORMAT = (
     """\
@@ -182,40 +183,56 @@ class WheelBuilder(Builder):
     def _build(self, wheel: zipfile.ZipFile) -> None:
         if not self.meta.config.setup_script:
             return
-        setup_py = self.ensure_setup_py()
-        with tempfile.TemporaryDirectory(prefix="pdm-pep517-") as build_dir:
+        build_dir = self.location / "build"
+        if build_dir.exists():
+            shutil.rmtree(str(build_dir))
+        if self.meta.config.run_setuptools:
+            setup_py = self.ensure_setup_py()
             build_args = [
                 sys.executable,
                 str(setup_py),
                 "build",
                 "-b",
-                build_dir,
+                str(build_dir),
             ]
             try:
                 subprocess.check_call(build_args)
             except subprocess.CalledProcessError as e:
                 raise BuildError(f"Error occurs when running {build_args}:\n{e}")
-            lib_dir = next(Path(build_dir).glob("lib.*"), None)
-            if not lib_dir:
+            lib_dir = next(build_dir.glob("lib.*"), None)
+        else:
+            with tokenize.open(self.meta.config.setup_script) as f:
+                code = compile(f.read(), self.meta.config.setup_script, "exec")
+            global_dict: Dict[str, Any] = {}
+            exec(code, global_dict)
+            if "build" not in global_dict:
+                show_warning(
+                    "No build() function found in the setup script, do nothing",
+                    PDMWarning,
+                )
                 return
+            global_dict["build"](str(self.location), str(build_dir))
+            lib_dir = build_dir
+        if not lib_dir:
+            return
 
-            _, excludes = self._get_include_and_exclude_paths(for_sdist=False)
-            for pkg in lib_dir.glob("**/*"):
-                if pkg.is_dir():
-                    continue
+        _, excludes = self._get_include_and_exclude_paths(for_sdist=False)
+        for pkg in lib_dir.glob("**/*"):
+            if pkg.is_dir():
+                continue
 
-                whl_path = rel_path = pkg.relative_to(lib_dir).as_posix()
-                if self.meta.config.package_dir:
-                    # act like being in the package_dir
-                    rel_path = os.path.join(self.meta.config.package_dir, rel_path)
+            whl_path = rel_path = pkg.relative_to(lib_dir).as_posix()
+            if self.meta.config.package_dir:
+                # act like being in the package_dir
+                rel_path = os.path.join(self.meta.config.package_dir, rel_path)
 
-                if self._is_excluded(rel_path, excludes):
-                    continue
+            if self._is_excluded(rel_path, excludes):
+                continue
 
-                if whl_path in wheel.namelist():
-                    continue
+            if whl_path in wheel.namelist():
+                continue
 
-                self._add_file(wheel, pkg.as_posix(), whl_path)
+            self._add_file(wheel, pkg.as_posix(), whl_path)
 
     def _copy_module(self, wheel: zipfile.ZipFile) -> None:
         for path in self.find_files_to_add():
