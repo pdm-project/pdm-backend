@@ -430,6 +430,10 @@ class Config:
         return None
 
     @property
+    def run_setuptools(self) -> bool:
+        return self.data.get("build", {}).get("run-setuptools", False)
+
+    @property
     def package_dir(self) -> str:
         """A directory that will be used to looking for packages."""
         default = "src" if self.root.joinpath("src").exists() else ""

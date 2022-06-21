@@ -1,10 +1,10 @@
-# build.py
-from setuptools.command.build_py import build_py
+import os
+
+from pdm.pep517.wheel import WheelBuilder
 
 
-class MyBuild(build_py):
-    pass
-
-
-def build(setup_kwargs):
-    setup_kwargs.update(cmdclass={"build_py": MyBuild})
+def build(src, dst):
+    meta = WheelBuilder(src).meta
+    os.makedirs(os.path.join(dst, "my_package"))
+    with open(os.path.join(dst, "my_package/version.foo"), "w") as f:
+        f.write(meta.version)

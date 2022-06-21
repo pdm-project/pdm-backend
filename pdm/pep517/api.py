@@ -20,7 +20,7 @@ def get_requires_for_build_wheel(
     just return an empty list.
     """
     with WheelBuilder(Path.cwd(), config_settings) as builder:
-        if builder.meta.config.setup_script:
+        if builder.meta.config.run_setuptools:
             return ["setuptools>=40.8.0"]
         return []
 
