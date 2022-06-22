@@ -1,3 +1,15 @@
+## Release v1.0.0a0 (2022-06-22)
+### Features & Improvements
+
+- Allow writing dynamic version from `scm` source to a file. [#94](https://github.com/frostming/pdm-pep517/issues/94)
+- The dynamic version table fields are renamed: `{from = ...}` to `{source = "file", path = ...}` and `{use_scm = true}` to `{source = "scm"}`. [#95](https://github.com/frostming/pdm-pep517/issues/95)
+- Support custom build script, a script containing a function named `build` that takes (src, dst) as the arguments. When `run-setuptools` is `true`, the `build` function will be called in a generated `setup.py` file, with the setup parameters as the only argument. [#98](https://github.com/frostming/pdm-pep517/issues/98)
+
+### Removals and Deprecations
+
+- `includes`, `excludes`, `source-includes`, `package-dir`, `is-purelib`, `editable-backend` are moved to `[tool.pdm.build]` table. `build` field is renamed to `setup-script` under `[tool.pdm.build]` table. [#96](https://github.com/frostming/pdm-pep517/issues/96)
+
+
 ## Release v0.12.7 (2022-06-08)
 No significant changes.
 
