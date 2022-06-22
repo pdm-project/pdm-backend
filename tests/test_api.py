@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from pdm.pep517 import api
+from pdm.pep517.wheel import WheelBuilder
 from tests.testutils import build_fixture_project, get_tarball_names, get_wheel_names
 
 
@@ -304,3 +305,30 @@ def test_build_wheel_preserve_permission(tmp_path: Path) -> None:
             info = zf.getinfo("my_package/executable")
             filemode = info.external_attr >> 16
             assert filemode & 0o111
+
+
+def test_build_wheel_write_version_to_file(project_with_scm: Path) -> None:
+    builder = WheelBuilder(project_with_scm)
+    builder.meta.config.data["version"] = {
+        "source": "scm",
+        "write_to": "foo/__version__.py",
+    }
+    with builder:
+        wheel_name = builder.build(project_with_scm / "dist")
+        with zipfile.ZipFile(project_with_scm / wheel_name) as zf:
+            version = zf.read("foo/__version__.py").decode("utf-8").strip()
+            assert version == "0.1.0"
+
+
+def test_build_wheel_write_version_to_file_template(project_with_scm: Path) -> None:
+    builder = WheelBuilder(project_with_scm)
+    builder.meta.config.data["version"] = {
+        "source": "scm",
+        "write_to": "foo/__version__.py",
+        "write_template": '__version__ = "{}"\n',
+    }
+    with builder:
+        wheel_name = builder.build(project_with_scm / "dist")
+        with zipfile.ZipFile(project_with_scm / wheel_name) as zf:
+            version = zf.read("foo/__version__.py").decode("utf-8").strip()
+            assert version == '__version__ = "0.1.0"'

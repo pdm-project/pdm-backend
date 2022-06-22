@@ -1,7 +1,8 @@
 import os
 import re
 import warnings
-from typing import Any, Dict
+from pathlib import Path
+from typing import Any, Dict, Union
 
 from pdm.pep517.exceptions import MetadataError
 from pdm.pep517.scm import get_version_from_scm
@@ -13,11 +14,11 @@ class DynamicVersion:
     Currently supports `file` and `scm` sources.
     """
 
-    _valid_args = {"file": ["path"], "scm": ["write_to", "write_to_template"]}
+    _valid_args = {"file": ["path"], "scm": ["write_to", "write_template"]}
 
-    def __init__(self, source: str, **kwargs: Any) -> None:
+    def __init__(self, source: str, **options: Any) -> None:
         self.source = source
-        self.kwargs = kwargs
+        self.options = options
 
     @classmethod
     def from_toml(cls, toml: Dict[str, Any]) -> "DynamicVersion":
@@ -62,10 +63,10 @@ class DynamicVersion:
             )
         return cls(source, **options)
 
-    def evaluate_in_project(self, root: str) -> str:
+    def evaluate_in_project(self, root: Union[str, Path]) -> str:
         """Evaluate the dynamic version."""
         if self.source == "file":
-            version_source = os.path.join(root, self.kwargs["path"])
+            version_source = os.path.join(root, self.options["path"])
             with open(version_source, encoding="utf-8") as fp:
                 match = re.search(
                     r"^__version__\s*=\s*[\"'](.+?)[\"']\s*(?:#.*)?$", fp.read(), re.M

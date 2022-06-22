@@ -93,7 +93,10 @@ class Metadata:
             self.dynamic and "version" in self.dynamic
         ):
             raise MetadataError("version", "missing from 'dynamic' fields")
-        return self.config.dynamic_version
+        dynamic_version = self.config.dynamic_version
+        return (
+            dynamic_version.evaluate_in_project(self.root) if dynamic_version else None
+        )
 
     description: MetaField[str] = MetaField("description")
 
@@ -455,8 +458,8 @@ class Config:
         return self._compatible_get("editable-backend", "path")
 
     @property
-    def dynamic_version(self) -> Optional[str]:
+    def dynamic_version(self) -> Optional[DynamicVersion]:
         dynamic_version = self.data.get("version")
         if not dynamic_version:
             return None
-        return DynamicVersion.from_toml(dynamic_version).evaluate_in_project(self.root)
+        return DynamicVersion.from_toml(dynamic_version)
