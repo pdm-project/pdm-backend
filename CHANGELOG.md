@@ -1,3 +1,9 @@
+## Release v1.0.0a1 (2022-06-02)
+
+### Bug Fixes
+
+- Emit `UserWarning` for deprecated settings.
+
 ## Release v1.0.0a0 (2022-06-22)
 ### Features & Improvements
 

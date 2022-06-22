@@ -55,21 +55,21 @@ def _replace_version(new_version: str):
 
 
 def _bump_version(pre=None, major=False, minor=False, patch=True):
-    if not any([major, minor, patch]):
+    if not any([major, minor, patch]) and not pre:
         patch = True
-    if len([v for v in [major, minor, patch] if v]) != 1:
+    if len([v for v in [major, minor, patch] if v]) > 1:
         print(
             "Only one option should be provided among " "(--major, --minor, --patch)",
             file=sys.stderr,
         )
         sys.exit(1)
-    current_version = parver.Version.parse(_get_current_version())
+    version = parver.Version.parse(_get_current_version())
     if any([major, minor, patch]):
         version_idx = [major, minor, patch].index(True)
-        version = current_version.replace(pre=None, post=None).bump_release(
-            index=version_idx
-        )
+        version = version.replace(pre=None, post=None).bump_release(index=version_idx)
     if pre:
+        if pre != version.pre_tag:
+            version = version.replace(pre=None)
         version = version.bump_pre(pre)
     version = version.replace(local=None, dev=None)
     return str(version)
