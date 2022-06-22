@@ -153,7 +153,7 @@ def test_license_classifiers_warning(recwarn) -> None:
     )
     metadata.classifiers
     assert len(recwarn) == 1
-    assert str(recwarn.pop(DeprecationWarning).message).startswith(
+    assert str(recwarn.pop(UserWarning).message).startswith(
         "License classifiers are deprecated"
     )
 
@@ -295,7 +295,7 @@ def test_renamed_tool_table_fields(attr_name, field_name, value):
         },
         {field_name: value},
     )
-    with pytest.warns(DeprecationWarning) as record:
+    with pytest.warns(UserWarning) as record:
         assert getattr(metadata.config, attr_name) == value
 
     assert str(record[0].message).startswith(f"Field `{field_name}` is renamed to")

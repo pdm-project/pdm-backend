@@ -31,7 +31,7 @@ repository = "https://github.com/frostming/pdm-pep517"
 [tool.pdm]
 version = {source = "file", path = "pdm/pep517/__init__.py"}
 
-[tool.pdm.build]
+# [tool.pdm.build]
 includes = ["pdm"]
 source-includes = ["tests"]
 

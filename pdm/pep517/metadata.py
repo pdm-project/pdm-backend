@@ -79,16 +79,6 @@ class Metadata:
         static_version = self.data.get("version")
         if isinstance(static_version, str):
             return static_version
-        elif isinstance(static_version, dict):
-            show_warning(
-                "`version` in [project] no longer supports dynamic filling. "
-                "Move it to [tool.pdm] or change it to static string.\n"
-                "It will raise an error in the next minor release.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            if "version" not in self.config.data:
-                self.config.data["version"] = static_version
         if "version" in self.config.data and not (
             self.dynamic and "version" in self.dynamic
         ):
@@ -178,14 +168,14 @@ class Metadata:
                 "`classifiers` no longer supports dynamic filling, "
                 "please remove it from `dynamic` fields and manually "
                 "supply all the classifiers",
-                DeprecationWarning,
+                PDMWarning,
                 stacklevel=2,
             )
         # if any(line.startswith("License :: ") for line in classifers):
         #     show_warning(
         #         "License classifiers are deprecated in favor of PEP 639 "
         #         "'license-expression' field.",
-        #         DeprecationWarning,
+        #         PDMWarning,
         #         stacklevel=2,
         #     )
 
@@ -399,7 +389,7 @@ class Config:
             show_warning(
                 f"Field `{old_name}` is renamed to `{name}` under [tool.pdm.build] "
                 "table, please update your pyproject.toml accordingly",
-                DeprecationWarning,
+                PDMWarning,
                 stacklevel=2,
             )
             return self.data[old_name]
@@ -426,7 +416,7 @@ class Config:
             show_warning(
                 "Field `build` is renamed to `setup-script` under [tool.pdm.build] "
                 "table, please update your pyproject.toml accordingly",
-                DeprecationWarning,
+                PDMWarning,
                 stacklevel=2,
             )
             return build_table
