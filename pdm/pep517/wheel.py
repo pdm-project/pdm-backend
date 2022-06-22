@@ -181,40 +181,44 @@ class WheelBuilder(Builder):
         self._records.append((rel_path, hash_digest, str(len(b))))
 
     def _build(self, wheel: zipfile.ZipFile) -> None:
-        if not self.meta.config.setup_script:
-            return
         build_dir = self.location / "build"
         if build_dir.exists():
             shutil.rmtree(str(build_dir))
-        if self.meta.config.run_setuptools:
-            setup_py = self.ensure_setup_py()
-            build_args = [
-                sys.executable,
-                str(setup_py),
-                "build",
-                "-b",
-                str(build_dir),
-            ]
-            try:
-                subprocess.check_call(build_args)
-            except subprocess.CalledProcessError as e:
-                raise BuildError(f"Error occurs when running {build_args}:\n{e}")
-            lib_dir = next(build_dir.glob("lib.*"), None)
-        else:
-            with tokenize.open(self.meta.config.setup_script) as f:
-                code = compile(f.read(), self.meta.config.setup_script, "exec")
-            global_dict: Dict[str, Any] = {}
-            exec(code, global_dict)
-            if "build" not in global_dict:
-                show_warning(
-                    "No build() function found in the setup script, do nothing",
-                    PDMWarning,
-                )
-                return
-            global_dict["build"](str(self.location), str(build_dir))
+        lib_dir: Optional[Path] = None
+        if self.meta.config.setup_script:
+            if self.meta.config.run_setuptools:
+                setup_py = self.ensure_setup_py()
+                build_args = [
+                    sys.executable,
+                    str(setup_py),
+                    "build",
+                    "-b",
+                    str(build_dir),
+                ]
+                try:
+                    subprocess.check_call(build_args)
+                except subprocess.CalledProcessError as e:
+                    raise BuildError(f"Error occurs when running {build_args}:\n{e}")
+                lib_dir = next(build_dir.glob("lib.*"), None)
+            else:
+                build_dir.mkdir(exist_ok=True)
+                with tokenize.open(self.meta.config.setup_script) as f:
+                    code = compile(f.read(), self.meta.config.setup_script, "exec")
+                global_dict: Dict[str, Any] = {}
+                exec(code, global_dict)
+                if "build" not in global_dict:
+                    show_warning(
+                        "No build() function found in the setup script, do nothing",
+                        PDMWarning,
+                    )
+                    return
+                global_dict["build"](str(self.location), str(build_dir))
+                lib_dir = build_dir
+        if lib_dir is None:
             lib_dir = build_dir
-        if not lib_dir:
-            return
+        if not lib_dir.exists():
+            lib_dir.mkdir(parents=True)
+        self._write_version(lib_dir)
 
         _, excludes = self._get_include_and_exclude_paths(for_sdist=False)
         for pkg in lib_dir.glob("**/*"):
@@ -233,6 +237,21 @@ class WheelBuilder(Builder):
                 continue
 
             self._add_file(wheel, pkg.as_posix(), whl_path)
+
+    def _write_version(self, destination: Path) -> None:
+        dynamic_version = self.meta.config.dynamic_version
+        if (
+            not dynamic_version
+            or dynamic_version.source != "scm"
+            or "write_to" not in dynamic_version.options
+        ):
+            return
+        write_template = dynamic_version.options.get("write_template", "{}\n")
+        write_to = dynamic_version.options["write_to"]
+        write_path = destination / write_to
+        write_path.parent.mkdir(parents=True, exist_ok=True)
+        with write_path.open("w") as f:
+            f.write(write_template.format(self.meta_version))
 
     def _copy_module(self, wheel: zipfile.ZipFile) -> None:
         for path in self.find_files_to_add():
