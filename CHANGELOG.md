@@ -1,10 +1,15 @@
-## Release v1.0.0a1 (2022-06-02)
+## Release v1.0.0 (2022-06-25)
+
+No significant changes.
+
+## Release v1.0.0a1 (2022-06-22)
 
 ### Bug Fixes
 
 - Emit `UserWarning` for deprecated settings.
 
 ## Release v1.0.0a0 (2022-06-22)
+
 ### Features & Improvements
 
 - Allow writing dynamic version from `scm` source to a file. [#94](https://github.com/frostming/pdm-pep517/issues/94)
@@ -15,37 +20,38 @@
 
 - `includes`, `excludes`, `source-includes`, `package-dir`, `is-purelib`, `editable-backend` are moved to `[tool.pdm.build]` table. `build` field is renamed to `setup-script` under `[tool.pdm.build]` table. [#96](https://github.com/frostming/pdm-pep517/issues/96)
 
-
 ## Release v0.12.7 (2022-06-08)
+
 No significant changes.
 
-
 ## Release v0.12.6 (2022-06-08)
+
 ### Bug Fixes
 
 - Fix a crash issue when `dependencies` field is missing from the project metadata. [#92](https://github.com/frostming/pdm-pep517/issues/92)
 - Leave `License` and `Summary` fields out from the generated core metadata if they are not given. [#93](https://github.com/frostming/pdm-pep517/issues/93)
 
-
 ## Release v0.12.5 (2022-05-16)
+
 ### Features & Improvements
 
 - Allow overriding SCM version with env var. This is useful to build from a source tree without SCM. [#89](https://github.com/frostming/pdm-pep517/issues/89)
 
-
 ## Release v0.12.4 (2022-05-02)
+
 ### Bug Fixes
 
 - Fallback the README content type to text/plain if no suffix is given. [#85](https://github.com/frostming/pdm-pep517/issues/85)
 - Write license files when preparing metadata for wheels. [#86](https://github.com/frostming/pdm-pep517/issues/86)
 
-
 ## Release v0.12.3 (2022-04-01)
+
 ### Bug Fixes
 
 - Do not emit deprecation warnings for `license` field until PEP 639 is accepted.
 
 ## Release v0.12.2 (2022-04-01)
+
 ### Features & Improvements
 
 - Warn about `editable` not being available for PEP 420 namespace packages. [#79](https://github.com/frostming/pdm-pep517/issues/79)
@@ -54,14 +60,14 @@ No significant changes.
 
 - Construct RECORD file using `csv.writer` to ensure correct quoting on path for each entry. [#80](https://github.com/frostming/pdm-pep517/issues/80)
 
-
 ## Release v0.12.1 (2022-03-10)
+
 ### Bug Fixes
 
 - Don't validate license text for PEP 621 `license` field for now. [#78](https://github.com/frostming/pdm-pep517/issues/78)
 
-
 ## Release v0.12.0 (2022-03-08)
+
 ### Features & Improvements
 
 - Implement PEP 639: Improving License Clarity in Project Metadata [#76](https://github.com/frostming/pdm-pep517/issues/76)
@@ -69,7 +75,6 @@ No significant changes.
 ### Removals and Deprecations
 
 - Mandates the PEP 621 metadata and raise an error if invalid. [#76](https://github.com/frostming/pdm-pep517/issues/76)
-
 
 ## Release v0.11.2 (2022-02-11)
 
