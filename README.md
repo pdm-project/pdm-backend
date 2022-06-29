@@ -61,13 +61,14 @@ You don't have to specify all of them, PDM-PEP517 can also derive these fields s
 + dynamic = ["version"]
 ```
 
-Then in `[tool.pdm.build]` table, specify how to get the version info. There are two ways supported:
+Then in `[tool.pdm.version]` table, specify how to get the version info. There are two ways supported:
 
 1. Read from a static string in the given file path:
 
 ```toml
-[tool.pdm.build]
-version = {source = "file", path = "mypackage/__init__.py"}
+[tool.pdm.version]
+source = "file"
+path = "mypackage/__init__.py"
 ```
 
 In this way, the file MUST contain a line like:
@@ -79,8 +80,8 @@ __version__ = "0.1.0" # Single quotes and double quotes are both OK, comments ar
 2. Read from SCM tag, supporting `git` and `hg`:
 
 ```toml
-[tool.pdm.build]
-version = {source = "scm"}
+[tool.pdm.version]
+source = "scm"
 ```
 
 When building from a source tree where SCM is not available, you can use the env var `PDM_PEP517_SCM_VERSION` to pretend the version is set.
@@ -94,16 +95,19 @@ PDM_PEP517_VERSION=0.1.0 python -m build
 You can instruct PDM-PEP517 to write back the dynamic version fetched from SCM to a file:
 
 ```toml
-[tool.pdm.build]
-version = {source = "scm", write_to = "foo/version.txt"}
+[tool.pdm.version]
+source = "scm"
+write_to = "foo/version.txt"
 ```
 
 By default, PDM-PEP517 will just write the SCM version itself.
 You can provide a template as a Python-formatted string to create a syntactically correct Python assignment:
 
 ```toml
-[tool.pdm.build]
-version = {source = "scm", write_to = "foo/_version.py", write_template = "__version__ = '{}'"}
+[tool.pdm.version]
+source = "scm"
+write_to = "foo/_version.py"
+write_template = "__version__ = '{}'"
 ```
 
 Note that PDM-PEP517 will rewrite the whole file each time, so you can't have additional contents in that file.
