@@ -1,3 +1,9 @@
+## Release v1.0.1 (2022-07-03)
+
+### Bug Fixes
+
+- Fix a compatibility issue that `run_setuptools` defaults to True for old build configuration.
+
 ## Release v1.0.0 (2022-06-25)
 
 No significant changes.
