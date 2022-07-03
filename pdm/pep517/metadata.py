@@ -13,6 +13,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
 )
 
 from pdm.pep517._vendor.packaging.requirements import Requirement
@@ -424,7 +425,8 @@ class Config:
 
     @property
     def run_setuptools(self) -> bool:
-        return self.data.get("build", {}).get("run-setuptools", False)
+        build = self.data.get("build", {})
+        return isinstance(build, str) or cast(dict, build).get("run-setuptools", False)
 
     @property
     def package_dir(self) -> str:
