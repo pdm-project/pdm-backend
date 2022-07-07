@@ -274,6 +274,7 @@ class Builder:
                 p.relative_to(self.location).as_posix()
                 for pattern in license_files["globs"]
                 for p in self.location.glob(pattern)
+                if (self.location / p).is_file()
             ]
             if license_files["globs"] and not paths:
                 warnings.warn(

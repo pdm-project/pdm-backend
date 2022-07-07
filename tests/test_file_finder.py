@@ -120,3 +120,10 @@ def test_license_file_explicit_empty(recwarn, key) -> None:
         license_files = builder.find_license_files()
     assert not license_files
     assert len(recwarn) == 0
+
+
+def test_reuse_spec_licenses_dir() -> None:
+    builder = Builder(FIXTURES / "projects/demo-reuse-spec")
+    with builder:
+        license_files = builder.find_license_files()
+    assert license_files == ["LICENSES/MPL-2.0.txt"]
