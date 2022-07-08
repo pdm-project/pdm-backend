@@ -1,0 +1,20 @@
+[build-system]
+requires = ["pdm-pep517"]
+build-backend = "pdm.pep517.api"
+
+[project]
+authors = [
+    {name = "CharString", email = "chris.wesseling@pm.me"},
+]
+dynamic = ["version"]
+requires-python = ">=3.5"
+license = {text = "MPL-2.0"}
+dependencies = []
+description = ""
+name = "demo-module"
+readme = "README.md"
+
+[project.optional-dependencies]
+
+[tool.pdm]
+version = {source = "file", path = "src/foo_module.py" }

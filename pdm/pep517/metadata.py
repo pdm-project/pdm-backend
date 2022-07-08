@@ -217,7 +217,15 @@ class Metadata:
                 #     stacklevel=2,
                 # )
                 return {"paths": [self.data["license"]["file"]]}
-            return {"globs": ["LICEN[CS]E*", "COPYING*", "NOTICE*", "AUTHORS*"]}
+            return {
+                "globs": [
+                    "LICENSES/*",
+                    "LICEN[CS]E*",
+                    "COPYING*",
+                    "NOTICE*",
+                    "AUTHORS*",
+                ]
+            }
         if "license" in self.data:
             raise MetadataError(
                 "license-files",

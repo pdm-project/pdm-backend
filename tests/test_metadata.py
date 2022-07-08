@@ -238,7 +238,7 @@ def test_default_license_files() -> None:
         }
     )
     assert metadata.license_files == {
-        "globs": ["LICEN[CS]E*", "COPYING*", "NOTICE*", "AUTHORS*"]
+        "globs": ["LICENSES/*", "LICEN[CS]E*", "COPYING*", "NOTICE*", "AUTHORS*"]
     }
 
 
