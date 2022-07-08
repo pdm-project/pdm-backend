@@ -11,8 +11,9 @@ from typing import Callable, Generator, Iterable, Optional, Type, Union
 
 from pdm.pep517._vendor.packaging import tags
 from pdm.pep517._vendor.packaging.markers import Marker
-from pdm.pep517._vendor.packaging.requirements import Requirement
+from pdm.pep517._vendor.packaging.requirements import InvalidRequirement, Requirement
 from pdm.pep517._vendor.packaging.version import InvalidVersion, Version
+from pdm.pep517.exceptions import MetadataError
 from pdm.pep517.macosx_platform import calculate_macosx_platform_tag
 
 
@@ -184,11 +185,15 @@ def get_abi_tag() -> Optional[str]:
         return None
 
 
-def ensure_pep440_req(req: str) -> Optional[str]:
+def ensure_pep440_req(req: str, field: str) -> Optional[str]:
     """Discard all non-PEP 440 requirements, e.g. editable VCS requirements."""
 
     if req.strip().startswith("-e"):
         return None
+    try:
+        Requirement(req)
+    except InvalidRequirement as e:
+        raise MetadataError(field, f"Invalid requirement {req!r}\n  {e}") from e
     return req
 
 

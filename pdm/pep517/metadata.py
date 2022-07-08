@@ -241,13 +241,18 @@ class Metadata:
             raise MetadataError("license-files", "Must specify 'paths' or 'globs'")
         return rv
 
-    def _convert_dependencies(self, deps: List[str]) -> List[str]:
-        return list(filter(None, map(ensure_pep440_req, deps)))
+    def _convert_dependencies(
+        self, deps: List[str], field: str = "dependencies"
+    ) -> List[str]:
+        return list(filter(None, (ensure_pep440_req(dep, field) for dep in deps)))
 
     def _convert_optional_dependencies(
         self, deps: Mapping[str, List[str]]
     ) -> Dict[str, List[str]]:
-        return {k: self._convert_dependencies(deps[k]) for k in deps}
+        return {
+            k: self._convert_dependencies(deps[k], "optional-dependencies")
+            for k in deps
+        }
 
     dependencies: MetaField[List[str]] = MetaField(
         "dependencies", _convert_dependencies

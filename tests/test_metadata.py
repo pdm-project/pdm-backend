@@ -273,6 +273,22 @@ def test_invalid_license_identifier() -> None:
         metadata.license_expression
 
 
+def test_invalid_requirement_strings() -> None:
+    metadata = make_metadata(
+        {
+            "description": "test package",
+            "name": "demo",
+            "dependencies": ["+abc"],
+            "optional-dependencies": {"foo": ["foo&123"]},
+        }
+    )
+    with pytest.raises(ValueError):
+        metadata.dependencies
+
+    with pytest.raises(ValueError):
+        metadata.optional_dependencies
+
+
 @pytest.mark.deprecation
 @pytest.mark.parametrize(
     "attr_name, field_name, value",
