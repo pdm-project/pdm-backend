@@ -1,3 +1,10 @@
+## Release v1.0.2 (2022-07-10)
+### Bug Fixes
+
+- Ensure the license is a file. Also add `LICENSES/*` to the default search patterns, as specified by [REUSE spec](https://reuse.software/spec/). [#105](https://github.com/frostming/pdm-pep517/issues/105)
+- Throw a better error message when a malformed requirement is being parsed. [#106](https://github.com/frostming/pdm-pep517/issues/106)
+
+
 ## Release v1.0.1 (2022-07-03)
 
 ### Bug Fixes
