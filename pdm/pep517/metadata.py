@@ -452,7 +452,7 @@ class Config:
         """If not explicitly set, the project is considered to be non-pure
         if `build` exists.
         """
-        return self._compatible_get("is-purelib", not bool(self.setup_script))
+        return self._compatible_get("is-purelib", not bool(self.run_setuptools))
 
     @property
     def editable_backend(self) -> str:
