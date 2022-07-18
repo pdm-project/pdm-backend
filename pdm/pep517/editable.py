@@ -2,6 +2,7 @@ import hashlib
 import os
 import subprocess
 import sys
+import tokenize
 import warnings
 import zipfile
 from base64 import urlsafe_b64encode
@@ -9,7 +10,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, TextIO, Tuple, Union
 
 from pdm.pep517.exceptions import BuildError, PDMWarning
-from pdm.pep517.utils import is_relative_path, to_filename
+from pdm.pep517.utils import is_relative_path, show_warning, to_filename
 from pdm.pep517.wheel import WheelBuilder
 
 
@@ -77,17 +78,32 @@ class EditableBuilder(WheelBuilder):
 
     def _build(self, wheel: zipfile.ZipFile) -> None:
         if self.meta.config.setup_script:
-            setup_py = self.ensure_setup_py()
-            build_args = [
-                sys.executable,
-                str(setup_py),
-                "build_ext",
-                "--inplace",
-            ]
-            try:
-                subprocess.check_call(build_args)
-            except subprocess.CalledProcessError as e:
-                raise BuildError(f"Error occurs when running {build_args}:\n{e}")
+            if self.meta.config.run_setuptools:
+                setup_py = self.ensure_setup_py()
+                build_args = [
+                    sys.executable,
+                    str(setup_py),
+                    "build_ext",
+                    "--inplace",
+                ]
+                try:
+                    subprocess.check_call(build_args)
+                except subprocess.CalledProcessError as e:
+                    raise BuildError(f"Error occurs when running {build_args}:\n{e}")
+            else:
+                build_dir = self.location / self.meta.config.package_dir
+                with tokenize.open(self.meta.config.setup_script) as f:
+                    code = compile(f.read(), self.meta.config.setup_script, "exec")
+                global_dict: Dict[str, Any] = {}
+                exec(code, global_dict)
+                if "build" not in global_dict:
+                    show_warning(
+                        "No build() function found in the setup script, do nothing",
+                        PDMWarning,
+                    )
+                    return
+                global_dict["build"](str(self.location), str(build_dir))
+
         self._prepare_editable()
         for name, content in self.editables.files():
             self._add_file_content(wheel, name, content)

@@ -254,9 +254,8 @@ def test_license_normalization() -> None:
     with pytest.warns(UserWarning) as record:
         assert metadata.license_expression == "MIT"
 
-    assert len(record) == 1
-    assert str(record.pop(UserWarning).message).startswith(
-        "License expression normalized to"
+    assert any(
+        str(m.message).startswith("License expression normalized to") for m in record
     )
 
 
