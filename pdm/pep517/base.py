@@ -1,7 +1,6 @@
 import atexit
 import glob
 import os
-import textwrap
 import warnings
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Tuple, TypeVar, Union
@@ -428,12 +427,7 @@ class Builder:
             )
         if meta.long_description:
             readme = meta.long_description
-            if full:
-                content += "\n" + readme + "\n"
-            else:
-                content += "Description: {}\n".format(
-                    textwrap.indent(readme, " " * 8, lambda line: True).lstrip()
-                )
+            content += "\n" + readme + "\n"
 
         return content
 
