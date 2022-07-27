@@ -3,7 +3,18 @@ import glob
 import os
 import warnings
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Tuple, TypeVar, Union
+from typing import (
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from pdm.pep517._vendor import tomli
 from pdm.pep517.exceptions import MetadataError, PDMWarning, ProjectError
@@ -314,7 +325,7 @@ class Builder:
         if package_paths["packages"]:
             extra.append(
                 "    'packages': {},\n".format(
-                    _format_list(package_paths["packages"], 8)
+                    _format_list(cast(List[str], package_paths["packages"]), 8)
                 )
             )
         if package_paths["package_dir"]:
@@ -418,8 +429,9 @@ class Builder:
                 for dep in reqs:
                     content += f"Requires-Dist: {dep}\n"
 
-        for url in sorted(meta.project_urls or {}):
-            content += f"Project-URL: {url}, {meta.project_urls[url]}\n"
+        if meta.project_urls:
+            for url in sorted(meta.project_urls):
+                content += f"Project-URL: {url}, {meta.project_urls[url]}\n"
 
         if meta.long_description_content_type:
             content += "Description-Content-Type: {}\n".format(

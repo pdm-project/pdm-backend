@@ -270,7 +270,7 @@ class Metadata:
 
     @property
     def project_filename(self) -> str:
-        if self.name is None:
+        if self.project_name is None:
             return "UNKNOWN"
         return to_filename(self.project_name)
 
@@ -336,7 +336,7 @@ class Metadata:
                     find_packages_iter(
                         package_dir or ".",
                         exclude=["tests", "tests.*"],
-                        src=src_dir,
+                        src=str(src_dir),
                     )
                 )
                 if not packages:
