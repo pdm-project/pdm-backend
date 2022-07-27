@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import warnings
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
 
 from pdm.pep517._vendor.packaging.version import LegacyVersion, Version
@@ -141,16 +142,14 @@ def tag_to_version(tag: str) -> Union[Version, LegacyVersion]:
     tagdict = _parse_version_tag(tag)
     if not tagdict or not tagdict.version:
         warnings.warn(f"tag {tag!r} no version found")
-        return None
+        return Version("0.0.0")
 
     version = tagdict.version
 
     if tagdict.suffix:
         warnings.warn(f"tag {tag!r} will be stripped of its suffix '{tagdict.suffix}'")
 
-    version = parse_version(version)
-
-    return version
+    return parse_version(version)
 
 
 def tags_to_versions(tags: Iterable[str]) -> List[Union[Version, LegacyVersion]]:
@@ -315,9 +314,9 @@ def format_version(version: VersionInfo) -> str:
     return main_version + local_version
 
 
-def get_version_from_scm(root: "os.PathLike[Any]") -> str:
+def get_version_from_scm(root: Union[str, Path]) -> str:
     if "PDM_PEP517_SCM_VERSION" in os.environ:
-        version = meta(os.getenv("PDM_PEP517_SCM_VERSION"))
+        version = meta(os.getenv("PDM_PEP517_SCM_VERSION", ""))
     else:
         for func in (git_parse_version, hg_parse_version):
             version = func(root)  # type: ignore

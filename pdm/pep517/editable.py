@@ -72,6 +72,7 @@ class EditableBuilder(WheelBuilder):
         self, location: Union[str, Path], config_settings: Optional[Mapping[str, Any]]
     ) -> None:
         super().__init__(location, config_settings=config_settings)
+        assert self.meta.project_name, "Project name is not specified"
         self.editables = EditableProject(
             to_filename(self.meta.project_name), self.location.as_posix()
         )
