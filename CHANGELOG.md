@@ -1,3 +1,11 @@
+## Release v1.0.4 (2022-08-06)
+### Bug Fixes
+
+- Fix a bug of editable install not reading `run-setuptools = false` config. [#107](https://github.com/frostming/pdm-pep517/issues/107)
+- Put the long description in the body as specified by Metadata Version 2.1 [#109](https://github.com/frostming/pdm-pep517/issues/109)
+- Overwrite the existing files in the custom build stage of `WheelBuilder`. [#114](https://github.com/frostming/pdm-pep517/issues/114)
+
+
 ## Release v1.0.2 (2022-07-10)
 ### Bug Fixes
 
