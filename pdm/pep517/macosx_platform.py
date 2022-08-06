@@ -13,7 +13,7 @@ import ctypes
 import os
 import sys
 from pathlib import Path
-from typing import BinaryIO, TypeVar, no_type_check
+from typing import TYPE_CHECKING, BinaryIO, TypeVar, no_type_check
 
 """here the needed const and struct from mach-o header files"""
 
@@ -207,8 +207,8 @@ struct build_version_command {
     uint32_t	ntools;		/* number of tool entries following this */
 };
 """
-
-Version = tuple[int, int, int]
+if TYPE_CHECKING:
+    Version = tuple[int, int, int]
 
 
 def swap32(x: int) -> int:
