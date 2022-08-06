@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import abc
 import contextlib
 import csv
@@ -14,18 +16,7 @@ import tokenize
 import zipfile
 from base64 import urlsafe_b64encode
 from pathlib import Path
-from typing import (
-    Any,
-    BinaryIO,
-    Dict,
-    Generator,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    TextIO,
-    Union,
-)
+from typing import Any, BinaryIO, Generator, Mapping, NamedTuple, TextIO
 
 from pdm.pep517 import __version__
 from pdm.pep517._vendor.packaging import tags
@@ -123,11 +114,11 @@ class WheelStringEntry(WheelEntry):
 class WheelBuilder(Builder):
     def __init__(
         self,
-        location: Union[str, Path],
-        config_settings: Optional[Mapping[str, Any]] = None,
+        location: str | Path,
+        config_settings: Mapping[str, Any] | None = None,
     ) -> None:
         super().__init__(location, config_settings)
-        self._entries: Dict[str, WheelEntry] = {}
+        self._entries: dict[str, WheelEntry] = {}
         self._parse_config_settings()
 
     def _parse_config_settings(self) -> None:
@@ -217,7 +208,7 @@ class WheelBuilder(Builder):
         version = self.meta_version
         return f"{name}-{version}.dist-info"
 
-    def _write_record(self, records: List[RecordEntry]) -> WheelEntry:
+    def _write_record(self, records: list[RecordEntry]) -> WheelEntry:
         entry = WheelStringEntry(self.dist_info_name + "/RECORD")
         with entry.text_open() as fp:
             writer = csv.writer(fp, lineterminator="\n")
@@ -255,7 +246,7 @@ class WheelBuilder(Builder):
         build_dir = self.location / "build"
         if build_dir.exists():
             shutil.rmtree(str(build_dir))
-        lib_dir: Optional[Path] = None
+        lib_dir: Path | None = None
         if self.meta.config.setup_script:
             if self.meta.config.run_setuptools:
                 setup_py = self.ensure_setup_py()
@@ -275,7 +266,7 @@ class WheelBuilder(Builder):
                 build_dir.mkdir(exist_ok=True)
                 with tokenize.open(self.meta.config.setup_script) as f:
                     code = compile(f.read(), self.meta.config.setup_script, "exec")
-                global_dict: Dict[str, Any] = {}
+                global_dict: dict[str, Any] = {}
                 exec(code, global_dict)
                 if "build" not in global_dict:
                     show_warning(
@@ -357,7 +348,7 @@ class WheelBuilder(Builder):
             fp.write("\n")
 
     def _write_to_zip(self, zf: zipfile.ZipFile) -> None:
-        records: List[RecordEntry] = []
+        records: list[RecordEntry] = []
         for entry in self._entries.values():
             records.append(entry.write_to_zip(zf))
 

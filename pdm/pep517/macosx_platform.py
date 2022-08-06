@@ -7,12 +7,13 @@ Currently only for MacOSX
 Adapted from
 https://github.com/pypa/wheel/blob/6e86e6b886/src/wheel/macosx_libfile.py
 """
+from __future__ import annotations
 
 import ctypes
 import os
 import sys
 from pathlib import Path
-from typing import BinaryIO, List, Optional, Tuple, Type, TypeVar, Union, no_type_check
+from typing import BinaryIO, TypeVar, no_type_check
 
 """here the needed const and struct from mach-o header files"""
 
@@ -207,7 +208,7 @@ struct build_version_command {
 };
 """
 
-Version = Tuple[int, int, int]
+Version = tuple[int, int, int]
 
 
 def swap32(x: int) -> int:
@@ -220,8 +221,8 @@ def swap32(x: int) -> int:
 
 
 def get_base_class_and_magic_number(
-    lib_file: BinaryIO, seek: Optional[int] = None
-) -> Tuple[Type[ctypes.Structure], int]:
+    lib_file: BinaryIO, seek: int | None = None
+) -> tuple[type[ctypes.Structure], int]:
     if seek is None:
         seek = lib_file.tell()
     else:
@@ -233,7 +234,7 @@ def get_base_class_and_magic_number(
     # Handle wrong byte order
     if magic_number in [FAT_CIGAM, FAT_CIGAM_64, MH_CIGAM, MH_CIGAM_64]:
         if sys.byteorder == "little":
-            BaseClass: Type[ctypes.Structure] = ctypes.BigEndianStructure
+            BaseClass: type[ctypes.Structure] = ctypes.BigEndianStructure
         else:
             BaseClass = ctypes.LittleEndianStructure
 
@@ -248,12 +249,12 @@ def get_base_class_and_magic_number(
 S = TypeVar("S", bound=ctypes.Structure)
 
 
-def read_data(struct_class: Type[S], lib_file: BinaryIO) -> S:
+def read_data(struct_class: type[S], lib_file: BinaryIO) -> S:
     return struct_class.from_buffer_copy(lib_file.read(ctypes.sizeof(struct_class)))
 
 
 @no_type_check
-def extract_macosx_min_system_version(path_to_lib: str) -> Optional[Version]:
+def extract_macosx_min_system_version(path_to_lib: str) -> Version | None:
     with open(path_to_lib, "rb") as lib_file:
         BaseClass, magic_number = get_base_class_and_magic_number(lib_file, 0)
         if magic_number not in [FAT_MAGIC, FAT_MAGIC_64, MH_MAGIC, MH_MAGIC_64]:
@@ -279,7 +280,7 @@ def extract_macosx_min_system_version(path_to_lib: str) -> Optional[Version]:
                 read_data(FatArch, lib_file) for _ in range(fat_header.nfat_arch)
             ]
 
-            versions_list: List[Version] = []
+            versions_list: list[Version] = []
             for el in fat_arch_list:
                 try:
                     version = read_mach_header(lib_file, el.offset)
@@ -312,9 +313,7 @@ def extract_macosx_min_system_version(path_to_lib: str) -> Optional[Version]:
 
 
 @no_type_check
-def read_mach_header(
-    lib_file: BinaryIO, seek: Optional[int] = None
-) -> Optional[Version]:
+def read_mach_header(lib_file: BinaryIO, seek: int | None = None) -> Version | None:
     """
     This funcition parse mach-O header and extract
     information about minimal system version
@@ -370,9 +369,7 @@ def parse_version(version: int) -> Version:
     return x, y, z
 
 
-def calculate_macosx_platform_tag(
-    archive_root: Union[str, Path], platform_tag: str
-) -> str:
+def calculate_macosx_platform_tag(archive_root: str | Path, platform_tag: str) -> str:
     """
     Calculate proper macosx platform tag basing on files which are included to wheel
 

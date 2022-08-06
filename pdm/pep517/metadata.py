@@ -1,20 +1,9 @@
+from __future__ import annotations
+
 import glob
 import os
 from pathlib import Path
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Generic,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Generic, Iterable, Mapping, TypeVar, cast
 
 from pdm.pep517._vendor.packaging.requirements import Requirement
 from pdm.pep517.exceptions import MetadataError, PDMWarning, ProjectError
@@ -36,12 +25,12 @@ T = TypeVar("T")
 
 class MetaField(Generic[T]):
     def __init__(
-        self, name: str, fget: Optional[Callable[["Metadata", Any], T]] = None
+        self, name: str, fget: Callable[[Metadata, Any], T] | None = None
     ) -> None:
         self.name = name
         self.fget = fget
 
-    def __get__(self, instance: "Metadata", owner: Type["Metadata"]) -> Optional[T]:
+    def __get__(self, instance: Metadata, owner: type[Metadata]) -> T | None:
         if instance is None:
             return self
         try:
@@ -59,7 +48,7 @@ class Metadata:
     DEFAULT_ENCODING = "utf-8"
     SUPPORTED_CONTENT_TYPES = ("text/markdown", "text/x-rst", "text/plain")
 
-    def __init__(self, root: Union[str, Path], pyproject: Dict[str, Any]) -> None:
+    def __init__(self, root: str | Path, pyproject: dict[str, Any]) -> None:
         self.root = Path(root).absolute()
         if "project" not in pyproject:
             raise ProjectError("No [project] config in pyproject.toml")
@@ -76,7 +65,7 @@ class Metadata:
         return self.data["name"]
 
     @property
-    def version(self) -> Optional[str]:
+    def version(self) -> str | None:
         static_version = self.data.get("version")
         if isinstance(static_version, str):
             return static_version
@@ -91,12 +80,12 @@ class Metadata:
 
     description: MetaField[str] = MetaField("description")
 
-    def _get_readme_file(self, value: Union[Mapping[str, str], str]) -> str:
+    def _get_readme_file(self, value: Mapping[str, str] | str) -> str:
         if isinstance(value, str):
             return value
         return value.get("file", "")
 
-    def _get_readme_content(self, value: Union[Mapping[str, str], str]) -> str:
+    def _get_readme_content(self, value: Mapping[str, str] | str) -> str:
         if isinstance(value, str):
             return Path(value).read_text(encoding=self.DEFAULT_ENCODING)
         if "file" in value and "text" in value:
@@ -111,7 +100,7 @@ class Metadata:
         encoding = value.get("charset", self.DEFAULT_ENCODING)
         return Path(file_path).read_text(encoding=encoding)
 
-    def _get_content_type(self, value: Union[Mapping[str, str], str]) -> str:
+    def _get_content_type(self, value: Mapping[str, str] | str) -> str:
         if isinstance(value, str):
             if value.lower().endswith(".md"):
                 return "text/markdown"
@@ -161,7 +150,7 @@ class Metadata:
     maintainer_email: MetaField[str] = MetaField("maintainers", _get_email)
 
     @property
-    def classifiers(self) -> List[str]:
+    def classifiers(self) -> list[str]:
         classifers = set(self.data.get("classifiers", []))
 
         if self.dynamic and "classifiers" in self.dynamic:
@@ -183,10 +172,10 @@ class Metadata:
         return sorted(classifers)
 
     keywords: MetaField[str] = MetaField("keywords")
-    project_urls: MetaField[Dict[str, str]] = MetaField("urls")
+    project_urls: MetaField[dict[str, str]] = MetaField("urls")
 
     @property
-    def license_expression(self) -> Optional[str]:
+    def license_expression(self) -> str | None:
         if "license-expression" in self.data:
             if "license" in self.data:
                 raise MetadataError(
@@ -208,7 +197,7 @@ class Metadata:
         return None
 
     @property
-    def license_files(self) -> Dict[str, List[str]]:
+    def license_files(self) -> dict[str, list[str]]:
         if "license-files" not in self.data:
             if self.data.get("license", {}).get("file"):
                 # show_warning(
@@ -242,28 +231,28 @@ class Metadata:
         return rv
 
     def _convert_dependencies(
-        self, deps: List[str], field: str = "dependencies"
-    ) -> List[str]:
+        self, deps: list[str], field: str = "dependencies"
+    ) -> list[str]:
         return list(filter(None, (ensure_pep440_req(dep, field) for dep in deps)))
 
     def _convert_optional_dependencies(
-        self, deps: Mapping[str, List[str]]
-    ) -> Dict[str, List[str]]:
+        self, deps: Mapping[str, list[str]]
+    ) -> dict[str, list[str]]:
         return {
             k: self._convert_dependencies(deps[k], "optional-dependencies")
             for k in deps
         }
 
-    dependencies: MetaField[List[str]] = MetaField(
+    dependencies: MetaField[list[str]] = MetaField(
         "dependencies", _convert_dependencies
     )
-    optional_dependencies: MetaField[Dict[str, List[str]]] = MetaField(
+    optional_dependencies: MetaField[dict[str, list[str]]] = MetaField(
         "optional-dependencies", _convert_optional_dependencies
     )
-    dynamic: MetaField[List[str]] = MetaField("dynamic")
+    dynamic: MetaField[list[str]] = MetaField("dynamic")
 
     @property
-    def project_name(self) -> Optional[str]:
+    def project_name(self) -> str | None:
         if self.name is None:
             return None
         return safe_name(self.name)
@@ -275,11 +264,11 @@ class Metadata:
         return to_filename(self.project_name)
 
     @property
-    def requires_extra(self) -> Dict[str, List[str]]:
+    def requires_extra(self) -> dict[str, list[str]]:
         """For PKG-INFO metadata"""
         if not self.optional_dependencies:
             return {}
-        result: Dict[str, List[str]] = {}
+        result: dict[str, list[str]] = {}
         for name, reqs in self.optional_dependencies.items():
             current = result[name] = []
             for r in reqs:
@@ -294,7 +283,7 @@ class Metadata:
         return "" if result == "*" else result
 
     @property
-    def entry_points(self) -> Dict[str, List[str]]:
+    def entry_points(self) -> dict[str, list[str]]:
         result = {}
         settings = self.data
         if "scripts" in settings:
@@ -319,12 +308,12 @@ class Metadata:
                 result[plugin] = [f"{k} = {v}" for k, v in value.items()]
         return result
 
-    def convert_package_paths(self) -> Dict[str, Union[List, Dict]]:
+    def convert_package_paths(self) -> dict[str, list | dict]:
         """Return a {package_dir, packages, package_data, exclude_package_data} dict."""
         packages = []
         py_modules = []
         package_data = {"": ["*"]}
-        exclude_package_data: Dict[str, List[str]] = {}
+        exclude_package_data: dict[str, list[str]] = {}
         package_dir = self.config.package_dir
         includes = self.config.includes
         excludes = self.config.excludes
@@ -389,12 +378,12 @@ class Metadata:
 class Config:
     """The [tool.pdm] table"""
 
-    def __init__(self, root: Path, data: Dict[str, Any]) -> None:
+    def __init__(self, root: Path, data: dict[str, Any]) -> None:
         self.root = root
         self.data = data
 
     def _compatible_get(
-        self, name: str, default: Any = None, old_name: Optional[str] = None
+        self, name: str, default: Any = None, old_name: str | None = None
     ) -> Any:
         if name in self.data.get("build", {}):
             return self.data["build"][name]
@@ -410,19 +399,19 @@ class Config:
         return default
 
     @property
-    def includes(self) -> List[str]:
+    def includes(self) -> list[str]:
         return self._compatible_get("includes", [])
 
     @property
-    def source_includes(self) -> List[str]:
+    def source_includes(self) -> list[str]:
         return self._compatible_get("source-includes", [])
 
     @property
-    def excludes(self) -> List[str]:
+    def excludes(self) -> list[str]:
         return self._compatible_get("excludes", [])
 
     @property
-    def setup_script(self) -> Optional[str]:
+    def setup_script(self) -> str | None:
         build_table = self.data.get("build", {})
         if "setup-script" in build_table:
             return build_table["setup-script"]
@@ -463,7 +452,7 @@ class Config:
         return self._compatible_get("editable-backend", "path")
 
     @property
-    def dynamic_version(self) -> Optional[DynamicVersion]:
+    def dynamic_version(self) -> DynamicVersion | None:
         dynamic_version = self.data.get("version")
         if not dynamic_version:
             return None

@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import os
 import subprocess
 import sys
 import tokenize
 import warnings
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Optional, TextIO, Tuple, Union
+from typing import Any, Iterable, Mapping, TextIO
 
 from pdm.pep517.exceptions import BuildError, PDMWarning
 from pdm.pep517.utils import is_relative_path, show_warning, to_filename
@@ -17,8 +19,8 @@ class EditableProject:
     def __init__(self, project_name: str, project_dir: str) -> None:
         self.project_name = project_name
         self.project_dir = Path(project_dir)
-        self.redirections: Dict[str, str] = {}
-        self.path_entries: List[Path] = []
+        self.redirections: dict[str, str] = {}
+        self.path_entries: list[Path] = []
 
     def make_absolute(self, path: str) -> Path:
         return (self.project_dir / path).resolve()
@@ -37,7 +39,7 @@ class EditableProject:
     def add_to_path(self, dirname: str) -> None:
         self.path_entries.append(self.make_absolute(dirname))
 
-    def files(self) -> Iterable[Tuple[str, str]]:
+    def files(self) -> Iterable[tuple[str, str]]:
         yield f"{self.project_name}.pth", self.pth_file()
         if self.redirections:
             yield f"__editables_{self.project_name}.py", self.bootstrap_file()
@@ -47,7 +49,7 @@ class EditableProject:
             yield "editables"
 
     def pth_file(self) -> str:
-        lines: List[str] = []
+        lines: list[str] = []
         if self.redirections:
             lines.append(f"import __editables_{self.project_name}")
         for entry in self.path_entries:
@@ -66,7 +68,7 @@ class EditableProject:
 
 class EditableBuilder(WheelBuilder):
     def __init__(
-        self, location: Union[str, Path], config_settings: Optional[Mapping[str, Any]]
+        self, location: str | Path, config_settings: Mapping[str, Any] | None
     ) -> None:
         super().__init__(location, config_settings=config_settings)
         assert self.meta.project_name, "Project name is not specified"
@@ -92,7 +94,7 @@ class EditableBuilder(WheelBuilder):
                 build_dir = self.location / self.meta.config.package_dir
                 with tokenize.open(self.meta.config.setup_script) as f:
                     code = compile(f.read(), self.meta.config.setup_script, "exec")
-                global_dict: Dict[str, Any] = {}
+                global_dict: dict[str, Any] = {}
                 exec(code, global_dict)
                 if "build" not in global_dict:
                     show_warning(
@@ -120,7 +122,7 @@ class EditableBuilder(WheelBuilder):
                 if "." in module:
                     continue
 
-                patterns: Tuple[str, ...] = (f"{module}.py",)
+                patterns: tuple[str, ...] = (f"{module}.py",)
                 if os.name == "nt":
                     patterns += (f"{module}.*.pyd",)
                 else:
@@ -142,7 +144,7 @@ class EditableBuilder(WheelBuilder):
                 )
             self.editables.add_to_path(package_dir)
 
-    def find_files_to_add(self, for_sdist: bool = False) -> List[Path]:
+    def find_files_to_add(self, for_sdist: bool = False) -> list[Path]:
         package_paths = self.meta.convert_package_paths()
         package_dir = self.meta.config.package_dir
         redirections = [
