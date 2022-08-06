@@ -115,7 +115,7 @@ class WheelStringEntry(WheelEntry):
 
     @contextlib.contextmanager
     def text_open(self) -> Generator[TextIO, None, None]:
-        text_buffer = io.TextIOWrapper(self.open(), encoding="utf-8")
+        text_buffer = io.TextIOWrapper(self.open(), encoding="utf-8", newline="")
         yield text_buffer
         text_buffer.detach()
 
