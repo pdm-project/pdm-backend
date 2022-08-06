@@ -1,8 +1,10 @@
 """
 PEP-517 compliant buildsystem API
 """
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Any, List, Mapping, Optional
+from typing import Any, Mapping
 
 from pdm.pep517.editable import EditableBuilder
 from pdm.pep517.sdist import SdistBuilder
@@ -10,8 +12,8 @@ from pdm.pep517.wheel import WheelBuilder
 
 
 def get_requires_for_build_wheel(
-    config_settings: Optional[Mapping[str, Any]] = None
-) -> List[str]:
+    config_settings: Mapping[str, Any] | None = None
+) -> list[str]:
     """
     Returns an additional list of requirements for building, as PEP508 strings,
     above and beyond those specified in the pyproject.toml file.
@@ -26,8 +28,8 @@ def get_requires_for_build_wheel(
 
 
 def get_requires_for_build_sdist(
-    config_settings: Optional[Mapping[str, Any]] = None
-) -> List[str]:
+    config_settings: Mapping[str, Any] | None = None
+) -> list[str]:
     """There isn't any requirement for building a sdist at this point."""
     return []
 
@@ -55,7 +57,7 @@ def _prepare_metadata(builder: WheelBuilder, metadata_directory: str) -> str:
 
 
 def prepare_metadata_for_build_wheel(
-    metadata_directory: str, config_settings: Optional[Mapping[str, Any]] = None
+    metadata_directory: str, config_settings: Mapping[str, Any] | None = None
 ) -> str:
     """Prepare the metadata, places it in metadata_directory"""
     with WheelBuilder(Path.cwd(), config_settings) as builder:
@@ -64,8 +66,8 @@ def prepare_metadata_for_build_wheel(
 
 def build_wheel(
     wheel_directory: str,
-    config_settings: Optional[Mapping[str, Any]] = None,
-    metadata_directory: Optional[str] = None,
+    config_settings: Mapping[str, Any] | None = None,
+    metadata_directory: str | None = None,
 ) -> str:
     """Builds a wheel, places it in wheel_directory"""
     with WheelBuilder(Path.cwd(), config_settings) as builder:
@@ -73,7 +75,7 @@ def build_wheel(
 
 
 def build_sdist(
-    sdist_directory: str, config_settings: Optional[Mapping[str, Any]] = None
+    sdist_directory: str, config_settings: Mapping[str, Any] | None = None
 ) -> str:
     """Builds an sdist, places it in sdist_directory"""
     with SdistBuilder(Path.cwd(), config_settings) as builder:
@@ -84,7 +86,7 @@ get_requires_for_build_editable = get_requires_for_build_wheel
 
 
 def prepare_metadata_for_build_editable(
-    metadata_directory: str, config_settings: Optional[Mapping[str, Any]] = None
+    metadata_directory: str, config_settings: Mapping[str, Any] | None = None
 ) -> str:
     """Prepare the metadata, places it in metadata_directory"""
     with EditableBuilder(Path.cwd(), config_settings) as builder:
@@ -94,8 +96,8 @@ def prepare_metadata_for_build_editable(
 
 def build_editable(
     wheel_directory: str,
-    config_settings: Optional[Mapping[str, Any]] = None,
-    metadata_directory: Optional[str] = None,
+    config_settings: Mapping[str, Any] | None = None,
+    metadata_directory: str | None = None,
 ) -> str:
     with EditableBuilder(Path.cwd(), config_settings) as builder:
         return Path(builder.build(wheel_directory)).name

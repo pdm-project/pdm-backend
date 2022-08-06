@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import functools
 import os
 import re
@@ -7,7 +9,7 @@ import warnings
 from contextlib import contextmanager
 from fnmatch import fnmatchcase
 from pathlib import Path
-from typing import Callable, Generator, Iterable, Optional, Type, Union
+from typing import Callable, Generator, Iterable
 
 from pdm.pep517._vendor.packaging import tags
 from pdm.pep517._vendor.packaging.markers import Marker
@@ -121,13 +123,13 @@ def cd(path: str) -> Generator[None, None, None]:
         os.chdir(_old_cwd)
 
 
-def normalize_path(filename: Union[str, Path]) -> str:
+def normalize_path(filename: str | Path) -> str:
     """Normalize a file/dir name for comparison purposes"""
     filename = os.path.abspath(filename) if sys.platform == "cygwin" else filename
     return os.path.normcase(os.path.realpath(os.path.normpath(filename)))
 
 
-def get_platform(build_dir: Union[str, Path]) -> str:
+def get_platform(build_dir: str | Path) -> str:
     """Return our platform name 'win32', 'linux_x86_64'"""
     result = sysconfig.get_platform()
     if result.startswith("macosx") and os.path.exists(build_dir):
@@ -156,7 +158,7 @@ def get_flag(
     return val == expected
 
 
-def get_abi_tag() -> Optional[str]:
+def get_abi_tag() -> str | None:
     """Return the ABI tag based on SOABI (if available) or emulate SOABI
     (CPython 2, PyPy)."""
     soabi = sysconfig.get_config_var("SOABI")
@@ -185,7 +187,7 @@ def get_abi_tag() -> Optional[str]:
         return None
 
 
-def ensure_pep440_req(req: str, field: str) -> Optional[str]:
+def ensure_pep440_req(req: str, field: str) -> str | None:
     """Discard all non-PEP 440 requirements, e.g. editable VCS requirements."""
 
     if req.strip().startswith("-e"):
@@ -207,6 +209,6 @@ def is_relative_path(target: Path, other: Path) -> bool:
 
 
 @functools.lru_cache(maxsize=None)
-def show_warning(message: str, category: Type[Warning], stacklevel: int = 1) -> None:
+def show_warning(message: str, category: type[Warning], stacklevel: int = 1) -> None:
     """A cached version of warnings.warn to avoid repeated warnings."""
     warnings.warn(message, category, stacklevel + 1)

@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import os
 import re
 import warnings
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Any
 
 from pdm.pep517.exceptions import MetadataError
 from pdm.pep517.scm import get_version_from_scm
@@ -21,7 +23,7 @@ class DynamicVersion:
         self.options = options
 
     @classmethod
-    def from_toml(cls, toml: Dict[str, Any]) -> "DynamicVersion":
+    def from_toml(cls, toml: dict[str, Any]) -> DynamicVersion:
         """Create a DynamicVersion from a TOML dictionary."""
         options = toml.copy()
         if "from" in options:
@@ -63,7 +65,7 @@ class DynamicVersion:
             )
         return cls(source, **options)
 
-    def evaluate_in_project(self, root: Union[str, Path]) -> str:
+    def evaluate_in_project(self, root: str | Path) -> str:
         """Evaluate the dynamic version."""
         if self.source == "file":
             version_source = os.path.join(root, self.options["path"])

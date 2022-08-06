@@ -1,20 +1,11 @@
+from __future__ import annotations
+
 import atexit
 import glob
 import os
 import warnings
 from pathlib import Path
-from typing import (
-    Any,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Tuple,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import Any, Iterator, Mapping, TypeVar, cast
 
 from pdm.pep517._vendor import tomli
 from pdm.pep517.exceptions import MetadataError, PDMWarning, ProjectError
@@ -69,8 +60,8 @@ def is_same_or_descendant_path(target: str, path: str) -> bool:
 
 
 def _merge_globs(
-    include_globs: Dict[str, str], excludes_globs: Dict[str, str]
-) -> Tuple[List[str], List[str]]:
+    include_globs: dict[str, str], excludes_globs: dict[str, str]
+) -> tuple[list[str], list[str]]:
     """Correctly merge includes and excludes.
     When a pattern exists in both includes and excludes,
     determine the priority in the following ways:
@@ -80,7 +71,7 @@ def _merge_globs(
     3. If both have the same part number and concrete level, *excludes* wins
     """
 
-    def path_weight(pathname: str) -> Tuple[int, int]:
+    def path_weight(pathname: str) -> tuple[int, int]:
         """Return a two-element tuple [part_num, concrete_level]"""
         pathname_parts = Path(pathname).parts
         wildcard_count = 0
@@ -104,7 +95,7 @@ def _merge_globs(
     return includes, list(excludes_globs)
 
 
-def _find_top_packages(root: str) -> List[str]:
+def _find_top_packages(root: str) -> list[str]:
     result = []
     for path in os.listdir(root):
         path = os.path.join(root, path)
@@ -113,7 +104,7 @@ def _find_top_packages(root: str) -> List[str]:
     return result
 
 
-def _format_list(data: List[str], indent: int = 4) -> str:
+def _format_list(data: list[str], indent: int = 4) -> str:
     result = ["["]
     for row in data:
         result.append(" " * indent + repr(row) + ",")
@@ -121,7 +112,7 @@ def _format_list(data: List[str], indent: int = 4) -> str:
     return "\n".join(result)
 
 
-def _format_dict_list(data: Dict[str, List[str]], indent: int = 4) -> str:
+def _format_dict_list(data: dict[str, list[str]], indent: int = 4) -> str:
     result = ["{"]
     for key, value in data.items():
         result.append(
@@ -138,15 +129,15 @@ class Builder:
 
     def __init__(
         self,
-        location: Union[str, Path],
-        config_settings: Optional[Mapping[str, Any]] = None,
+        location: str | Path,
+        config_settings: Mapping[str, Any] | None = None,
     ) -> None:
-        self._old_cwd: Optional[str] = None
+        self._old_cwd: str | None = None
         self.location = Path(location).absolute()
         self.config_settings = config_settings
-        self._meta: Optional[Metadata] = None
+        self._meta: Metadata | None = None
 
-    def _read_pyproject_toml(self) -> Dict[str, Any]:
+    def _read_pyproject_toml(self) -> dict[str, Any]:
         pyproject_toml = self.location / "pyproject.toml"
         if not pyproject_toml.exists():
             raise ProjectError("No pyproject.toml found")
@@ -184,7 +175,7 @@ class Builder:
 
     def _get_include_and_exclude_paths(
         self, for_sdist: bool = False
-    ) -> Tuple[List[str], List[str]]:
+    ) -> tuple[list[str], list[str]]:
         includes = set()
         excludes = set(self.DEFAULT_EXCLUDES)
 
@@ -221,7 +212,7 @@ class Builder:
         include_paths, exclude_paths = _merge_globs(include_globs, excludes_globs)
         return sorted(include_paths), sorted(exclude_paths)
 
-    def _is_excluded(self, path: str, exclude_paths: List[str]) -> bool:
+    def _is_excluded(self, path: str, exclude_paths: list[str]) -> bool:
         return any(
             is_same_or_descendant_path(path, exclude_path)
             for exclude_path in exclude_paths
@@ -259,7 +250,7 @@ class Builder:
         if os.path.isfile("pyproject.toml"):
             yield "pyproject.toml"
 
-    def find_files_to_add(self, for_sdist: bool = False) -> List[Path]:
+    def find_files_to_add(self, for_sdist: bool = False) -> list[Path]:
         """Traverse the project path and return a list of file names
         that should be included in a sdist distribution.
         If for_sdist is True, will include files like LICENSE, README and pyproject
@@ -267,7 +258,7 @@ class Builder:
         """
         return sorted({Path(p) for p in self._find_files_iter(for_sdist)})
 
-    def find_license_files(self) -> List[str]:
+    def find_license_files(self) -> list[str]:
         """Return a list of license files from the PEP 639 metadata."""
         license_files = self.meta.license_files
         if "paths" in license_files:
@@ -325,7 +316,7 @@ class Builder:
         if package_paths["packages"]:
             extra.append(
                 "    'packages': {},\n".format(
-                    _format_list(cast(List[str], package_paths["packages"]), 8)
+                    _format_list(cast("list[str]", package_paths["packages"]), 8)
                 )
             )
         if package_paths["package_dir"]:

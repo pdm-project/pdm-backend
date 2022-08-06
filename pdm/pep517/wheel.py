@@ -1,6 +1,10 @@
+from __future__ import annotations
+
+import abc
 import contextlib
 import csv
 import hashlib
+import io
 import os
 import re
 import shutil
@@ -11,9 +15,8 @@ import tempfile
 import tokenize
 import zipfile
 from base64 import urlsafe_b64encode
-from io import StringIO
 from pathlib import Path
-from typing import Any, Dict, Generator, List, Mapping, Optional, TextIO, Tuple, Union
+from typing import Any, BinaryIO, Generator, Mapping, NamedTuple, TextIO
 
 from pdm.pep517 import __version__
 from pdm.pep517._vendor.packaging import tags
@@ -35,14 +38,87 @@ Tag: {tag}
 PY_LIMITED_API_PATTERN = r"cp3\d"
 
 
+class RecordEntry(NamedTuple):
+    relpath: str
+    hash_digest: str
+    size: str
+
+
+class WheelEntry(metaclass=abc.ABCMeta):
+    # Fix the date time for reproducible builds
+    date_time = (2016, 1, 1, 0, 0, 0)
+
+    def __init__(self, rel_path: str) -> None:
+        self.rel_path = rel_path
+
+    @abc.abstractmethod
+    def open(self) -> BinaryIO:
+        pass
+
+    def build_zipinfo(self) -> zipfile.ZipInfo:
+        return zipfile.ZipInfo(self.rel_path, self.date_time)
+
+    def write_to_zip(self, zf: zipfile.ZipFile) -> RecordEntry:
+        zi = self.build_zipinfo()
+
+        hashsum = hashlib.sha256()
+        with self.open() as src:
+            while True:
+                buf = src.read(1024 * 8)
+                if not buf:
+                    break
+                hashsum.update(buf)
+
+            src.seek(0)
+            zf.writestr(zi, src.read(), compress_type=zipfile.ZIP_DEFLATED)
+
+        size = zi.file_size
+        hash_digest = urlsafe_b64encode(hashsum.digest()).decode("ascii").rstrip("=")
+        return RecordEntry(self.rel_path, f"sha256={hash_digest}", str(size))
+
+
+class WheelFileEntry(WheelEntry):
+    def __init__(self, rel_path: str, full_path: Path) -> None:
+        super().__init__(rel_path)
+        self.full_path = full_path
+
+    def open(self) -> BinaryIO:
+        return self.full_path.open("rb")
+
+    def build_zipinfo(self) -> zipfile.ZipInfo:
+        zi = super().build_zipinfo()
+        st_mode = os.stat(self.full_path).st_mode
+        zi.external_attr = (st_mode & 0xFFFF) << 16  # Unix attributes
+
+        if stat.S_ISDIR(st_mode):
+            zi.external_attr |= 0x10  # MS-DOS directory flag
+        return zi
+
+
+class WheelStringEntry(WheelEntry):
+    def __init__(self, rel_path: str) -> None:
+        super().__init__(rel_path)
+        self.buffer = io.BytesIO()
+
+    def open(self) -> BinaryIO:
+        self.buffer.seek(0)
+        return self.buffer
+
+    @contextlib.contextmanager
+    def text_open(self) -> Generator[TextIO, None, None]:
+        text_buffer = io.TextIOWrapper(self.open(), encoding="utf-8", newline="")
+        yield text_buffer
+        text_buffer.detach()
+
+
 class WheelBuilder(Builder):
     def __init__(
         self,
-        location: Union[str, Path],
-        config_settings: Optional[Mapping[str, Any]] = None,
+        location: str | Path,
+        config_settings: Mapping[str, Any] | None = None,
     ) -> None:
         super().__init__(location, config_settings)
-        self._records = []  # type: List[Tuple[str, str, str]]
+        self._entries: dict[str, WheelEntry] = {}
         self._parse_config_settings()
 
     def _parse_config_settings(self) -> None:
@@ -66,16 +142,17 @@ class WheelBuilder(Builder):
         if not os.path.exists(build_dir):
             os.makedirs(build_dir, exist_ok=True)
 
-        self._records.clear()
+        self._entries.clear()
         fd, temp_path = tempfile.mkstemp(suffix=".whl")
         os.close(fd)
 
+        self._copy_module()
+        self._build()
+        self._write_metadata()
         with zipfile.ZipFile(
             temp_path, mode="w", compression=zipfile.ZIP_DEFLATED
         ) as zip_file:
-            self._copy_module(zip_file)
-            self._build(zip_file)
-            self._write_metadata(zip_file)
+            self._write_to_zip(zip_file)
 
         target = os.path.join(build_dir, self.wheel_filename)
         if os.path.exists(target):
@@ -131,60 +208,45 @@ class WheelBuilder(Builder):
         version = self.meta_version
         return f"{name}-{version}.dist-info"
 
-    def _write_record(self, fp: TextIO) -> None:
-        writer = csv.writer(fp, lineterminator="\n")
-        writer.writerows(
-            [(path, f"sha256={hash}", size) for path, hash, size in self._records]
-        )
-        writer.writerow([self.dist_info_name + "/RECORD", "", ""])
+    def _write_record(self, records: list[RecordEntry]) -> WheelEntry:
+        entry = WheelStringEntry(self.dist_info_name + "/RECORD")
+        with entry.text_open() as fp:
+            writer = csv.writer(fp, lineterminator="\n")
+            writer.writerows(records)
+            writer.writerow(RecordEntry(entry.rel_path, "", ""))
+        return entry
 
-    def _write_metadata(self, wheel: zipfile.ZipFile) -> None:
+    def _write_metadata(self) -> None:
         dist_info = self.dist_info_name
         if self.meta.entry_points:
-            with self._write_to_zip(wheel, dist_info + "/entry_points.txt") as f:
+            with self._open_for_write(dist_info + "/entry_points.txt") as f:
                 self._write_entry_points(f)
 
-        with self._write_to_zip(wheel, dist_info + "/WHEEL") as f:
+        with self._open_for_write(dist_info + "/WHEEL") as f:
             self._write_wheel_file(f)
 
-        with self._write_to_zip(wheel, dist_info + "/METADATA") as f:
+        with self._open_for_write(dist_info + "/METADATA") as f:
             self._write_metadata_file(f)
 
         for license_file in self.find_license_files():
             self._add_file(
-                wheel,
-                os.path.join(self.location, license_file),
                 f"{dist_info}/license_files/{license_file}",
+                self.location / license_file,
             )
 
-        with self._write_to_zip(wheel, dist_info + "/RECORD") as f:
-            self._write_record(f)
-
     @contextlib.contextmanager
-    def _write_to_zip(
-        self, wheel: zipfile.ZipFile, rel_path: str
-    ) -> Generator[StringIO, None, None]:
-        sio = StringIO()
-        yield sio
-
-        # The default is a fixed timestamp rather than the current time, so
-        # that building a wheel twice on the same computer can automatically
-        # give you the exact same result.
-        date_time = (2016, 1, 1, 0, 0, 0)
-        zi = zipfile.ZipInfo(rel_path, date_time)
-        b = sio.getvalue().encode("utf-8")
-        hashsum = hashlib.sha256(b)
-        hash_digest = urlsafe_b64encode(hashsum.digest()).decode("ascii").rstrip("=")
-
-        wheel.writestr(zi, b, compress_type=zipfile.ZIP_DEFLATED)
+    def _open_for_write(self, rel_path: str) -> Generator[TextIO, None, None]:
+        entry = WheelStringEntry(rel_path)
+        with entry.text_open() as fp:
+            yield fp
         print(f" - Adding {rel_path}")
-        self._records.append((rel_path, hash_digest, str(len(b))))
+        self._entries[rel_path] = entry
 
-    def _build(self, wheel: zipfile.ZipFile) -> None:
+    def _build(self) -> None:
         build_dir = self.location / "build"
         if build_dir.exists():
             shutil.rmtree(str(build_dir))
-        lib_dir: Optional[Path] = None
+        lib_dir: Path | None = None
         if self.meta.config.setup_script:
             if self.meta.config.run_setuptools:
                 setup_py = self.ensure_setup_py()
@@ -204,7 +266,7 @@ class WheelBuilder(Builder):
                 build_dir.mkdir(exist_ok=True)
                 with tokenize.open(self.meta.config.setup_script) as f:
                     code = compile(f.read(), self.meta.config.setup_script, "exec")
-                global_dict: Dict[str, Any] = {}
+                global_dict: dict[str, Any] = {}
                 exec(code, global_dict)
                 if "build" not in global_dict:
                     show_warning(
@@ -233,16 +295,13 @@ class WheelBuilder(Builder):
             if self._is_excluded(rel_path, excludes):
                 continue
 
-            if whl_path in wheel.namelist():
-                continue
-
-            self._add_file(wheel, pkg.as_posix(), whl_path)
+            self._add_file(whl_path, pkg)
 
     def _write_version(self, destination: Path) -> None:
         dynamic_version = self.meta.config.dynamic_version
         if (
             not dynamic_version
-            or dynamic_version.source != "scm"
+            or dynamic_version.source == "file"
             or "write_to" not in dynamic_version.options
         ):
             return
@@ -253,48 +312,21 @@ class WheelBuilder(Builder):
         with write_path.open("w") as f:
             f.write(write_template.format(self.meta_version))
 
-    def _copy_module(self, wheel: zipfile.ZipFile) -> None:
+    def _copy_module(self) -> None:
+        root = self.meta.config.package_dir or self.location
         for path in self.find_files_to_add():
-            rel_path = None
-            if self.meta.config.package_dir:
-                try:
-                    rel_path = path.relative_to(self.meta.config.package_dir).as_posix()
-                except ValueError:
-                    pass
-            self._add_file(wheel, str(path), rel_path)
+            try:
+                rel_path = path.relative_to(root).as_posix()
+            except ValueError:
+                rel_path = path.as_posix()
+            self._add_file(rel_path, path)
 
-    def _add_file(
-        self, wheel: zipfile.ZipFile, full_path: str, rel_path: Optional[str] = None
-    ) -> None:
-        if not rel_path:
-            rel_path = full_path
+    def _add_file(self, rel_path: str, full_path: Path) -> None:
         if os.sep != "/":
             # We always want to have /-separated paths in the zip file and in RECORD
             rel_path = rel_path.replace(os.sep, "/")
         print(f" - Adding {rel_path}")
-        zinfo = zipfile.ZipInfo.from_file(full_path, rel_path)
-
-        # Normalize permission bits to either 755 (executable) or 644
-        st_mode = os.stat(full_path).st_mode
-
-        if stat.S_ISDIR(st_mode):
-            zinfo.external_attr |= 0x10  # MS-DOS directory flag
-
-        hashsum = hashlib.sha256()
-        with open(full_path, "rb") as src:
-            while True:
-                buf = src.read(1024 * 8)
-                if not buf:
-                    break
-                hashsum.update(buf)
-
-            src.seek(0)
-            wheel.writestr(zinfo, src.read(), compress_type=zipfile.ZIP_DEFLATED)
-
-        size = os.stat(full_path).st_size
-        hash_digest = urlsafe_b64encode(hashsum.digest()).decode("ascii").rstrip("=")
-
-        self._records.append((rel_path, hash_digest, str(size)))
+        self._entries[rel_path] = WheelFileEntry(rel_path, full_path)
 
     def _write_metadata_file(self, fp: TextIO) -> None:
         fp.write(self.format_pkginfo())
@@ -314,3 +346,11 @@ class WheelBuilder(Builder):
                 fp.write(ep.replace(" ", "") + "\n")
 
             fp.write("\n")
+
+    def _write_to_zip(self, zf: zipfile.ZipFile) -> None:
+        records: list[RecordEntry] = []
+        for entry in self._entries.values():
+            records.append(entry.write_to_zip(zf))
+
+        record_entry = self._write_record(records)
+        record_entry.write_to_zip(zf)

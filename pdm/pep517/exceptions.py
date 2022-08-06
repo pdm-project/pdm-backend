@@ -1,4 +1,6 @@
-from typing import Any, List
+from __future__ import annotations
+
+from typing import Any
 
 
 class BuildError(RuntimeError):
@@ -20,6 +22,6 @@ class PDMWarning(UserWarning):
 
 
 class PEP621ValidationError(ProjectError):
-    def __init__(self, errors: List[str]) -> None:
+    def __init__(self, errors: list[str]) -> None:
         super().__init__(errors)
         self.errors = errors
