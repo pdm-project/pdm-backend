@@ -1,11 +1,8 @@
-import hashlib
 import os
 import subprocess
 import sys
 import tokenize
 import warnings
-import zipfile
-from base64 import urlsafe_b64encode
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, TextIO, Tuple, Union
 
@@ -77,7 +74,7 @@ class EditableBuilder(WheelBuilder):
             to_filename(self.meta.project_name), self.location.as_posix()
         )
 
-    def _build(self, wheel: zipfile.ZipFile) -> None:
+    def _build(self) -> None:
         if self.meta.config.setup_script:
             if self.meta.config.run_setuptools:
                 setup_py = self.ensure_setup_py()
@@ -107,7 +104,8 @@ class EditableBuilder(WheelBuilder):
 
         self._prepare_editable()
         for name, content in self.editables.files():
-            self._add_file_content(wheel, name, content)
+            with self._open_for_write(name) as fp:
+                fp.write(content)
 
     def _prepare_editable(self) -> None:
         package_paths = self.meta.convert_package_paths()
@@ -156,22 +154,6 @@ class EditableBuilder(WheelBuilder):
             if p.suffix not in (".py", ".pyc", ".pyo")
             and not any(is_relative_path(p, package) for package in redirections)
         ]
-
-    def _add_file_content(
-        self, wheel: zipfile.ZipFile, rel_path: str, content: str
-    ) -> None:
-        print(f" - Adding {rel_path}")
-        zinfo = zipfile.ZipInfo(rel_path)
-
-        hashsum = hashlib.sha256()
-        buf = content.encode("utf-8")
-        hashsum.update(buf)
-
-        wheel.writestr(zinfo, buf, compress_type=zipfile.ZIP_DEFLATED)
-        size = len(buf)
-        hash_digest = urlsafe_b64encode(hashsum.digest()).decode("ascii").rstrip("=")
-
-        self._records.append((rel_path, hash_digest, str(size)))
 
     def _write_metadata_file(self, fp: TextIO) -> None:
         self.meta.data.setdefault("dependencies", []).extend(
