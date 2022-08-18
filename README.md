@@ -87,7 +87,7 @@ source = "scm"
 When building from a source tree where SCM is not available, you can use the env var `PDM_PEP517_SCM_VERSION` to pretend the version is set.
 
 ```bash
-PDM_PEP517_VERSION=0.1.0 python -m build
+PDM_PEP517_SCM_VERSION=0.1.0 python -m build
 ```
 
 ## Writing SCM version to file
