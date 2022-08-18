@@ -38,7 +38,9 @@ includes = []
 excludes = []
 # File patterns to include in source distribution and exclude in wheel distribution.
 source-includes = []
-# An extra script to populate the arguments of `setup()`, one can build C extensions with this script. Or a custom build() function to generate files.
+# A custom script to generate files or,
+# if `run-setuptools = True`, an extra script to populate the arguments of
+# `setuptools.setup()` (for example, to build C extensions).
 setup-script = "build.py"
 # If true, the setup-script will run in a generated `setup.py` file.
 run-setuptools = false
@@ -117,6 +119,8 @@ Note that PDM-PEP517 will rewrite the whole file each time, so you can't have ad
 With custom build script, you can call other tools to generates files to be included in the wheel.
 Just set the `setup-script` field under `[tool.pdm.build]` table to the path of the script.
 
+### With run-setuptools = False (default)
+
 In the script, you expose a function named `build`, which takes two arguments:
 
 - `src`(str): the path of the source directory
@@ -131,17 +135,20 @@ def build(src, dst):
         # Put a file in the wheel
         f.write("Hello World!")
 ```
+
 Note that the generated file hierarchy will be preserved in the wheel: `$dst/myfile.txt` -> `$wheel_root/myfile.txt`.
 
-When `run-setuptools` is `true`, the `build` function will be called in a generated `setup.py` file, with the setup parameters as the only argument.
+### With run-setuptools = True
+
+When `run-setuptools` is `true`, the `build` function in the `build-script` will be called in a generated `setup.py` file, with the [`setuptools.setup()` parameters](https://setuptools.pypa.io/en/latest/references/keywords.html) dict as the only argument.
 
 Example:
 
 ```python
 
-def build(setup_params):
+def build(setup_kwargs):
     # add ext_modules to the setup() arguments
-    setup_parms.update(ext_modules=[Extension("myextension", ["myextension.c"])])
+    setup_kwargs.update(ext_modules=[Extension("myextension", ["myextension.c"])])
 ```
 
 The will result in a `setup()` call like following:
@@ -154,7 +161,7 @@ setup(
 )
 ```
 
-**By default, when `setup-script` is set, the resulted wheel will be platform-specific, but you can override this behavior by setting `is-purelib` to `false`**
+**By default, when `run-setuptools = True`, the resulting wheel will be platform-specific. You can override this behavior by setting `is-purelib = true`**
 
 ## Supported config settings
 
