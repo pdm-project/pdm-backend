@@ -89,7 +89,7 @@ class EditableBuilder(WheelBuilder):
                 try:
                     subprocess.check_call(build_args)
                 except subprocess.CalledProcessError as e:
-                    raise BuildError(f"Error occurs when running {build_args}:\n{e}")
+                    raise BuildError(f"Error when running {build_args}:\n{e}")
             else:
                 build_dir = self.location / self.meta.config.package_dir
                 with tokenize.open(self.meta.config.setup_script) as f:
@@ -98,7 +98,7 @@ class EditableBuilder(WheelBuilder):
                 exec(code, global_dict)
                 if "build" not in global_dict:
                     show_warning(
-                        "No build() function found in the setup script, do nothing",
+                        "No build() function found in the setup-script, doing nothing",
                         PDMWarning,
                     )
                     return

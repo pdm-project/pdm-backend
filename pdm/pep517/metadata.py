@@ -390,8 +390,9 @@ class Config:
         old_name = old_name or name
         if old_name in self.data:
             show_warning(
-                f"Field `{old_name}` is renamed to `{name}` under [tool.pdm.build] "
-                "table, please update your pyproject.toml accordingly",
+                f"Field `{old_name}` under [tool.pdm] has been renamed to "
+                f"`{name}` under [tool.pdm.build], please update your "
+                "pyproject.toml accordingly.",
                 PDMWarning,
                 stacklevel=2,
             )
@@ -417,8 +418,9 @@ class Config:
             return build_table["setup-script"]
         if isinstance(build_table, str):
             show_warning(
-                "Field `build` is renamed to `setup-script` under [tool.pdm.build] "
-                "table, please update your pyproject.toml accordingly",
+                "Field `build` under [tool.pdm] has been renamed to "
+                "`setup-script` under [tool.pdm.build], please update your "
+                "pyproject.toml accordingly",
                 PDMWarning,
                 stacklevel=2,
             )

@@ -260,7 +260,7 @@ class WheelBuilder(Builder):
                 try:
                     subprocess.check_call(build_args)
                 except subprocess.CalledProcessError as e:
-                    raise BuildError(f"Error occurs when running {build_args}:\n{e}")
+                    raise BuildError(f"Error when running {build_args}:\n{e}")
                 lib_dir = next(build_dir.glob("lib.*"), None)
             else:
                 build_dir.mkdir(exist_ok=True)
@@ -270,7 +270,7 @@ class WheelBuilder(Builder):
                 exec(code, global_dict)
                 if "build" not in global_dict:
                     show_warning(
-                        "No build() function found in the setup script, do nothing",
+                        "No build() function found in the setup-script, doing nothing",
                         PDMWarning,
                     )
                     return
