@@ -47,8 +47,10 @@ def _prepare_metadata(builder: WheelBuilder, metadata_directory: str) -> str:
     with (dist_info / "METADATA").open("w", encoding="utf-8") as f:
         builder._write_metadata_file(f)
 
-    (dist_info / "license_files").mkdir(exist_ok=True)
     for license_file in builder.find_license_files():
+        (dist_info / "license_files" / license_file).parent.mkdir(
+            parents=True, exist_ok=True
+        )
         (dist_info / "license_files" / license_file).write_bytes(
             Path(license_file).read_bytes()
         )
