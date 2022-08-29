@@ -158,24 +158,6 @@ def test_license_classifiers_warning(recwarn) -> None:
     )
 
 
-def test_both_license_and_license_expression_error() -> None:
-    metadata = make_metadata(
-        {
-            "description": "test package",
-            "name": "demo",
-            "version": "0.1.0",
-            "license": {"text": "MIT"},
-            "license-expression": "MIT",
-        }
-    )
-    with pytest.raises(
-        ValueError,
-        match="license-expression: Can't specify both 'license' and "
-        "'license-expression' fields",
-    ):
-        metadata.license_expression
-
-
 @pytest.mark.deprecation
 @pytest.mark.xfail(reason="Don't emit warning until PEP 639 is accepted")
 def test_deprecated_license_field_warning(recwarn) -> None:
@@ -204,9 +186,7 @@ def test_missing_license_expression_warning(recwarn) -> None:
     )
     assert not metadata.license_expression
     assert len(recwarn) == 1
-    assert str(recwarn.pop(UserWarning).message).startswith(
-        "'license-expression' is missing"
-    )
+    assert str(recwarn.pop(UserWarning).message).startswith("'license' is missing")
 
 
 @pytest.mark.deprecation
@@ -217,7 +197,6 @@ def test_deprecated_license_file_warning(recwarn) -> None:
             "description": "test package",
             "name": "demo",
             "version": "0.1.0",
-            "license-expression": "MIT",
             "license": {"file": "LICENSE"},
         }
     )
@@ -234,7 +213,7 @@ def test_default_license_files() -> None:
             "description": "test package",
             "name": "demo",
             "version": "0.1.0",
-            "license-expression": "MIT",
+            "license": "MIT",
         }
     )
     assert metadata.license_files == {
@@ -242,13 +221,14 @@ def test_default_license_files() -> None:
     }
 
 
+@pytest.mark.xfail(reason="Don't emit warning until PEP 639 is accepted")
 def test_license_normalization() -> None:
     metadata = make_metadata(
         {
             "description": "test package",
             "name": "demo",
             "version": "0.1.0",
-            "license-expression": "mIt",
+            "license": "mIt",
         }
     )
     with pytest.warns(UserWarning) as record:
@@ -259,13 +239,14 @@ def test_license_normalization() -> None:
     )
 
 
+@pytest.mark.xfail(reason="Don't emit warning until PEP 639 is accepted")
 def test_invalid_license_identifier() -> None:
     metadata = make_metadata(
         {
             "description": "test package",
             "name": "demo",
             "version": "0.1.0",
-            "license-expression": "foo OR MIT",
+            "license": "foo OR MIT",
         }
     )
     with pytest.raises(ValueError, match=r".*Unknown license key\(s\): foo"):

@@ -230,7 +230,7 @@ class WheelBuilder(Builder):
 
         for license_file in self.find_license_files():
             self._add_file(
-                f"{dist_info}/license_files/{license_file}",
+                f"{dist_info}/licenses/{license_file}",
                 self.location / license_file,
             )
 
