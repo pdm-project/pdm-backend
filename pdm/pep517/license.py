@@ -26,7 +26,7 @@ def normalize_expression(expression: str) -> str:
     """Normalize a SPDX license expression."""
     validate_result = _licensing.validate(expression)
     if validate_result.errors:
-        raise MetadataError("license-expression", validate_result.errors)
+        raise MetadataError("license", validate_result.errors)
     result = validate_result.normalized_expression or expression
     if result != expression:
         warnings.warn(

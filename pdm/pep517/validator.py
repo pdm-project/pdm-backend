@@ -22,6 +22,7 @@ README_RULE = [
 ]
 
 LICENSE_RULE = [
+    {"type": "string"},
     {"type": "dict", "schema": {"file": {"type": "string", "required": True}}},
     {"type": "dict", "schema": {"text": {"type": "string", "required": True}}},
 ]
@@ -53,7 +54,6 @@ PEP621_SCHEMA = {
     "readme": {"oneof": README_RULE},
     "requires-python": {"type": "string"},
     "license": {"oneof": LICENSE_RULE},
-    "license-expression": {"type": "string"},
     "license-files": {"oneof": LICENSE_FILE_RULE},
     "authors": AUTHOR_RULE,
     "maintainers": AUTHOR_RULE,

@@ -7,7 +7,6 @@ from typing import Any, Callable, Generic, Iterable, Mapping, TypeVar, cast
 
 from pdm.pep517._vendor.packaging.requirements import Requirement
 from pdm.pep517.exceptions import MetadataError, PDMWarning, ProjectError
-from pdm.pep517.license import normalize_expression
 from pdm.pep517.utils import (
     cd,
     ensure_pep440_req,
@@ -161,13 +160,6 @@ class Metadata:
                 PDMWarning,
                 stacklevel=2,
             )
-        # if any(line.startswith("License :: ") for line in classifers):
-        #     show_warning(
-        #         "License classifiers are deprecated in favor of PEP 639 "
-        #         "'license-expression' field.",
-        #         PDMWarning,
-        #         stacklevel=2,
-        #     )
 
         return sorted(classifers)
 
@@ -176,32 +168,34 @@ class Metadata:
 
     @property
     def license_expression(self) -> str | None:
-        if "license-expression" in self.data:
-            if "license" in self.data:
-                raise MetadataError(
-                    "license-expression",
-                    "Can't specify both 'license' and 'license-expression' fields",
-                )
-            return normalize_expression(self.data["license-expression"])
-        elif "license" in self.data and "text" in self.data["license"]:
+        if "license" in self.data:
+            if isinstance(self.data["license"], str):
+                return self.data["license"]
             # show_warning(
-            #     "'license' field is deprecated in favor of 'license-expression'",
+            #     "'license.text' subtable is deprecated in favor of string 'license' "
+            #     "value",
             #     PDMWarning,
             #     stacklevel=2,
             # )
-            # TODO: do not validate legacy license text,
-            # remove this after PEP 639 is finalized
-            return self.data["license"]["text"]
-        elif "license-expression" not in (self.dynamic or []):
-            show_warning("'license-expression' is missing", PDMWarning, stacklevel=2)
+            if "text" in self.data["license"]:
+                return self.data["license"]["text"]
+        show_warning("'license' is missing", PDMWarning, stacklevel=2)
         return None
 
     @property
     def license_files(self) -> dict[str, list[str]]:
+        subtable_files = None
+        if (
+            "license" in self.data
+            and isinstance(self.data["license"], dict)
+            and "files" in self.data["license"]
+        ):
+            subtable_files = self.data["license"]["files"]
         if "license-files" not in self.data:
-            if self.data.get("license", {}).get("file"):
+            if subtable_files is not None:
                 # show_warning(
-                #     "'license.file' field is deprecated in favor of 'license-files'",
+                #     "'license.files' subtable is deprecated in favor of "
+                #     "'license-files'",
                 #     PDMWarning,
                 #     stacklevel=2,
                 # )
@@ -215,10 +209,10 @@ class Metadata:
                     "AUTHORS*",
                 ]
             }
-        if "license" in self.data:
+        if subtable_files is not None:
             raise MetadataError(
                 "license-files",
-                "Can't specify both 'license' and 'license-files' fields",
+                "Can't specify both 'license.files' and 'license-files' fields",
             )
         rv = self.data["license-files"]
         valid_keys = {"globs", "paths"} & set(rv)

@@ -3,6 +3,7 @@ PEP-517 compliant buildsystem API
 """
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -48,12 +49,9 @@ def _prepare_metadata(builder: WheelBuilder, metadata_directory: str) -> str:
         builder._write_metadata_file(f)
 
     for license_file in builder.find_license_files():
-        (dist_info / "license_files" / license_file).parent.mkdir(
-            parents=True, exist_ok=True
-        )
-        (dist_info / "license_files" / license_file).write_bytes(
-            Path(license_file).read_bytes()
-        )
+        full_path = dist_info / "licenses" / license_file
+        full_path.parent.mkdir(exist_ok=True, parents=True)
+        shutil.copy2(license_file, full_path)
 
     return dist_info.name
 

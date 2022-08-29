@@ -27,12 +27,12 @@ VALID_DATA = [
     },
     {
         "name": "foo",
-        "license-expression": "MIT",
+        "license": "MIT",
         "license-files": {"paths": ["LICENSE"]},
     },
     {
         "name": "foo",
-        "license-expression": "MIT",
+        "license": "MIT",
         "license-files": {"globs": ["LICENSE*"]},
     },
 ]
@@ -53,7 +53,7 @@ INVALID_DATA = [
     {"name": "foo", "version": {"from": "foo.py"}},
     {
         "name": "foo",
-        "license-expression": "MIT",
+        "license": "MIT",
         "license-files": {"paths": ["LICENSE"], "globs": ["LICENSE*"]},
     },
 ]
