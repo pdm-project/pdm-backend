@@ -5,11 +5,11 @@ import os
 from pathlib import Path
 from typing import Any, Callable, Generic, Iterable, Mapping, TypeVar, cast
 
-from pdm.pep517._vendor.packaging.requirements import Requirement
+from pdm.pep517._vendor.packaging.requirements import InvalidRequirement, Requirement
 from pdm.pep517.exceptions import MetadataError, PDMWarning, ProjectError
 from pdm.pep517.utils import (
     cd,
-    ensure_pep440_req,
+    expand_vars,
     find_packages_iter,
     merge_marker,
     safe_name,
@@ -227,7 +227,20 @@ class Metadata:
     def _convert_dependencies(
         self, deps: list[str], field: str = "dependencies"
     ) -> list[str]:
-        return list(filter(None, (ensure_pep440_req(dep, field) for dep in deps)))
+        def convert_req(req: str) -> str | None:
+            """Discard all non-PEP 440 requirements, e.g. editable VCS requirements."""
+
+            if req.strip().startswith("-e"):
+                return None
+            try:
+                r = Requirement(req)
+            except InvalidRequirement as e:
+                raise MetadataError(field, f"Invalid requirement {req!r}\n  {e}") from e
+            if r.url and "${" in r.url:
+                r.url = expand_vars(r.url, self.root.resolve().as_posix())
+            return str(r)
+
+        return list(filter(None, map(convert_req, deps)))
 
     def _convert_optional_dependencies(
         self, deps: Mapping[str, list[str]]
