@@ -5,17 +5,17 @@ import os
 import re
 import sys
 import sysconfig
+import urllib
 import warnings
 from contextlib import contextmanager
 from fnmatch import fnmatchcase
 from pathlib import Path
-from typing import Callable, Generator, Iterable
+from typing import Callable, Generator, Iterable, Match
 
 from pdm.pep517._vendor.packaging import tags
 from pdm.pep517._vendor.packaging.markers import Marker
-from pdm.pep517._vendor.packaging.requirements import InvalidRequirement, Requirement
+from pdm.pep517._vendor.packaging.requirements import Requirement
 from pdm.pep517._vendor.packaging.version import InvalidVersion, Version
-from pdm.pep517.exceptions import MetadataError
 from pdm.pep517.macosx_platform import calculate_macosx_platform_tag
 
 
@@ -187,18 +187,6 @@ def get_abi_tag() -> str | None:
         return None
 
 
-def ensure_pep440_req(req: str, field: str) -> str | None:
-    """Discard all non-PEP 440 requirements, e.g. editable VCS requirements."""
-
-    if req.strip().startswith("-e"):
-        return None
-    try:
-        Requirement(req)
-    except InvalidRequirement as e:
-        raise MetadataError(field, f"Invalid requirement {req!r}\n  {e}") from e
-    return req
-
-
 def is_relative_path(target: Path, other: Path) -> bool:
     try:
         target.relative_to(other)
@@ -212,3 +200,18 @@ def is_relative_path(target: Path, other: Path) -> bool:
 def show_warning(message: str, category: type[Warning], stacklevel: int = 1) -> None:
     """A cached version of warnings.warn to avoid repeated warnings."""
     warnings.warn(message, category, stacklevel + 1)
+
+
+def expand_vars(line: str, root: str) -> str:
+    """Expand environment variables in a string."""
+    if "$" not in line:
+        return line
+    line = line.replace("${PROJECT_ROOT}", root.lstrip("/"))
+
+    def replace_func(match: Match[str]) -> str:
+        rv = os.getenv(match.group(1))
+        if rv is None:
+            return match.group(0)
+        return urllib.parse.quote(rv)
+
+    return re.sub(r"\$\{(.+?)\}", replace_func, line)
