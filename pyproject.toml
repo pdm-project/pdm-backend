@@ -20,13 +20,14 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
 ]
 
 dependencies = []
 
 [project.urls]
 homepage = "https://pdm.fming.dev"
-repository = "https://github.com/frostming/pdm-pep517"
+repository = "https://github.com/pdm-project/pdm-pep517"
 
 [tool.pdm]
 version = {source = "file", path = "pdm/pep517/__init__.py"}
