@@ -3,7 +3,7 @@ ci:
 
 repos:
   - repo: https://github.com/psf/black
-    rev: 22.8.0
+    rev: 22.10.0
     hooks:
       - id: black
         exclude: ^pdm/pep517/_vendor
@@ -21,13 +21,13 @@ repos:
         exclude: ^.*/?setup\.py$
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.981
+    rev: v0.982
     hooks:
       - id: mypy
         files: ^pdm/pep517/(?!_vendor).*\.py$
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v2.38.2
+    rev: v3.2.0
     hooks:
       - id: pyupgrade
         exclude: ^pdm/pep517/_vendor
