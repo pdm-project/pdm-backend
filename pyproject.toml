@@ -43,6 +43,7 @@ test = [
     "pytest-xdist",
     "vendoring; python_version ~= '3.8'",
     "parver~=0.3",
+    "setuptools",
 ]
 
 [tool.pdm.scripts]
