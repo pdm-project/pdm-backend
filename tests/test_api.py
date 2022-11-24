@@ -136,6 +136,20 @@ def test_prepare_metadata(tmp_path: Path) -> None:
             assert (tmp_path / dist_info / filename).is_file()
 
 
+def test_build_wheel_metadata_identical(tmp_path: Path) -> None:
+    with build_fixture_project("demo-package"):
+        dist_info = api.prepare_metadata_for_build_wheel(tmp_path.as_posix())
+        (tmp_path / dist_info / "other.txt").write_text("foo")
+
+        wheel_name = api.build_wheel(
+            tmp_path.as_posix(), metadata_directory=str(tmp_path / dist_info)
+        )
+
+        with zipfile.ZipFile(tmp_path / wheel_name) as wheel:
+            assert f"{dist_info}/other.txt" in wheel.namelist()
+            assert wheel.read(f"{dist_info}/other.txt") == b"foo"
+
+
 def test_build_package_with_modules_in_src(tmp_path: Path) -> None:
     with build_fixture_project("demo-src-pymodule"):
         wheel_name = api.build_wheel(tmp_path.as_posix())
