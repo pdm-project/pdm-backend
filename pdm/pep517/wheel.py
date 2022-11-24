@@ -139,7 +139,7 @@ class WheelBuilder(Builder):
             self.plat_name = self.config_settings["--plat-name"]
 
     def build(
-        self, build_dir: str, metadata_directory: str | None = None, **kwargs: Any
+        self, build_dir: str, *, metadata_directory: str | None = None, **kwargs: Any
     ) -> str:
         if not os.path.exists(build_dir):
             os.makedirs(build_dir, exist_ok=True)
