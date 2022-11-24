@@ -100,9 +100,8 @@ drop = [
 [tool.towncrier]
 package = "pdm"
 filename = "CHANGELOG.md"
-issue_format = "[#{issue}](https://github.com/frostming/pdm-pep517/issues/{issue})"
+issue_format = "[#{issue}](https://github.com/pdm-project/pdm-pep517/issues/{issue})"
 directory = "news/"
-title_format = "## Release v{version} ({project_date})"
 template = "news/towncrier_template.md"
 underlines = "-~^"
 

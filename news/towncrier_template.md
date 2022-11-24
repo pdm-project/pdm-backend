@@ -1,3 +1,4 @@
+## Release v{{versiondata.version}} ({{versiondata.date}})
 {% for section in sections %}
 {% if sections[section] %}
 {% for category, val in definitions.items() if category in sections[section] and category != 'trivial' %}
