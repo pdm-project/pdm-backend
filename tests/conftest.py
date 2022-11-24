@@ -3,7 +3,7 @@ import subprocess
 
 import pytest
 
-from pdm.pep517 import utils
+from pdm.backend import utils
 from tests import FIXTURES
 
 

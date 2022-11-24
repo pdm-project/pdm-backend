@@ -2,7 +2,7 @@ import sys
 
 import pytest
 
-from pdm.pep517 import wheel
+from pdm.backend import wheel
 from tests import FIXTURES
 
 

@@ -5,8 +5,8 @@ from typing import Optional
 
 import pytest
 
-from pdm.pep517._vendor import tomli
-from pdm.pep517.metadata import Metadata
+from pdm.backend._vendor import tomli
+from pdm.backend.config import Metadata
 from tests import FIXTURES
 
 

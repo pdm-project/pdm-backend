@@ -1,6 +1,6 @@
 import pytest
 
-from pdm.pep517.validator import validate_pep621
+from pdm.backend.validator import validate_pep621
 
 VALID_DATA = [
     {

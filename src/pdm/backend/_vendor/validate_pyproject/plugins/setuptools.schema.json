@@ -1,0 +1,301 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+
+  "$id": "https://setuptools.pypa.io/en/latest/references/keywords.html",
+  "title": "``tool.setuptools`` table",
+  "$$description": [
+    "Please notice for the time being the ``setuptools`` project does not specify",
+    "a way of configuring builds via ``pyproject.toml``.",
+    "Therefore this schema should be taken just as a *\"thought experiment\"* on how",
+    "this *might be done*, by following the principles established in",
+    "`ini2toml <https://ini2toml.readthedocs.io/en/latest/setuptools_pep621.html>`_.",
+    "It considers only ``setuptools`` `parameters",
+    "<https://setuptools.pypa.io/en/latest/userguide/declarative_config.html>`_",
+    "that can currently be configured via ``setup.cfg`` and are not covered by :pep:`621`",
+    "but intentionally excludes ``dependency_links`` and ``setup_requires``.",
+    "NOTE: ``scripts`` was renamed to ``script-files`` to avoid confusion with",
+    "entry-point based scripts (defined in :pep:`621`)."
+  ],
+
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "platforms": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "provides": {
+      "$$description": [
+        "Package and virtual package names contained within this package",
+        "**(not supported by pip)**"
+      ],
+      "type": "array",
+      "items": {"type": "string", "format": "pep508-identifier"}
+    },
+    "obsoletes": {
+      "$$description": [
+        "Packages which this package renders obsolete",
+        "**(not supported by pip)**"
+      ],
+      "type": "array",
+      "items": {"type": "string", "format": "pep508-identifier"}
+    },
+    "zip-safe": {
+      "description":
+        "Whether the project can be safely installed and run from a zip file.",
+      "type": "boolean"
+    },
+    "script-files": {
+      "description": "Legacy way of defining scripts (entry-points are preferred).",
+      "type": "array",
+      "items": {"type": "string"},
+      "$comment": "TODO: is this field deprecated/should be removed?"
+    },
+    "eager-resources": {
+      "$$description": [
+        "Resources that should be extracted together, if any of them is needed,",
+        "or if any C extensions included in the project are imported."
+      ],
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "packages": {
+      "$$description": [
+        "Packages that should be included in the distribution.",
+        "It can be given either as a list of package identifiers",
+        "or as a ``dict``-like structure with a single key ``find``",
+        "which corresponds to a dynamic call to",
+        "``setuptools.config.expand.find_packages`` function.",
+        "The ``find`` key is associated with a nested ``dict``-like structure that can",
+        "contain ``where``, ``include``, ``exclude`` and ``namespaces`` keys,",
+        "mimicking the keyword arguments of the associated function."
+      ],
+      "oneOf": [
+        {
+          "title": "Array of Python package identifiers",
+          "type": "array",
+          "items": {"type": "string", "format": "python-module-name"}
+        },
+        {"$ref": "#/definitions/find-directive"}
+      ]
+    },
+    "package-dir": {
+      "$$description": [
+        ":class:`dict`-like structure mapping from package names to directories where their",
+        "code can be found.",
+        "The empty string (as key) means that all packages are contained inside",
+        "the given directory will be included in the distribution."
+      ],
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {
+        "oneOf": [{"format": "python-module-name"}, {"const": ""}]
+      },
+      "patternProperties": {
+        "^.*$": {"type": "string" }
+      }
+    },
+    "package-data": {
+      "$$description": [
+        "Mapping from package names to lists of glob patterns.",
+        "Usually this option is not needed when using ``include-package-data = true``",
+        "For more information on how to include data files, check ``setuptools`` `docs",
+        "<https://setuptools.pypa.io/en/latest/userguide/datafiles.html>`_."
+      ],
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {
+        "oneOf": [{"format": "python-module-name"}, {"const": "*"}]
+      },
+      "patternProperties": {
+        "^.*$": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "include-package-data": {
+      "$$description": [
+        "Automatically include any data files inside the package directories",
+        "that are specified by ``MANIFEST.in``",
+        "For more information on how to include data files, check ``setuptools`` `docs",
+        "<https://setuptools.pypa.io/en/latest/userguide/datafiles.html>`_."
+      ],
+      "type": "boolean"
+    },
+    "exclude-package-data": {
+      "$$description": [
+        "Mapping from package names to lists of glob patterns that should be excluded",
+        "For more information on how to include data files, check ``setuptools`` `docs",
+        "<https://setuptools.pypa.io/en/latest/userguide/datafiles.html>`_."
+      ],
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {
+        "oneOf": [{"format": "python-module-name"}, {"const": "*"}]
+      },
+      "patternProperties": {
+          "^.*$": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "namespace-packages": {
+      "type": "array",
+      "items": {"type": "string", "format": "python-module-name"},
+      "$comment": "https://setuptools.pypa.io/en/latest/userguide/package_discovery.html"
+    },
+    "py-modules": {
+      "description": "Modules that setuptools will manipulate",
+      "type": "array",
+      "items": {"type": "string", "format": "python-module-name"},
+      "$comment": "TODO: clarify the relationship with ``packages``"
+    },
+    "data-files": {
+      "$$description": [
+        "**DEPRECATED**: dict-like structure where each key represents a directory and",
+        "the value is a list of glob patterns that should be installed in them.",
+        "Please notice this don't work with wheels. See `data files support",
+        "<https://setuptools.pypa.io/en/latest/userguide/datafiles.html>`_"
+      ],
+      "type": "object",
+      "patternProperties": {
+          "^.*$": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "cmdclass": {
+      "$$description": [
+        "Mapping of distutils-style command names to ``setuptools.Command`` subclasses",
+        "which in turn should be represented by strings with a qualified class name",
+        "(i.e., \"dotted\" form with module), e.g.::\n\n",
+        "    cmdclass = {mycmd = \"pkg.subpkg.module.CommandClass\"}\n\n",
+        "The command class should be a directly defined at the top-level of the",
+        "containing module (no class nesting)."
+      ],
+      "type": "object",
+      "patternProperties": {
+          "^.*$": {"type": "string", "format": "python-qualified-identifier"}
+      }
+    },
+    "license-files": {
+      "type": "array",
+      "items": {"type": "string"},
+      "$$description": [
+        "PROVISIONAL: List of glob patterns for all license files being distributed.",
+        "(might become standard with PEP 639)."
+      ],
+      "default": ["LICEN[CS]E*", " COPYING*", " NOTICE*", "AUTHORS*"],
+      "$comment": "TODO: revise if PEP 639 is accepted. Probably ``project.license-files``?"
+    },
+    "dynamic": {
+      "type": "object",
+      "description": "Instructions for loading :pep:`621`-related metadata dynamically",
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "$$description": [
+            "A version dynamically loaded via either the ``attr:`` or ``file:``",
+            "directives. Please make sure the given file or attribute respects :pep:`440`."
+          ],
+          "oneOf": [
+            {"$ref": "#/definitions/attr-directive"},
+            {"$ref": "#/definitions/file-directive"}
+          ]
+        },
+        "classifiers": {"$ref": "#/definitions/file-directive"},
+        "description": {"$ref": "#/definitions/file-directive"},
+        "dependencies": {"$ref": "#/definitions/file-directive"},
+        "entry-points": {"$ref": "#/definitions/file-directive"},
+        "optional-dependencies": {
+          "type": "object",
+          "propertyNames": {"format": "python-identifier"},
+          "additionalProperties": false,
+          "patternProperties": {".+": {"$ref": "#/definitions/file-directive"}}
+        },
+        "readme": {
+          "anyOf": [
+            {"$ref": "#/definitions/file-directive"},
+            {"properties": {"content-type": {"type": "string"}}}
+          ],
+          "required": ["file"]
+        }
+      }
+    }
+  },
+
+  "definitions": {
+    "file-directive": {
+      "$id": "#/definitions/file-directive",
+      "title": "'file:' directive",
+      "description":
+        "Value is read from a file (or list of files and then concatenated)",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "file": {
+          "oneOf": [
+            {"type": "string"},
+            {"type": "array", "items": {"type": "string"}}
+          ]
+        }
+      },
+      "required": ["file"]
+    },
+    "attr-directive": {
+      "title": "'attr:' directive",
+      "$id": "#/definitions/attr-directive",
+      "$$description": [
+        "Value is read from a module attribute. Supports callables and iterables;",
+        "unsupported types are cast via ``str()``"
+      ],
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "attr": {"type": "string"}
+      },
+      "required": ["attr"]
+    },
+    "find-directive": {
+      "$id": "#/definitions/find-directive",
+      "title": "'find:' directive",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "find": {
+          "type": "object",
+          "$$description": [
+            "Dynamic `package discovery",
+            "<https://setuptools.pypa.io/en/latest/userguide/package_discovery.html>`_."
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "where": {
+              "description":
+                "Directories to be searched for packages (Unix-style relative path)",
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "exclude": {
+              "type": "array",
+              "$$description": [
+                "Exclude packages that match the values listed in this field.",
+                "Can container shell-style wildcards (e.g. ``'pkg.*'``)"
+              ],
+              "items": {"type": "string"}
+            },
+            "include": {
+              "type": "array",
+              "$$description": [
+                "Restrict the found packages to just the ones listed in this field.",
+                "Can container shell-style wildcards (e.g. ``'pkg.*'``)"
+              ],
+              "items": {"type": "string"}
+            },
+            "namespaces": {
+              "type": "boolean",
+              "$$description": [
+                "When ``True``, directories without a ``__init__.py`` file will also",
+                "be scanned for :pep:`420`-style implicit namespaces"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

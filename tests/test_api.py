@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from pdm.pep517 import api
-from pdm.pep517.wheel import WheelBuilder
+from pdm.backend import api
+from pdm.backend.wheel import WheelBuilder
 from tests.testutils import build_fixture_project, get_tarball_names, get_wheel_names
 
 

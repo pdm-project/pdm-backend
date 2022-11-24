@@ -4,7 +4,7 @@ import zipfile
 from pathlib import Path
 from typing import Iterator, List
 
-from pdm.pep517 import utils
+from pdm.backend import utils
 from tests import FIXTURES
 
 

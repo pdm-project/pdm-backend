@@ -42,7 +42,7 @@ class PythonVersionParser(HTMLParser):
 
 
 def _get_current_version():
-    from pdm.pep517.base import Builder
+    from pdm.backend.base import Builder
 
     builder = Builder(PROJECT_DIR)
     return builder.meta.version

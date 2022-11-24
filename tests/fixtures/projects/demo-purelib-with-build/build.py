@@ -1,6 +1,6 @@
 import os
 
-from pdm.pep517.wheel import WheelBuilder
+from pdm.backend.wheel import WheelBuilder
 
 
 def build(src, dst):

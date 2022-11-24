@@ -1,4 +1,4 @@
-from pdm.pep517.utils import expand_vars
+from pdm.backend.utils import expand_vars
 
 
 def test_expand_vars(monkeypatch):

@@ -1,8 +1,8 @@
 [project]
 # PEP 621 project metadata
 # https://www.python.org/dev/peps/pep-0621
-name = "pdm-pep517"
-description = "A PEP 517 backend for PDM that supports PEP 621 metadata"
+name = "pdm-backend"
+description = "The build backend used by PDM that supports latest packaging standards"
 authors = [
   {name = "Frost Ming", email = "mianghong@gmail.com"}
 ]
@@ -23,17 +23,18 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
 ]
 
-dependencies = []
+dependencies = ["importlib-metadata>=3.6; python_version < \"3.10\""]
 
 [project.urls]
 homepage = "https://pdm.fming.dev"
 repository = "https://github.com/pdm-project/pdm-pep517"
 
 [tool.pdm]
-version = {source = "file", path = "pdm/pep517/__init__.py"}
+version = {source = "file", path = "src/pdm/backend/__init__.py"}
 
 [tool.pdm.build]
-includes = ["pdm"]
+includes = ["src"]
+package-dir = "src"
 source-includes = ["tests"]
 
 [tool.pdm.dev-dependencies]
@@ -53,8 +54,8 @@ release = "python scripts/release.py"
 
 [build-system]
 requires = []
-build-backend = "pdm.pep517.api"
-backend-path = ["."]
+build-backend = "pdm.backend.api"
+backend-path = ["src"]
 
 [tool.black]
 line-length = 88
@@ -71,12 +72,11 @@ exclude = '''
 '''
 
 [tool.vendoring]
-destination = "pdm/pep517/_vendor/"
-requirements = "pdm/pep517/_vendor/vendor.txt"
-namespace = "pdm.pep517._vendor"
-
-protected-files = ["__init__.py", "README.md", "vendor.txt"]
+destination = "src/pdm/backend/_vendor/"
+requirements = "src/pdm/backend/_vendor/vendor.txt"
+namespace = "pdm.backend._vendor"
 patches-dir = "scripts/patches"
+protected-files = ["__init__.py", "README.md", "vendor.txt"]
 
 [tool.vendoring.transformations]
 substitute = []
@@ -85,8 +85,6 @@ drop = [
     "*.so",
     "typing.*",
     "*/tests/",
-    "spdx/data/*.txt",
-    "cerberus/benchmarks/",
     "**/test_*.py",
     "**/*_test.py"
 ]

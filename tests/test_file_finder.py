@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from pdm.pep517 import utils
-from pdm.pep517.base import Builder, is_same_or_descendant_path
+from pdm.backend import utils
+from pdm.backend.base import Builder, is_same_or_descendant_path
 from tests import FIXTURES
 
 

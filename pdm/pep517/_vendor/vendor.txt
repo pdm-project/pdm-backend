@@ -1,7 +1,0 @@
-packaging==21.0
-pyparsing==3.0.7
-tomli==2.0.1
-tomli-w==1.0.0
-cerberus==1.3.4
-boolean.py==3.8
-license-expression==21.6.14
