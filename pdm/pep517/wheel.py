@@ -138,7 +138,9 @@ class WheelBuilder(Builder):
         if "--plat-name" in self.config_settings:
             self.plat_name = self.config_settings["--plat-name"]
 
-    def build(self, build_dir: str, **kwargs: Any) -> str:
+    def build(
+        self, build_dir: str, metadata_directory: str | None = None, **kwargs: Any
+    ) -> str:
         if not os.path.exists(build_dir):
             os.makedirs(build_dir, exist_ok=True)
 
@@ -148,7 +150,10 @@ class WheelBuilder(Builder):
 
         self._copy_module()
         self._build()
-        self._write_metadata()
+        if metadata_directory is None:
+            self._write_metadata()
+        else:
+            self._copy_metadata(metadata_directory)
         with zipfile.ZipFile(
             temp_path, mode="w", compression=zipfile.ZIP_DEFLATED
         ) as zip_file:
@@ -354,3 +359,12 @@ class WheelBuilder(Builder):
 
         record_entry = self._write_record(records)
         record_entry.write_to_zip(zf)
+
+    def _copy_metadata(self, metadata_directory: str) -> None:
+        for root, _, files in os.walk(metadata_directory):
+            relroot = os.path.relpath(root, os.path.dirname(metadata_directory))
+            for file in files:
+                self._add_file(
+                    os.path.join(relroot, file),
+                    Path(root) / file,
+                )

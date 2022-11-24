@@ -71,7 +71,7 @@ def build_wheel(
 ) -> str:
     """Builds a wheel, places it in wheel_directory"""
     with WheelBuilder(Path.cwd(), config_settings) as builder:
-        return Path(builder.build(wheel_directory)).name
+        return Path(builder.build(wheel_directory, metadata_directory)).name
 
 
 def build_sdist(
@@ -100,4 +100,4 @@ def build_editable(
     metadata_directory: str | None = None,
 ) -> str:
     with EditableBuilder(Path.cwd(), config_settings) as builder:
-        return Path(builder.build(wheel_directory)).name
+        return Path(builder.build(wheel_directory, metadata_directory)).name
