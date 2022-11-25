@@ -68,6 +68,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "editables"
+version = "0.3"
+requires_python = ">=3.7"
+summary = "Editable installations"
+
+[[package]]
 name = "exceptiongroup"
 version = "1.0.2"
 requires_python = ">=3.7"
@@ -319,7 +325,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.0"
-content_hash = "sha256:4d6f0d3f3cd9dcc3068be44e56af9ca7895663c2e597734fea6a2c77140c5e20"
+content_hash = "sha256:9d917ab4377b59a373cadac7b4b3dd6eff71830eef63bedfb395f9ab769c3687"
 
 [metadata.files]
 "arpeggio 2.0.0" = [
@@ -404,6 +410,10 @@ content_hash = "sha256:4d6f0d3f3cd9dcc3068be44e56af9ca7895663c2e597734fea6a2c771
     {url = "https://files.pythonhosted.org/packages/e9/f0/3be949bd129237553714149b1909d34c94137ca4b86e036bc7060431da18/coverage-6.5.0-cp38-cp38-win32.whl", hash = "sha256:6d4817234349a80dbf03640cec6109cd90cba068330703fa65ddf56b60223a6d"},
     {url = "https://files.pythonhosted.org/packages/ea/52/c08080405329326a7ff16c0dfdb4feefaa8edd7446413df67386fe1bbfe0/coverage-6.5.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:633713d70ad6bfc49b34ead4060531658dc6dfc9b3eb7d8a716d5873377ab745"},
     {url = "https://files.pythonhosted.org/packages/ff/27/339089b558672f04e62d0cd2d49b9280270bad3bc95de24e7eb03deb4638/coverage-6.5.0-cp311-cp311-win32.whl", hash = "sha256:98e8a10b7a314f454d9eff4216a9a94d143a7ee65018dd12442e898ee2310578"},
+]
+"editables 0.3" = [
+    {url = "https://files.pythonhosted.org/packages/01/b0/a2a87db4b6cb8e7d57004b6836faa634e0747e3e39ded126cdbe5a33ba36/editables-0.3.tar.gz", hash = "sha256:167524e377358ed1f1374e61c268f0d7a4bf7dbd046c656f7b410cde16161b1a"},
+    {url = "https://files.pythonhosted.org/packages/ef/8c/87276afb1ba3193c4c05be83965a1e69b8a14821ce6d688464071b179383/editables-0.3-py3-none-any.whl", hash = "sha256:ee686a8db9f5d91da39849f175ffeef094dd0e9c36d6a59a2e8c7f92a3b80020"},
 ]
 "exceptiongroup 1.0.2" = [
     {url = "https://files.pythonhosted.org/packages/8b/0a/72ed77311ab4f88b030749d7303b5aca361acce2cf74978cb48b8ef0ff17/exceptiongroup-1.0.2-py3-none-any.whl", hash = "sha256:c22f11ec6a10d2b453871c5c5fe887436c4d1961324ce9090f2ca6ddc4180c27"},

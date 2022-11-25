@@ -317,14 +317,11 @@ def format_version(version: VersionInfo) -> str:
 
 
 def get_version_from_scm(root: str | Path) -> str:
-    if "PDM_BUILD_SCM_VERSION" in os.environ:
-        version = meta(os.getenv("PDM_BUILD_SCM_VERSION", ""))
+    for func in (git_parse_version, hg_parse_version):
+        version = func(root)  # type: ignore
+        if version:
+            break
     else:
-        for func in (git_parse_version, hg_parse_version):
-            version = func(root)  # type: ignore
-            if version:
-                break
-        else:
-            version = meta("0.0.0")
+        version = meta("0.0.0")
     assert version is not None
     return format_version(version)

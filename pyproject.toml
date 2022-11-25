@@ -41,11 +41,15 @@ source-includes = ["tests"]
 test = [
     "pytest",
     "pytest-cov",
-    "towncrier",
     "pytest-xdist",
-    "vendoring; python_version ~= '3.8'",
-    "parver~=0.3",
     "setuptools",
+]
+
+dev = [
+    "editables",
+    "towncrier",
+    "parver~=0.3",
+    "vendoring; python_version ~= '3.8'",
 ]
 
 [tool.pdm.scripts]
@@ -54,7 +58,7 @@ release = "python scripts/release.py"
 
 [build-system]
 requires = []
-build-backend = "pdm.backend.api"
+build-backend = "pdm.backend.intree"
 backend-path = ["src"]
 
 [tool.black]

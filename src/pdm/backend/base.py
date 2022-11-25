@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import abc
 import glob
 import os
+import shutil
 import sys
 import warnings
 from pathlib import Path
@@ -11,6 +11,8 @@ from typing import Any, Iterable, Mapping, TypeVar, cast
 from pdm.backend.config import Config
 from pdm.backend.exceptions import PDMWarning, ValidationError
 from pdm.backend.hooks import BuildHookInterface, Context
+from pdm.backend.hooks.version import DynamicVersionBuildHook
+from pdm.backend.structures import FileMap
 from pdm.backend.utils import import_module_at_path, is_python_package
 
 if sys.version_info >= (3, 10):
@@ -81,11 +83,13 @@ def _find_top_packages(root: str) -> list[str]:
     return result
 
 
-class Builder(metaclass=abc.ABC):
+class Builder:
     """Base class for building and distributing a package from given path."""
 
-    target: str
     DEFAULT_EXCLUDES = ["build"]
+
+    target: str
+    hooks: list[BuildHookInterface] = [DynamicVersionBuildHook()]
 
     def __init__(
         self,
@@ -94,40 +98,50 @@ class Builder(metaclass=abc.ABC):
     ) -> None:
         self._old_cwd: str | None = None
         self.location = Path(location)
+        self.config = Config.from_pyproject(self.location)
         self.config_settings = dict(config_settings or {})
-        self._hooks = list(self._load_hooks())
+        self._hooks = list(self.get_hooks())
 
-    def _load_hooks(self) -> Iterable[BuildHookInterface]:
+    def get_hooks(self) -> Iterable[BuildHookInterface]:
         """Load hooks in the following order:
 
         1. plugins installed in 'pdm.build.hook' entry point group.
         2. local hook defined in the `pdm_build.py` file.
         """
+        yield from self.hooks
         for ep in entry_points(group="pdm.build.hook"):
             hook = ep.load()
             try:
                 yield cast(BuildHookInterface, hook())  # for a hook class
             except TypeError:
                 yield cast(BuildHookInterface, hook)  # for a hook module
-        local_hook = self.location / "pdm_build.py"
-        if local_hook.exists():
+        local_hook = self.config.build_config.custom_hook
+        if local_hook is not None:
             yield cast(BuildHookInterface, import_module_at_path(local_hook))
 
-    def call_hook(self, hook_name: str, *args: Any) -> None:
+    def call_hook(
+        self, hook_name: str, context: Context, *args: Any, **kwargs: Any
+    ) -> None:
         """Call the hook on all registered hooks and skip if not implemented."""
         for hook in self._hooks:
+            if hasattr(hook, "is_enabled"):
+                if not hook.is_enabled(context):
+                    continue
             if hasattr(hook, hook_name):
-                getattr(hook, hook_name)(*args)
+                getattr(hook, hook_name)(context, *args, **kwargs)
 
-    def build_context(self, destination: Path) -> Context:
+    def build_context(self, destination: Path, **kwargs: Any) -> Context:
         build_dir = self.location / "build"
-        build_dir.mkdir(0o700, exist_ok=True)
+        if not destination.exists():
+            destination.mkdir(0o700, parents=True)
         return Context(
-            config=Config.from_pyproject(self.location),
+            root=self.location,
+            config=self.config,
             target=self.target,
             build_dir=build_dir,
             dist_dir=destination,
             config_settings=self.config_settings,
+            kwargs=kwargs,
         )
 
     def __enter__(self: T) -> T:
@@ -139,43 +153,61 @@ class Builder(metaclass=abc.ABC):
         assert self._old_cwd
         os.chdir(self._old_cwd)
 
-    def initialize(self, context: Context) -> None:
-        self.call_hook("initialize", context)
+    def clean(self, context: Context) -> None:
+        """Clean up the build directory."""
+        self.call_hook("pdm_build_clean", context)
+        if context.build_dir.exists():
+            shutil.rmtree(context.build_dir)
 
-    def get_file_list(self, context: Context) -> Iterable[tuple[str, str]]:
+    def initialize(self, context: Context) -> None:
+        self.call_hook("pdm_build_initialize", context)
+
+    def get_files(self, context: Context) -> Iterable[tuple[str, Path]]:
         """Get the files to add to the package, return a iterable of
-        (path: relpath).
+        (relpath, path).
         """
-        files = self._find_files_to_add(context)
-        self.call_hook("update_file_list", context, files)
+        files = self._find_files_to_add(context, self.location)
+        self.call_hook("pdm_build_update_files", context, files)
+        # At this point, all files must be ready under the build_dir,
+        # collect them now.
+        if context.build_dir.exists():
+            files.update(self._find_files_to_add(context, context.build_dir))
         return sorted(files.items())
 
     def finalize(self, context: Context, artifact: Path) -> None:
-        self.call_hook("finalize", context, artifact)
+        self.call_hook("pdm_build_finalize", context, artifact)
 
-    def build(self, build_dir: str, **kwargs: Any) -> str:
-        context = self.build_context(Path(build_dir))
+    def build(self, build_dir: str, **kwargs: Any) -> Path:
+        """Build the package and return the path to the artifact."""
+        context = self.build_context(Path(build_dir), **kwargs)
+        if self.config_settings.get("clean", True):
+            self.clean(context)
         self.initialize(context)
-        artifact = self.build_artifact(context, **kwargs)
+        files = self.get_files(context)
+        artifact = self.build_artifact(context, files)
         self.finalize(context, artifact)
-        return artifact.name
+        return artifact
 
-    @abc.abstractmethod
-    def build_artifact(self, context: Context, **kwargs: Any) -> Path:
-        """Build the artifact and return the path to it."""
+    def build_artifact(
+        self, context: Context, files: Iterable[tuple[str, Path]]
+    ) -> Path:
+        """Build the artifact from an iterable of (relpath, path) pairs
+        and return the path to it.
+        """
+        raise NotImplementedError()
 
     def format_pkginfo(self, context: Context) -> str:
         metadata = context.config.as_standard_metadata()
         return str(metadata.as_rfc822())
 
-    def _find_files_to_add(self, context: Context) -> dict[str, str]:
-        """This is always the first hook, intialize the file list."""
+    def _find_files_to_add(self, context: Context, root: Path) -> FileMap:
+        """Collect files to add to the artifact under the given root."""
         includes, excludes = self._get_include_and_exclude_paths(context)
-        files: dict[str, str] = {}
+        files = FileMap()
         for include_path in includes:
-            path = Path(include_path)
+            path = root / include_path
             if path.is_file():
-                files[include_path] = include_path
+                files[include_path] = path
                 continue
             # The path is a directory name
             for p in path.glob("**/*"):
@@ -186,28 +218,8 @@ class Builder(metaclass=abc.ABC):
                 if p.name.endswith(".pyc") or self._is_excluded(rel_path, excludes):
                     continue
 
-                files[rel_path] = rel_path
+                files[rel_path] = p
 
-        if context.target != "sdist":
-            dist_info = getattr(context, "dist_info", "")
-            for file in self.find_license_files(context):
-                files[file] = f"{dist_info}/licenses/{file}"
-            return files
-
-        if context.config.backend_config.setup_script and os.path.isfile(
-            context.config.backend_config.setup_script
-        ):
-            setup_script = context.config.backend_config.setup_script
-            files[setup_script] = setup_script
-
-        readme_file = context.config.metadata.readme_file
-        if readme_file and (context.root / readme_file).exists():
-            files[readme_file] = readme_file
-
-        # The pyproject.toml file is valid at this point, include it
-        files["pyproject.toml"] = "pyproject.toml"
-        for file in self.find_license_files(context):
-            files[file] = file
         return files
 
     def find_license_files(self, context: Context) -> list[str]:
@@ -244,7 +256,7 @@ class Builder(metaclass=abc.ABC):
     ) -> tuple[list[str], list[str]]:
         includes = set()
         excludes = set(self.DEFAULT_EXCLUDES)
-        build_config = context.config.backend_config
+        build_config = context.config.build_config
         meta_excludes = list(build_config.excludes)
         source_includes = build_config.source_includes or ["tests"]
         if context.target != "sdist":
@@ -283,3 +295,10 @@ class Builder(metaclass=abc.ABC):
             is_same_or_descendant_path(path, exclude_path)
             for exclude_path in exclude_paths
         )
+
+    def _show_add_file(self, rel_path: str, full_path: Path) -> None:
+        try:
+            show_path = full_path.relative_to(self.location)
+        except ValueError:
+            show_path = full_path
+        print(f" - Adding {show_path} -> {rel_path}")

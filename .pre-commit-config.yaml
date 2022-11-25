@@ -24,6 +24,7 @@ repos:
     rev: v0.982
     hooks:
       - id: mypy
+        exclude: ^(src/pdm/backend/_vendor|tests|scripts)
 
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.2.0

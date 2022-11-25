@@ -3,7 +3,7 @@ This is a simple script to call pdm-pep517's backend apis to make release artifa
 """
 import logging
 
-from pdm.backend import api
+import pdm.backend as api
 
 logger = logging.getLogger("pdm.backend")
 handler = logging.StreamHandler()
@@ -12,9 +12,10 @@ logger.addHandler(handler)
 logger.setLevel(logging.DEBUG)
 
 
-def main():
+def main() -> None:
     api.build_sdist("dist")
     api.build_wheel("dist")
+    api.build_editable("dist")
 
 
 if __name__ == "__main__":

@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import abc
-import atexit
-import contextlib
 import csv
 import hashlib
 import io
@@ -10,40 +7,27 @@ import os
 import re
 import shutil
 import stat
-import subprocess
-import sys
 import tempfile
-import tokenize
 import zipfile
 from base64 import urlsafe_b64encode
 from pathlib import Path
-from typing import Any, BinaryIO, Generator, Mapping, NamedTuple, TextIO, cast
+from typing import IO, Any, Iterable, Mapping, NamedTuple, TextIO
 
 from pdm.backend import __version__
 from pdm.backend._vendor.packaging import tags
 from pdm.backend._vendor.packaging.specifiers import SpecifierSet
 from pdm.backend.base import Builder
-from pdm.backend.exceptions import BuildError, PDMWarning
 from pdm.backend.hooks import Context
-from pdm.backend.utils import get_abi_tag, get_platform, show_warning
-
-# A minimal template of setup.py, which is used to build extensions
-SETUP_FORMAT = """
-# -*- coding: utf-8 -*-
-from setuptools import setup
-
-{before}
-setup_kwargs = {{
-    'name': {name!r},
-    'version': {version!r},
-    'description': {description!r},
-    'url': {url!r},
-{extra}
-}}
-{after}
-
-setup(**setup_kwargs)
-"""
+from pdm.backend.hooks.setuptools import SetuptoolsBuildHook
+from pdm.backend.structures import FileMap
+from pdm.backend.utils import (
+    expand_vars,
+    get_abi_tag,
+    get_platform,
+    safe_name,
+    safe_version,
+    to_filename,
+)
 
 WHEEL_FILE_FORMAT = (
     """\
@@ -56,24 +40,8 @@ Tag: {tag}
 )
 
 PY_LIMITED_API_PATTERN = r"cp3\d"
-
-
-def _format_list(data: list[str], indent: int = 4) -> str:
-    result = ["["]
-    for row in data:
-        result.append(" " * indent + repr(row) + ",")
-    result.append(" " * (indent - 4) + "]")
-    return "\n".join(result)
-
-
-def _format_dict_list(data: dict[str, list[str]], indent: int = 4) -> str:
-    result = ["{"]
-    for key, value in data.items():
-        result.append(
-            " " * indent + repr(key) + ": " + _format_list(value, indent + 4) + ","
-        )
-    result.append(" " * (indent - 4) + "}")
-    return "\n".join(result)
+# Fix the date time for reproducible builds
+ZIPINFO_DEFAULT_DATE_TIME = (2016, 1, 1, 0, 0, 0)
 
 
 class RecordEntry(NamedTuple):
@@ -82,81 +50,16 @@ class RecordEntry(NamedTuple):
     size: str
 
 
-class WheelEntry(metaclass=abc.ABCMeta):
-    # Fix the date time for reproducible builds
-    date_time = (2016, 1, 1, 0, 0, 0)
-
-    def __init__(self, rel_path: str) -> None:
-        self.rel_path = rel_path
-
-    @abc.abstractmethod
-    def open(self) -> BinaryIO:
-        pass
-
-    def build_zipinfo(self) -> zipfile.ZipInfo:
-        return zipfile.ZipInfo(self.rel_path, self.date_time)
-
-    def write_to_zip(self, zf: zipfile.ZipFile) -> RecordEntry:
-        zi = self.build_zipinfo()
-
-        hashsum = hashlib.sha256()
-        with self.open() as src:
-            while True:
-                buf = src.read(1024 * 8)
-                if not buf:
-                    break
-                hashsum.update(buf)
-
-            src.seek(0)
-            zf.writestr(zi, src.read(), compress_type=zipfile.ZIP_DEFLATED)
-
-        size = zi.file_size
-        hash_digest = urlsafe_b64encode(hashsum.digest()).decode("ascii").rstrip("=")
-        return RecordEntry(self.rel_path, f"sha256={hash_digest}", str(size))
-
-
-class WheelFileEntry(WheelEntry):
-    def __init__(self, rel_path: str, full_path: Path) -> None:
-        super().__init__(rel_path)
-        self.full_path = full_path
-
-    def open(self) -> BinaryIO:
-        return self.full_path.open("rb")
-
-    def build_zipinfo(self) -> zipfile.ZipInfo:
-        zi = super().build_zipinfo()
-        st_mode = os.stat(self.full_path).st_mode
-        zi.external_attr = (st_mode & 0xFFFF) << 16  # Unix attributes
-
-        if stat.S_ISDIR(st_mode):
-            zi.external_attr |= 0x10  # MS-DOS directory flag
-        return zi
-
-
-class WheelStringEntry(WheelEntry):
-    def __init__(self, rel_path: str) -> None:
-        super().__init__(rel_path)
-        self.buffer = io.BytesIO()
-
-    def open(self) -> BinaryIO:
-        self.buffer.seek(0)
-        return self.buffer
-
-    @contextlib.contextmanager
-    def text_open(self) -> Generator[TextIO, None, None]:
-        text_buffer = io.TextIOWrapper(self.open(), encoding="utf-8", newline="")
-        yield text_buffer
-        text_buffer.detach()
-
-
 class WheelBuilder(Builder):
+    target = "wheel"
+    hooks = Builder.hooks + [SetuptoolsBuildHook()]
+
     def __init__(
         self,
         location: str | Path,
         config_settings: Mapping[str, Any] | None = None,
     ) -> None:
         super().__init__(location, config_settings)
-        self._entries: dict[str, WheelEntry] = {}
         self._parse_config_settings()
 
     def _parse_config_settings(self) -> None:
@@ -176,45 +79,80 @@ class WheelBuilder(Builder):
         if "--plat-name" in self.config_settings:
             self.plat_name = self.config_settings["--plat-name"]
 
-    def build(
-        self, build_dir: str, *, metadata_directory: str | None = None, **kwargs: Any
-    ) -> str:
-        if not os.path.exists(build_dir):
-            os.makedirs(build_dir, exist_ok=True)
+    def prepare_metadata(self, metadata_directory: str) -> Path:
+        """Write the dist-info files under the given directory"""
+        context = self.build_context(metadata_directory)
+        self.initialize(context)
+        return self._write_dist_info(context, Path(metadata_directory))
 
-        self._entries.clear()
-        fd, temp_path = tempfile.mkstemp(suffix=".whl")
-        os.close(fd)
+    def initialize(self, context: Context) -> None:
+        self._fix_dependencies(context)
+        return super().initialize(context)
 
-        self._copy_module()
-        self._build()
-        if metadata_directory is None:
-            self._write_metadata()
-        else:
-            self._copy_metadata(metadata_directory)
-        with zipfile.ZipFile(
-            temp_path, mode="w", compression=zipfile.ZIP_DEFLATED
-        ) as zip_file:
-            self._write_to_zip(zip_file)
+    def _fix_dependencies(self, context: Context) -> None:
+        """Fix the dependencies and remove dynamic variables from the metadata"""
+        metadata = context.config.metadata
+        root = str(context.root)
+        if metadata.get("dependencies"):
+            metadata["dependencies"] = [
+                expand_vars(dep, root) for dep in metadata["dependencies"]
+            ]
+        if metadata.get("optional-dependencies"):
+            for name, deps in metadata["optional-dependencies"].items():
+                metadata["optional-dependencies"][name] = [
+                    expand_vars(dep, root) for dep in deps
+                ]
 
-        target = os.path.join(build_dir, self.wheel_filename)
-        if os.path.exists(target):
-            os.unlink(target)
-        shutil.move(temp_path, target)
+    def _find_files_to_add(self, context: Context, root: Path) -> FileMap:
+        files = super()._find_files_to_add(context, root)
+        if root == context.root:
+            self._fix_package_dir(context, files)
+            files.update(self._get_metadata_files(context))
+        return files
 
+    def _fix_package_dir(self, context: Context, files: FileMap) -> None:
+        """remove the package-dir part from the relative paths"""
+        package_dir = context.config.build_config.package_dir
+        if not package_dir:
+            return
+        common_prefix = f"{package_dir}/"
+        for rel_path, full_path in list(files.items()):
+            if rel_path.startswith(common_prefix):
+                files[rel_path[len(common_prefix) :]] = full_path
+                del files[rel_path]
+
+    def build_artifact(
+        self, context: Context, files: Iterable[tuple[str, Path]]
+    ) -> Path:
+        records: list[RecordEntry] = []
+        with tempfile.NamedTemporaryFile(suffix=".whl", delete=False) as fp:
+            with zipfile.ZipFile(fp, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+                for rel_path, full_path in files:
+                    records.append(self._add_file_to_zip(zf, rel_path, full_path))
+                self._write_record(zf, records)
+
+        target = context.dist_dir / f"{self.name_version}-{self.tag}.whl"
+        if target.exists():
+            target.unlink()
+        shutil.move(fp.name, target)
         return target
 
     @property
-    def wheel_filename(self) -> str:
-        name = self.meta.project_filename
-        version = self.meta_version
-        return f"{name}-{version}-{self.tag}.whl"
+    def name_version(self) -> str:
+        name = to_filename(safe_name(self.config.metadata["name"]))
+        version = to_filename(safe_version(self.config.metadata["version"]))
+        return f"{name}-{version}"
+
+    @property
+    def dist_info_name(self) -> str:
+        return f"{self.name_version}.dist-info"
 
     @property
     def tag(self) -> str:
         platform = self.plat_name
         impl = self.python_tag
-        if not self.meta.config.is_purelib:
+        is_purelib = self.config.build_config.is_purelib
+        if not is_purelib:
             if not platform:
                 platform = get_platform(self.location / "build")
             if not impl:
@@ -229,264 +167,114 @@ class WheelBuilder(Builder):
                 platform = "any"
             abi_tag = "none"
             if not impl:
-                if self.meta.requires_python and SpecifierSet(
-                    self.meta.requires_python
-                ).contains("2.7"):
+                requires_python = self.config.metadata.get("requires-python", "")
+                if SpecifierSet(requires_python).contains("2.7"):
                     impl = "py2.py3"
                 else:
                     impl = "py3"
 
         platform = platform.lower().replace("-", "_").replace(".", "_")
         tag = (impl, abi_tag, platform)
-        if not self.meta.config.is_purelib:
+        if not is_purelib:
             supported_tags = [(t.interpreter, t.abi, platform) for t in tags.sys_tags()]
             assert (
                 tag in supported_tags
             ), f"would build wheel with unsupported tag {tag}"
         return "-".join(tag)
 
-    @property
-    def dist_info_name(self) -> str:
-        name = self.meta.project_filename
-        version = self.meta_version
-        return f"{name}-{version}.dist-info"
+    def _write_dist_info(self, context: Context, parent: Path) -> Path:
+        """write the dist-info directory and return the path to it"""
+        dist_info = parent / self.dist_info_name
+        dist_info.mkdir(0o700, parents=True, exist_ok=True)
+        meta = context.config.as_standard_metadata()
+        entry_points: dict[str, dict[str, str]] = {}
+        if meta.scripts:
+            entry_points["console_scripts"] = meta.scripts
+        if meta.gui_scripts:
+            entry_points["gui_scripts"] = meta.gui_scripts
+        if meta.entrypoints:
+            entry_points.update(meta.entrypoints)
+        if entry_points:
+            with open(dist_info / "entry_points.txt", "w", encoding="utf-8") as f:
+                self._write_entry_points(f, entry_points)
 
-    def _write_record(self, records: list[RecordEntry]) -> WheelEntry:
-        entry = WheelStringEntry(self.dist_info_name + "/RECORD")
-        with entry.text_open() as fp:
-            writer = csv.writer(fp, lineterminator="\n")
-            writer.writerows(records)
-            writer.writerow(RecordEntry(entry.rel_path, "", ""))
-        return entry
+        with open(dist_info / "WHEEL", "w", encoding="utf-8") as f:
+            self._write_wheel_file(f, is_purelib=context.config.build_config.is_purelib)
 
-    def _write_metadata(self) -> None:
-        dist_info = self.dist_info_name
-        if self.meta.entry_points:
-            with self._open_for_write(dist_info + "/entry_points.txt") as f:
-                self._write_entry_points(f)
+        with open(dist_info / "METADATA", "w", encoding="utf-8") as f:
+            f.write(str(meta.as_rfc822()))
 
-        with self._open_for_write(dist_info + "/WHEEL") as f:
-            self._write_wheel_file(f)
+        for file in self.find_license_files(context):
+            target = dist_info / "licenses" / file
+            target.parent.mkdir(0o700, parents=True, exist_ok=True)
+            shutil.copy2(context.root / file, target)
+        return dist_info
 
-        with self._open_for_write(dist_info + "/METADATA") as f:
-            self._write_metadata_file(f)
+    def _add_file_to_zip(
+        self, zf: zipfile.ZipFile, rel_path: str, full_path: Path
+    ) -> RecordEntry:
 
-        for license_file in self.find_license_files():
-            self._add_file(
-                f"{dist_info}/licenses/{license_file}",
-                self.location / license_file,
-            )
+        self._show_add_file(rel_path, full_path)
+        zi = zipfile.ZipInfo(rel_path, ZIPINFO_DEFAULT_DATE_TIME)
+        st_mode = os.stat(full_path).st_mode
+        zi.external_attr = (st_mode & 0xFFFF) << 16  # Unix attributes
 
-    @contextlib.contextmanager
-    def _open_for_write(self, rel_path: str) -> Generator[TextIO, None, None]:
-        entry = WheelStringEntry(rel_path)
-        with entry.text_open() as fp:
-            yield fp
-        print(f" - Adding {rel_path}")
-        self._entries[rel_path] = entry
+        if stat.S_ISDIR(st_mode):
+            zi.external_attr |= 0x10  # MS-DOS directory flag
 
-    def _build(self) -> None:
-        build_dir = self.location / "build"
-        if build_dir.exists():
-            shutil.rmtree(str(build_dir))
-        lib_dir: Path | None = None
-        if self.meta.config.setup_script:
-            if self.meta.config.run_setuptools:
-                setup_py = self.ensure_setup_py()
-                build_args = [
-                    sys.executable,
-                    str(setup_py),
-                    "build",
-                    "-b",
-                    str(build_dir),
-                ]
-                try:
-                    subprocess.check_call(build_args)
-                except subprocess.CalledProcessError as e:
-                    raise BuildError(f"Error occurs when running {build_args}:\n{e}")
-                lib_dir = next(build_dir.glob("lib.*"), None)
-            else:
-                build_dir.mkdir(exist_ok=True)
-                with tokenize.open(self.meta.config.setup_script) as f:
-                    code = compile(f.read(), self.meta.config.setup_script, "exec")
-                global_dict: dict[str, Any] = {}
-                exec(code, global_dict)
-                if "build" not in global_dict:
-                    show_warning(
-                        "No build() function found in the setup script, do nothing",
-                        PDMWarning,
-                    )
-                    return
-                global_dict["build"](str(self.location), str(build_dir))
-                lib_dir = build_dir
-        if lib_dir is None:
-            lib_dir = build_dir
-        if not lib_dir.exists():
-            lib_dir.mkdir(parents=True)
-        self._write_version(lib_dir)
+        with full_path.open("rb") as src:
+            hash_digest = self._write_zip_info(zf, zi, src)
+        size = zi.file_size
+        return RecordEntry(rel_path, f"sha256={hash_digest}", str(size))
 
-        _, excludes = self._get_include_and_exclude_paths(for_sdist=False)
-        for pkg in lib_dir.glob("**/*"):
-            if pkg.is_dir():
-                continue
+    @staticmethod
+    def _write_zip_info(
+        zf: zipfile.ZipFile, zi: zipfile.ZipInfo, src: IO[bytes]
+    ) -> str:
+        hashsum = hashlib.sha256()
+        for buf in iter(lambda: src.read(2**16), b""):
+            hashsum.update(buf)
 
-            whl_path = rel_path = pkg.relative_to(lib_dir).as_posix()
-            if self.meta.config.package_dir:
-                # act like being in the package_dir
-                rel_path = os.path.join(self.meta.config.package_dir, rel_path)
+        src.seek(0)
+        zf.writestr(zi, src.read(), compress_type=zipfile.ZIP_DEFLATED)
+        return urlsafe_b64encode(hashsum.digest()).decode("ascii").rstrip("=")
 
-            if self._is_excluded(rel_path, excludes):
-                continue
+    def _write_record(self, zf: zipfile.ZipFile, records: list[RecordEntry]) -> None:
+        zi = zipfile.ZipInfo(f"{self.dist_info_name}/RECORD", ZIPINFO_DEFAULT_DATE_TIME)
+        buffer = io.BytesIO()
+        text_buffer = io.TextIOWrapper(buffer, encoding="utf-8", newline="")
 
-            self._add_file(whl_path, pkg)
+        writer = csv.writer(text_buffer, lineterminator="\n")
+        writer.writerows(records)
+        writer.writerow(RecordEntry(zi.filename, "", ""))
+        text_buffer.detach()
+        buffer.seek(0)
+        self._show_add_file(zi.filename, Path(zi.filename))
+        self._write_zip_info(zf, zi, buffer)
 
-    def _write_version(self, destination: Path) -> None:
-        dynamic_version = self.meta.config.dynamic_version
-        if (
-            not dynamic_version
-            or dynamic_version.source == "file"
-            or "write_to" not in dynamic_version.options
-        ):
-            return
-        write_template = dynamic_version.options.get("write_template", "{}\n")
-        write_to = dynamic_version.options["write_to"]
-        write_path = destination / write_to
-        write_path.parent.mkdir(parents=True, exist_ok=True)
-        with write_path.open("w") as f:
-            f.write(write_template.format(self.meta_version))
+    def _write_wheel_file(self, fp: TextIO, is_purelib: bool) -> None:
+        fp.write(WHEEL_FILE_FORMAT.format(is_purelib=is_purelib, tag=self.tag))
 
-    def _copy_module(self) -> None:
-        root = self.meta.config.package_dir or self.location
-        for path in self.find_files_to_add():
-            try:
-                rel_path = path.relative_to(root).as_posix()
-            except ValueError:
-                rel_path = path.as_posix()
-            self._add_file(rel_path, path)
-
-    def _add_file(self, rel_path: str, full_path: Path) -> None:
-        if os.sep != "/":
-            # We always want to have /-separated paths in the zip file and in RECORD
-            rel_path = rel_path.replace(os.sep, "/")
-        print(f" - Adding {rel_path}")
-        self._entries[rel_path] = WheelFileEntry(rel_path, full_path)
-
-    def _write_metadata_file(self, fp: TextIO) -> None:
-        fp.write(self.format_pkginfo())
-
-    def _write_wheel_file(self, fp: TextIO) -> None:
-        fp.write(
-            WHEEL_FILE_FORMAT.format(
-                is_purelib=self.meta.config.is_purelib, tag=self.tag
-            )
-        )
-
-    def _write_entry_points(self, fp: TextIO) -> None:
-        entry_points = self.meta.entry_points
+    def _write_entry_points(
+        self, fp: TextIO, entry_points: dict[str, dict[str, str]]
+    ) -> None:
         for group_name in sorted(entry_points):
             fp.write(f"[{group_name}]\n")
-            for ep in sorted(entry_points[group_name]):
-                fp.write(ep.replace(" ", "") + "\n")
+            for name, value in sorted(entry_points[group_name].items()):
+                fp.write(f"{name} = {value}\n")
 
             fp.write("\n")
 
-    def _write_to_zip(self, zf: zipfile.ZipFile) -> None:
-        records: list[RecordEntry] = []
-        for entry in self._entries.values():
-            records.append(entry.write_to_zip(zf))
+    def _get_metadata_files(self, context: Context) -> Iterable[tuple[str, Path]]:
+        """Generate the metadata files for the wheel."""
+        if context.kwargs.get("metadata_directory"):
+            return self._iter_files_in_directory(context.kwargs["metadata_directory"])
+        else:
+            dist_info = self._write_dist_info(context, context.build_dir)
+            return self._iter_files_in_directory(str(dist_info))
 
-        record_entry = self._write_record(records)
-        record_entry.write_to_zip(zf)
-
-    def _copy_metadata(self, metadata_directory: str) -> None:
-        for root, _, files in os.walk(metadata_directory):
-            relroot = os.path.relpath(root, os.path.dirname(metadata_directory))
+    def _iter_files_in_directory(self, path: str) -> Iterable[tuple[str, Path]]:
+        for root, _, files in os.walk(path):
+            relroot = os.path.relpath(root, os.path.dirname(path))
             for file in files:
-                self._add_file(
-                    os.path.join(relroot, file),
-                    Path(root) / file,
-                )
-
-    def format_setup_py(self, context: Context) -> str:
-        before, extra, after = [], [], []
-        meta = context.config.metadata
-        config = context.config.backend_config
-        kwargs = {
-            "name": meta["name"],
-            "version": meta["version"],
-            "description": meta["description"],
-            "url": (meta.get("project-urls", {})).get("homepage", ""),
-        }
-
-        if config.setup_script:
-            # The build script must contain a `build(setup_kwargs)`, we just import
-            # and execute it.
-            script = config.setup_script
-            after.extend(
-                [
-                    "from {} import build\n".format(script.split(".")[0]),
-                    "build(setup_kwargs)\n",
-                ]
-            )
-
-        package_paths = config.convert_package_paths()
-        if package_paths["packages"]:
-            extra.append(
-                "    'packages': {},\n".format(
-                    _format_list(cast("list[str]", package_paths["packages"]), 8)
-                )
-            )
-        if package_paths["package_dir"]:
-            extra.append(
-                "    'package_dir': {!r},\n".format(package_paths["package_dir"])
-            )
-        if package_paths["package_data"]:
-            extra.append(
-                "    'package_data': {!r},\n".format(package_paths["package_data"])
-            )
-        if package_paths["exclude_package_data"]:
-            extra.append(
-                "    'exclude_package_data': {!r},\n".format(
-                    package_paths["exclude_package_data"]
-                )
-            )
-
-        if meta.dependencies:
-            before.append(f"INSTALL_REQUIRES = {_format_list(meta.dependencies)}\n")
-            extra.append("    'install_requires': INSTALL_REQUIRES,\n")
-        if meta.optional_dependencies:
-            before.append(
-                "EXTRAS_REQUIRE = {}\n".format(
-                    _format_dict_list(meta.optional_dependencies)
-                )
-            )
-            extra.append("    'extras_require': EXTRAS_REQUIRE,\n")
-        if meta.requires_python:
-            extra.append(f"    'python_requires': {meta.requires_python!r},\n")
-        if meta.entry_points:
-            before.append(f"ENTRY_POINTS = {_format_dict_list(meta.entry_points)}\n")
-            extra.append("    'entry_points': ENTRY_POINTS,\n")
-        return SETUP_FORMAT.format(
-            before="".join(before), after="".join(after), extra="".join(extra), **kwargs
-        )
-
-    def ensure_setup_py(self, context: Context, clean: bool = True) -> Path:
-        """Ensures the requirement has a setup.py ready."""
-        # XXX: Currently only handle PDM project, and do nothing if not.
-
-        setup_py_path = self.location.joinpath("setup.py")
-        if setup_py_path.is_file():
-            return setup_py_path
-
-        setup_py_path.write_text(self.format_setup_py(context), encoding="utf-8")
-
-        # Clean this temp file when process exits
-        def cleanup() -> None:
-            try:
-                setup_py_path.unlink()
-            except OSError:
-                pass
-
-        if clean:
-            atexit.register(cleanup)
-        return setup_py_path
+                yield (os.path.join(relroot, file), Path(root) / file)

@@ -18,6 +18,8 @@ class Context:
     assign arbitrary attributes to this object.
     """
 
+    # The project root directory
+    root: Path
     # The parsed pyproject.toml as a Config object
     config: Config
     # The target to build, one of "sdist", "wheel", "editable"
@@ -28,9 +30,13 @@ class Context:
     dist_dir: Path
     # The config settings passed to the hook
     config_settings: dict[str, str]
+    # The extra args passed to the build method
+    kwargs: dict[str, Any]
 
-    def __post_init__(self):
-        self.root = self.config.root
+    def ensure_build_dir(self) -> None:
+        """Ensure the build directory exists."""
+        if not self.build_dir.exists():
+            self.build_dir.mkdir(mode=0o700, parents=True)
 
 
 class BuildHookInterface(Protocol):
@@ -39,24 +45,34 @@ class BuildHookInterface(Protocol):
     Custom hooks can implement part of the methods to provide corresponding abilities.
     """
 
-    def initalize(self, context: Context) -> None:
+    def is_enabled(self, context: Context) -> bool:
+        """Return True if the hook is enabled for the current build"""
+        ...
+
+    def pdm_build_clean(self, context: Context) -> None:
+        """An optional clean step which will be called before the build starts"""
+        ...
+
+    def pdm_build_initialize(self, context: Context) -> None:
         """This hook will be called before the build starts,
         any updates to the context object will be seen by the following processes.
         """
         ...
 
-    def update_file_list(self, context: Context, files: dict[str, str]) -> None:
-        """Passed in the current file mapping of {file_path: rel_path}
+    def pdm_build_update_files(self, context: Context, files: dict[str, Path]) -> None:
+        """Passed in the current file mapping of {relpath: path}
         for hooks to update
         """
         ...
 
-    def finalize(self, context: Context, artifact: Path) -> None:
+    def pdm_build_finalize(self, context: Context, artifact: Path) -> None:
         """This hook will be called after the build is done,
         the artifact is the path to the built artifact.
         """
         ...
 
-    def update_setup_kwargs(self, context: Context, kwargs: dict[str, Any]) -> None:
+    def pdm_build_update_setup_kwargs(
+        self, context: Context, kwargs: dict[str, Any]
+    ) -> None:
         """Passed in the setup kwargs for hooks to update"""
         ...

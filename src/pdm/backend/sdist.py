@@ -1,11 +1,13 @@
-import itertools
 import os
 import tarfile
 import tempfile
 from copy import copy
-from typing import Any, Iterator
+from pathlib import Path
+from typing import Iterable
 
 from pdm.backend.base import Builder
+from pdm.backend.hooks import Context
+from pdm.backend.structures import FileMap
 
 
 def normalize_file_permissions(st_mode: int) -> int:
@@ -46,41 +48,59 @@ def clean_tarinfo(tar_info: tarfile.TarInfo) -> tarfile.TarInfo:
 class SdistBuilder(Builder):
     """This build should be performed for PDM project only."""
 
-    def _find_files_iter(self, for_sdist: bool = False) -> Iterator[str]:
-        return itertools.chain(
-            super()._find_files_iter(for_sdist), self.find_license_files()
-        )
+    target = "sdist"
 
-    def build(self, build_dir: str, **kwargs: Any) -> str:
-        if not os.path.exists(build_dir):
-            os.makedirs(build_dir, exist_ok=True)
+    def initialize(self, context: Context) -> None:
+        super().initialize(context)
+        # Save the config to build_dir/pyprojec.toml so that any
+        # modification to the pyproject.toml will be saved in the sdist.
+        context.ensure_build_dir()
+        context.config.write_to(context.build_dir / "pyproject.toml")
 
-        version = self.meta_version
+    def _find_files_to_add(self, context: Context, root: Path) -> FileMap:
+        files = super()._find_files_to_add(context, root)
+        local_hook = context.config.build_config.custom_hook
 
-        target = os.path.join(build_dir, f"{self.meta.project_name}-{version}.tar.gz")
+        if local_hook is not None and (root / local_hook).exists():
+            files[local_hook] = root / local_hook
+
+        readme_file = context.config.metadata.readme_file
+        if readme_file and (root / readme_file).exists():
+            files[readme_file] = root / readme_file
+
+        # The pyproject.toml file is valid at this point, include it
+        files["pyproject.toml"] = root / "pyproject.toml"
+        for file in self.find_license_files(context):
+            if root.joinpath(file).exists():
+                files[file] = root / file
+        return files
+
+    def build_artifact(
+        self, context: Context, files: Iterable[tuple[str, Path]]
+    ) -> Path:
+        version: str = context.config.metadata["version"]
+        dist_info = f"{context.config.metadata['name']}-{version}"
+
+        target = context.dist_dir / f"{dist_info}.tar.gz"
         tar = tarfile.open(target, mode="w:gz", format=tarfile.PAX_FORMAT)
 
         try:
-            tar_dir = f"{self.meta.project_name}-{version}"
-
-            files_to_add = self.find_files_to_add(True)
-
-            for relpath in files_to_add:
+            for relpath, path in files:
                 tar.add(
-                    relpath,
-                    arcname=os.path.join(tar_dir, str(relpath)),
+                    path,
+                    arcname=os.path.join(dist_info, relpath),
                     recursive=False,
                 )
-                print(f" - Adding {relpath}")
+                self._show_add_file(relpath, path)
 
             fd, temp_name = tempfile.mkstemp(prefix="pkg-info")
-            pkg_info = self.format_pkginfo(False).encode("utf-8")
+            pkg_info = self.format_pkginfo(context).encode("utf-8")
             with open(fd, "wb") as f:
                 f.write(pkg_info)
             tar.add(
-                temp_name, arcname=os.path.join(tar_dir, "PKG-INFO"), recursive=False
+                temp_name, arcname=os.path.join(dist_info, "PKG-INFO"), recursive=False
             )
-            print(" - Adding PKG-INFO")
+            self._show_add_file("PKG-INFO", Path("PKG-INFO"))
         finally:
             tar.close()
 

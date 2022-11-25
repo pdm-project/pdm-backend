@@ -5,7 +5,7 @@ class BuildError(RuntimeError):
     pass
 
 
-class ProjectError(ValueError):
+class ConfigError(ValueError):
     pass
 
 
@@ -13,7 +13,7 @@ class PDMWarning(UserWarning):
     pass
 
 
-class ValidationError(ProjectError):
+class ValidationError(ConfigError):
     def __init__(self, summary: str, details: str) -> None:
         super().__init__(summary)
         self.summary = summary

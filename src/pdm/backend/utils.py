@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import functools
 import importlib.util
 import os
 import re
 import sys
 import sysconfig
 import types
-import urllib
+import urllib.parse
 import warnings
 from contextlib import contextmanager
 from fnmatch import fnmatchcase
@@ -198,12 +197,6 @@ def is_relative_path(target: Path, other: Path) -> bool:
         return True
 
 
-@functools.lru_cache(maxsize=None)
-def show_warning(message: str, category: type[Warning], stacklevel: int = 1) -> None:
-    """A cached version of warnings.warn to avoid repeated warnings."""
-    warnings.warn(message, category, stacklevel + 1)
-
-
 def expand_vars(line: str, root: str) -> str:
     """Expand environment variables in a string."""
     if "$" not in line:
@@ -224,6 +217,8 @@ def import_module_at_path(
 ) -> types.ModuleType:
     """Import a module from a given path."""
     spec = importlib.util.spec_from_file_location(module_name, src_path)
+    if spec is None:
+        raise ValueError(f"Could not import module {module_name} from {src_path}")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)  # type: ignore
     return module
