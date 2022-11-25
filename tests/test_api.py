@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from pdm.backend import api
+import pdm.backend as api
 from pdm.backend.wheel import WheelBuilder
 from tests.testutils import build_fixture_project, get_tarball_names, get_wheel_names
 
@@ -209,23 +209,23 @@ def test_build_with_cextension_in_src(tmp_path: Path) -> None:
 def test_build_editable(tmp_path: Path) -> None:
     with build_fixture_project("demo-package") as project:
         wheel_name = api.build_editable(tmp_path.as_posix())
-        assert api.get_requires_for_build_editable() == []
+        assert api.get_requires_for_build_editable() == ["editables"]
         with zipfile.ZipFile(tmp_path / wheel_name) as zf:
             namelist = zf.namelist()
             assert "demo_package.pth" in namelist
-            assert "__editables_demo_package.py" in namelist
-            assert "demo_package-0.1.0.dist-info/licenses/LICENSE" in namelist
+            assert "_editable_impl_demo_package.py" in namelist
+            assert "demo_package-0.1.0+editable.dist-info/licenses/LICENSE" in namelist
 
             metadata = email.message_from_bytes(
-                zf.read("demo_package-0.1.0.dist-info/METADATA")
+                zf.read("demo_package-0.1.0+editable.dist-info/METADATA")
             )
             assert "editables" in metadata.get_all("Requires-Dist", [])
 
             pth_content = zf.read("demo_package.pth").decode("utf-8").strip()
-            assert pth_content == "import __editables_demo_package"
+            assert pth_content == "import _editable_impl_demo_package"
 
             proxy_module = (
-                zf.read("__editables_demo_package.py").decode("utf-8").strip()
+                zf.read("_editable_impl_demo_package.py").decode("utf-8").strip()
             )
             assert proxy_module == (
                 "from editables.redirector import RedirectingFinder as F\n"
@@ -243,15 +243,15 @@ def test_build_editable_src(tmp_path: Path) -> None:
         with zipfile.ZipFile(tmp_path / wheel_name) as zf:
             namelist = zf.namelist()
             assert "demo_package.pth" in namelist
-            assert "__editables_demo_package.py" in namelist
+            assert "_editable_impl_demo_package.py" in namelist
             assert "my_package/data.json" not in namelist
             assert "data_out.json" in namelist
 
             pth_content = zf.read("demo_package.pth").decode("utf-8").strip()
-            assert pth_content == "import __editables_demo_package"
+            assert pth_content == "import _editable_impl_demo_package"
 
             proxy_module = (
-                zf.read("__editables_demo_package.py").decode("utf-8").strip()
+                zf.read("_editable_impl_demo_package.py").decode("utf-8").strip()
             )
             assert proxy_module == (
                 "from editables.redirector import RedirectingFinder as F\n"
@@ -278,7 +278,7 @@ def test_build_editable_pep420(tmp_path: Path) -> None:
             assert "__editables_demo_package.py" not in namelist
 
             metadata = email.message_from_bytes(
-                zf.read("demo_package-0.1.0.dist-info/METADATA")
+                zf.read("demo_package-0.1.0+editable.dist-info/METADATA")
             )
             assert "editables" not in metadata.get_all("Requires-Dist", [])
 
@@ -289,7 +289,7 @@ def test_build_editable_pep420(tmp_path: Path) -> None:
 def test_prepare_metadata_for_editable(tmp_path: Path) -> None:
     with build_fixture_project("demo-package"):
         dist_info = api.prepare_metadata_for_build_editable(tmp_path.as_posix())
-        assert dist_info == "demo_package-0.1.0.dist-info"
+        assert dist_info == "demo_package-0.1.0+editable.dist-info"
         with (tmp_path / dist_info / "METADATA").open("rb") as metadata:
             deps = email.message_from_binary_file(metadata).get_all("Requires-Dist")
         assert "editables" in deps
@@ -304,7 +304,7 @@ def test_build_purelib_project_with_build(tmp_path: Path) -> None:
             wheel_metadata = email.message_from_bytes(
                 zf.read("demo_package-0.1.0.dist-info/WHEEL")
             )
-            version = zf.read("my_package/version.foo").decode("utf-8").strip()
+            version = zf.read("my_package/version.txt").decode("utf-8").strip()
             assert version == "0.1.0"
             assert wheel_metadata["Root-Is-Purelib"] == "True"
 
@@ -323,7 +323,7 @@ def test_build_wheel_preserve_permission(tmp_path: Path) -> None:
 
 def test_build_wheel_write_version_to_file(project_with_scm: Path) -> None:
     builder = WheelBuilder(project_with_scm)
-    builder.meta.config.data["version"] = {
+    builder.config.data.setdefault("tool", {}).setdefault("pdm", {})["version"] = {
         "source": "scm",
         "write_to": "foo/__version__.py",
     }
@@ -336,7 +336,7 @@ def test_build_wheel_write_version_to_file(project_with_scm: Path) -> None:
 
 def test_build_wheel_write_version_to_file_template(project_with_scm: Path) -> None:
     builder = WheelBuilder(project_with_scm)
-    builder.meta.config.data["version"] = {
+    builder.config.data.setdefault("tool", {}).setdefault("pdm", {})["version"] = {
         "source": "scm",
         "write_to": "foo/__version__.py",
         "write_template": '__version__ = "{}"\n',
@@ -346,3 +346,10 @@ def test_build_wheel_write_version_to_file_template(project_with_scm: Path) -> N
         with zipfile.ZipFile(project_with_scm / wheel_name) as zf:
             version = zf.read("foo/__version__.py").decode("utf-8").strip()
             assert version == '__version__ = "0.1.0"'
+
+
+def test_override_scm_version_via_env_var(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("PDM_BUILD_SCM_VERSION", "1.0.0")
+    with build_fixture_project("demo-using-scm"):
+        wheel_name = api.build_wheel(tmp_path.as_posix())
+        assert wheel_name == "foo-1.0.0-py3-none-any.whl"

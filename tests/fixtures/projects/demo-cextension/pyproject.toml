@@ -20,7 +20,6 @@ version = {source = "file", path = "my_package/__init__.py" }
 
 [tool.pdm.build]
 source-includes = ["**/*.c"]
-setup-script = "build.py"
 run-setuptools = true
 
 [[tool.pdm.source]]

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import tarfile
 import tempfile
@@ -57,22 +59,24 @@ class SdistBuilder(Builder):
         context.ensure_build_dir()
         context.config.write_to(context.build_dir / "pyproject.toml")
 
-    def _find_files_to_add(self, context: Context, root: Path) -> FileMap:
-        files = super()._find_files_to_add(context, root)
-        local_hook = context.config.build_config.custom_hook
+    def _collect_files(self, context: Context, root: Path) -> FileMap:
+        files = super()._collect_files(context, root)
+        local_hook = self.config.build_config.custom_hook
 
-        if local_hook is not None and (root / local_hook).exists():
-            files[local_hook] = root / local_hook
+        additional_files: Iterable[str] = filter(
+            None,
+            (
+                local_hook,
+                self.config.metadata.readme_file,
+                "pyproject.toml",
+                *self.find_license_files(),
+            ),
+        )
 
-        readme_file = context.config.metadata.readme_file
-        if readme_file and (root / readme_file).exists():
-            files[readme_file] = root / readme_file
-
-        # The pyproject.toml file is valid at this point, include it
-        files["pyproject.toml"] = root / "pyproject.toml"
-        for file in self.find_license_files(context):
+        for file in additional_files:
             if root.joinpath(file).exists():
                 files[file] = root / file
+
         return files
 
     def build_artifact(
@@ -94,7 +98,7 @@ class SdistBuilder(Builder):
                 self._show_add_file(relpath, path)
 
             fd, temp_name = tempfile.mkstemp(prefix="pkg-info")
-            pkg_info = self.format_pkginfo(context).encode("utf-8")
+            pkg_info = self.format_pkginfo().encode("utf-8")
             with open(fd, "wb") as f:
                 f.write(pkg_info)
             tar.add(

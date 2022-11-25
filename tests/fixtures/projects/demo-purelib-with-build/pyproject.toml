@@ -19,8 +19,7 @@ name = "demo-package"
 version = {source = "file", path = "my_package/__init__.py" }
 
 [tool.pdm.build]
-source-includes = ["**/*.foo"]
-setup-script = "build.py"
+custom-hook = "my_build.py"
 is-purelib = true
 
 [[tool.pdm.source]]

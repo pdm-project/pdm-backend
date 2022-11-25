@@ -73,5 +73,6 @@ class DynamicVersionBuildHook:
             target = context.build_dir / write_to
             if not target.parent.exists():
                 target.parent.mkdir(0o700, parents=True)
-            target.write_text(write_template.format(version))
+            with open(target, "w", encoding="utf-8", newline="") as fp:
+                fp.write(write_template.format(version))
         return version

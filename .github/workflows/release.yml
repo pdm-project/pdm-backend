@@ -18,7 +18,8 @@ jobs:
 
       - name: Build artifacts
         run: |
-          python -m scripts.build
+          python -m install build
+          python -m build
 
       - name: Test build
         run: |

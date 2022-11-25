@@ -177,7 +177,12 @@ class Metadata(Table):
 
     @property
     def entry_points(self) -> dict[str, dict[str, str]]:
-        pass
+        entry_points: dict[str, dict[str, str]] = self.get("entry-points", {})
+        if "scripts" in self:
+            entry_points["console_scripts"] = self["scripts"]
+        if "gui-scripts" in self:
+            entry_points["gui_scripts"] = self["gui-scripts"]
+        return entry_points
 
 
 class BuildConfig(Table):

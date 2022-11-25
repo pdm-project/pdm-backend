@@ -13,7 +13,7 @@ from pdm.backend.exceptions import PDMWarning, ValidationError
 from pdm.backend.hooks import BuildHookInterface, Context
 from pdm.backend.hooks.version import DynamicVersionBuildHook
 from pdm.backend.structures import FileMap
-from pdm.backend.utils import import_module_at_path, is_python_package
+from pdm.backend.utils import cd, import_module_at_path, is_python_package
 
 if sys.version_info >= (3, 10):
     from importlib.metadata import entry_points
@@ -117,7 +117,9 @@ class Builder:
                 yield cast(BuildHookInterface, hook)  # for a hook module
         local_hook = self.config.build_config.custom_hook
         if local_hook is not None:
-            yield cast(BuildHookInterface, import_module_at_path(local_hook))
+            yield cast(
+                BuildHookInterface, import_module_at_path(self.location / local_hook)
+            )
 
     def call_hook(
         self, hook_name: str, context: Context, *args: Any, **kwargs: Any
@@ -166,12 +168,12 @@ class Builder:
         """Get the files to add to the package, return a iterable of
         (relpath, path).
         """
-        files = self._find_files_to_add(context, self.location)
+        files = self._collect_files(context, self.location)
         self.call_hook("pdm_build_update_files", context, files)
         # At this point, all files must be ready under the build_dir,
         # collect them now.
         if context.build_dir.exists():
-            files.update(self._find_files_to_add(context, context.build_dir))
+            files.update(self._collect_files(context, context.build_dir))
         return sorted(files.items())
 
     def finalize(self, context: Context, artifact: Path) -> None:
@@ -196,13 +198,13 @@ class Builder:
         """
         raise NotImplementedError()
 
-    def format_pkginfo(self, context: Context) -> str:
-        metadata = context.config.as_standard_metadata()
+    def format_pkginfo(self) -> str:
+        metadata = self.config.as_standard_metadata()
         return str(metadata.as_rfc822())
 
-    def _find_files_to_add(self, context: Context, root: Path) -> FileMap:
+    def _collect_files(self, context: Context, root: Path) -> FileMap:
         """Collect files to add to the artifact under the given root."""
-        includes, excludes = self._get_include_and_exclude_paths(context)
+        includes, excludes = self._get_include_and_exclude_paths(root)
         files = FileMap()
         for include_path in includes:
             path = root / include_path
@@ -214,7 +216,7 @@ class Builder:
                 if not p.is_file():
                     continue
 
-                rel_path = p.absolute().relative_to(context.root).as_posix()
+                rel_path = p.absolute().relative_to(root).as_posix()
                 if p.name.endswith(".pyc") or self._is_excluded(rel_path, excludes):
                     continue
 
@@ -222,10 +224,10 @@ class Builder:
 
         return files
 
-    def find_license_files(self, context: Context) -> list[str]:
+    def find_license_files(self) -> list[str]:
         """Return a list of license files from the PEP 639 metadata."""
-        root = context.root
-        license_files = context.config.metadata.license_files
+        root = self.location
+        license_files = self.config.metadata.license_files
         if "paths" in license_files:
             invalid_paths = [
                 p for p in license_files["paths"] if not (root / p).is_file()
@@ -251,15 +253,13 @@ class Builder:
                 )
             return paths
 
-    def _get_include_and_exclude_paths(
-        self, context: Context
-    ) -> tuple[list[str], list[str]]:
+    def _get_include_and_exclude_paths(self, root: Path) -> tuple[list[str], list[str]]:
         includes = set()
         excludes = set(self.DEFAULT_EXCLUDES)
-        build_config = context.config.build_config
+        build_config = self.config.build_config
         meta_excludes = list(build_config.excludes)
         source_includes = build_config.source_includes or ["tests"]
-        if context.target != "sdist":
+        if self.target != "sdist":
             # exclude source-includes for non-sdist builds
             meta_excludes.extend(source_includes)
 
@@ -268,24 +268,27 @@ class Builder:
             if top_packages:
                 includes.update(top_packages)
             else:
+                # Include all top-level .py modules under the package-dir
                 includes.add(f"{build_config.package_dir or '.'}/*.py")
         else:
+            # use what user specifies
             includes.update(build_config.includes)
 
         includes.update(source_includes)
         excludes.update(meta_excludes)
 
-        include_globs = {
-            os.path.normpath(path): key
-            for key in includes
-            for path in glob.iglob(key, recursive=True)
-        }
+        with cd(root):
+            include_globs = {
+                os.path.normpath(path): key
+                for key in includes
+                for path in glob.iglob(key, recursive=True)
+            }
 
-        excludes_globs = {
-            os.path.normpath(path): key
-            for key in excludes
-            for path in glob.iglob(key, recursive=True)
-        }
+            excludes_globs = {
+                os.path.normpath(path): key
+                for key in excludes
+                for path in glob.iglob(key, recursive=True)
+            }
 
         include_paths, exclude_paths = _merge_globs(include_globs, excludes_globs)
         return sorted(include_paths), sorted(exclude_paths)

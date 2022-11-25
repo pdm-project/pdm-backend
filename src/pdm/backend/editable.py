@@ -45,7 +45,8 @@ class EditableBuildHook:
         editables: EditableProject = context.editables
         context.ensure_build_dir()
         for name, content in editables.files():
-            context.build_dir.joinpath(name).write_text(content)
+            with open(os.path.join(context.build_dir, name), "w", newline="") as f:
+                f.write(content)
             files[name] = context.build_dir.joinpath(name)
 
     def _prepare_editable(self, context: Context) -> EditableProject:

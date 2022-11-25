@@ -12,5 +12,6 @@ license = {text = "MIT"}
 dependencies = []
 description = ""
 readme = "README.md"
+dynamic = ["version"]
 
 [project.optional-dependencies]

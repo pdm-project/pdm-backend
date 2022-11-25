@@ -11,7 +11,7 @@ import tempfile
 import zipfile
 from base64 import urlsafe_b64encode
 from pathlib import Path
-from typing import IO, Any, Iterable, Mapping, NamedTuple, TextIO
+from typing import IO, Any, Iterable, Mapping, NamedTuple
 
 from pdm.backend import __version__
 from pdm.backend._vendor.packaging import tags
@@ -42,6 +42,11 @@ Tag: {tag}
 PY_LIMITED_API_PATTERN = r"cp3\d"
 # Fix the date time for reproducible builds
 ZIPINFO_DEFAULT_DATE_TIME = (2016, 1, 1, 0, 0, 0)
+
+
+def _open_for_write(path: str | Path) -> IO[str]:
+    """A simple wrapper around open() that preserves the line ending styles"""
+    return open(path, "w", newline="", encoding="utf-8")
 
 
 class RecordEntry(NamedTuple):
@@ -81,18 +86,18 @@ class WheelBuilder(Builder):
 
     def prepare_metadata(self, metadata_directory: str) -> Path:
         """Write the dist-info files under the given directory"""
-        context = self.build_context(metadata_directory)
+        context = self.build_context(Path(metadata_directory))
         self.initialize(context)
-        return self._write_dist_info(context, Path(metadata_directory))
+        return self._write_dist_info(Path(metadata_directory))
 
     def initialize(self, context: Context) -> None:
-        self._fix_dependencies(context)
+        self._fix_dependencies()
         return super().initialize(context)
 
-    def _fix_dependencies(self, context: Context) -> None:
+    def _fix_dependencies(self) -> None:
         """Fix the dependencies and remove dynamic variables from the metadata"""
-        metadata = context.config.metadata
-        root = str(context.root)
+        metadata = self.config.metadata
+        root = self.location.as_posix()
         if metadata.get("dependencies"):
             metadata["dependencies"] = [
                 expand_vars(dep, root) for dep in metadata["dependencies"]
@@ -103,16 +108,16 @@ class WheelBuilder(Builder):
                     expand_vars(dep, root) for dep in deps
                 ]
 
-    def _find_files_to_add(self, context: Context, root: Path) -> FileMap:
-        files = super()._find_files_to_add(context, root)
-        if root == context.root:
-            self._fix_package_dir(context, files)
+    def _collect_files(self, context: Context, root: Path) -> FileMap:
+        files = super()._collect_files(context, root)
+        if root == self.location:
+            self._fix_package_dir(files)
             files.update(self._get_metadata_files(context))
         return files
 
-    def _fix_package_dir(self, context: Context, files: FileMap) -> None:
+    def _fix_package_dir(self, files: FileMap) -> None:
         """remove the package-dir part from the relative paths"""
-        package_dir = context.config.build_config.package_dir
+        package_dir = self.config.build_config.package_dir
         if not package_dir:
             return
         common_prefix = f"{package_dir}/"
@@ -182,32 +187,26 @@ class WheelBuilder(Builder):
             ), f"would build wheel with unsupported tag {tag}"
         return "-".join(tag)
 
-    def _write_dist_info(self, context: Context, parent: Path) -> Path:
+    def _write_dist_info(self, parent: Path) -> Path:
         """write the dist-info directory and return the path to it"""
         dist_info = parent / self.dist_info_name
         dist_info.mkdir(0o700, parents=True, exist_ok=True)
-        meta = context.config.as_standard_metadata()
-        entry_points: dict[str, dict[str, str]] = {}
-        if meta.scripts:
-            entry_points["console_scripts"] = meta.scripts
-        if meta.gui_scripts:
-            entry_points["gui_scripts"] = meta.gui_scripts
-        if meta.entrypoints:
-            entry_points.update(meta.entrypoints)
+        meta = self.config.metadata
+        entry_points = meta.entry_points
         if entry_points:
-            with open(dist_info / "entry_points.txt", "w", encoding="utf-8") as f:
+            with _open_for_write(dist_info / "entry_points.txt") as f:
                 self._write_entry_points(f, entry_points)
 
-        with open(dist_info / "WHEEL", "w", encoding="utf-8") as f:
-            self._write_wheel_file(f, is_purelib=context.config.build_config.is_purelib)
+        with _open_for_write(dist_info / "WHEEL") as f:
+            self._write_wheel_file(f, is_purelib=self.config.build_config.is_purelib)
 
-        with open(dist_info / "METADATA", "w", encoding="utf-8") as f:
-            f.write(str(meta.as_rfc822()))
+        with _open_for_write(dist_info / "METADATA") as f:
+            f.write(self.format_pkginfo())
 
-        for file in self.find_license_files(context):
+        for file in self.find_license_files():
             target = dist_info / "licenses" / file
             target.parent.mkdir(0o700, parents=True, exist_ok=True)
-            shutil.copy2(context.root / file, target)
+            shutil.copy2(self.location / file, target)
         return dist_info
 
     def _add_file_to_zip(
@@ -252,11 +251,11 @@ class WheelBuilder(Builder):
         self._show_add_file(zi.filename, Path(zi.filename))
         self._write_zip_info(zf, zi, buffer)
 
-    def _write_wheel_file(self, fp: TextIO, is_purelib: bool) -> None:
+    def _write_wheel_file(self, fp: IO[str], is_purelib: bool) -> None:
         fp.write(WHEEL_FILE_FORMAT.format(is_purelib=is_purelib, tag=self.tag))
 
     def _write_entry_points(
-        self, fp: TextIO, entry_points: dict[str, dict[str, str]]
+        self, fp: IO[str], entry_points: dict[str, dict[str, str]]
     ) -> None:
         for group_name in sorted(entry_points):
             fp.write(f"[{group_name}]\n")
@@ -270,7 +269,7 @@ class WheelBuilder(Builder):
         if context.kwargs.get("metadata_directory"):
             return self._iter_files_in_directory(context.kwargs["metadata_directory"])
         else:
-            dist_info = self._write_dist_info(context, context.build_dir)
+            dist_info = self._write_dist_info(context.build_dir)
             return self._iter_files_in_directory(str(dist_info))
 
     def _iter_files_in_directory(self, path: str) -> Iterable[tuple[str, Path]]:

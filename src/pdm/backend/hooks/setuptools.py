@@ -1,3 +1,6 @@
+"""A built-in hook to generate setup.py and run the script"""
+from __future__ import annotations
+
 import atexit
 import os
 import pickle
@@ -68,6 +71,12 @@ class SetuptoolsBuildHook:
         return context.target != "sdist" and context.config.build_config.run_setuptools
 
     def pdm_build_initialize(self, context: Context) -> None:
+        if context.target == "editable":
+            self._build_inplace(context)
+        else:
+            self._build_lib(context)
+
+    def _build_lib(self, context: Context) -> None:
         context.ensure_build_dir()
         setup_py = self.ensure_setup_py(context)
         with tempfile.TemporaryDirectory(prefix="pdm-build-") as temp_dir:
@@ -85,6 +94,14 @@ class SetuptoolsBuildHook:
                     shutil.copytree(file, context.build_dir / file.name)
                 else:
                     shutil.copy2(file, context.build_dir)
+
+    def _build_inplace(self, context: Context) -> None:
+        setup_py = self.ensure_setup_py(context)
+        build_args = [sys.executable, str(setup_py), "build_ext", "--inplace"]
+        try:
+            subprocess.check_call(build_args)
+        except subprocess.CalledProcessError as e:
+            raise BuildError(f"Error occurs when running {build_args}:\n{e}")
 
     def ensure_setup_py(self, context: Context, clean: bool = True) -> Path:
         """Ensures the requirement has a setup.py ready."""
@@ -151,20 +168,25 @@ class SetuptoolsBuildHook:
                 )
             )
 
-        if meta.dependencies:
-            before.append(f"INSTALL_REQUIRES = {_format_list(meta.dependencies)}\n")
+        if meta.get("dependencies"):
+            before.append(f"INSTALL_REQUIRES = {_format_list(meta['dependencies'])}\n")
             extra.append("    'install_requires': INSTALL_REQUIRES,\n")
-        if meta.optional_dependencies:
+        if meta.get("optional-dependencies"):
             before.append(
                 "EXTRAS_REQUIRE = {}\n".format(
-                    _format_dict_list(meta.optional_dependencies)
+                    _format_dict_list(meta["optional-dependencies"])
                 )
             )
             extra.append("    'extras_require': EXTRAS_REQUIRE,\n")
-        if meta.requires_python:
-            extra.append(f"    'python_requires': {meta.requires_python!r},\n")
-        if meta.entry_points:
-            before.append(f"ENTRY_POINTS = {_format_dict_list(meta.entry_points)}\n")
+        if meta.get("requires-python"):
+            extra.append(f"    'python_requires': {meta['requires-python']!r},\n")
+        entry_points = meta.entry_points
+        if entry_points:
+            entry_points_list = {
+                group: [f"{k} = {v}" for k, v in values.items()]
+                for group, values in entry_points.items()
+            }
+            before.append(f"ENTRY_POINTS = {_format_dict_list(entry_points_list)}\n")
             extra.append("    'entry_points': ENTRY_POINTS,\n")
         return SETUP_FORMAT.format(
             before="".join(before), after="".join(after), extra="".join(extra), **kwargs
