@@ -1,11 +1,31 @@
 from __future__ import annotations
 
+import ast
+import contextlib
+import functools
+import importlib
 import os
 import re
+import sys
+import warnings
+from pathlib import Path
+from typing import Any, Generator
 
-from pdm.backend.exceptions import ConfigError, ValidationError
+from pdm.backend.exceptions import ConfigError, PDMWarning, ValidationError
 from pdm.backend.hooks.base import Context
 from pdm.backend.hooks.version.scm import get_version_from_scm
+
+_attr_regex = re.compile(r"([\w.]+)\s*:\s*([\w.]+)\s*(\([^)]+\))?")
+
+
+@contextlib.contextmanager
+def patch_sys_path(path: str | Path) -> Generator[None, None, None]:
+    old_path = sys.path[:]
+    sys.path.insert(0, str(path))
+    try:
+        yield
+    finally:
+        sys.path[:] = old_path
 
 
 class DynamicVersionBuildHook:
@@ -14,7 +34,7 @@ class DynamicVersionBuildHook:
     Currently supports `file` and `scm` sources.
     """
 
-    supported_sources = ("file", "scm")
+    supported_sources = ("file", "scm", "call")
 
     def pdm_build_initialize(self, context: Context) -> None:
         version_config = (
@@ -35,10 +55,12 @@ class DynamicVersionBuildHook:
         if not source:
             raise ConfigError("tool.pdm.version.source is required")
         if source not in self.supported_sources:
-            raise ConfigError(
+            warnings.warn(
                 f"Invalid version source {source}, must be one of "
-                f"{', '.join(self.supported_sources)}"
+                f"{', '.join(self.supported_sources)}",
+                PDMWarning,
             )
+            return
         options = {k: v for k, v in version_config.items() if k != "source"}
         metadata["version"] = getattr(self, f"resolve_version_from_{source}")(
             context, **options
@@ -69,10 +91,47 @@ class DynamicVersionBuildHook:
             version = os.environ["PDM_BUILD_SCM_VERSION"]
         else:
             version = get_version_from_scm(context.root)
+
+        self._write_version(context, version, write_to, write_template)
+        return version
+
+    def _write_version(
+        self,
+        context: Context,
+        version: str,
+        write_to: str | None = None,
+        write_template: str = "{}\n",
+    ) -> None:
+        """Write the resolved version to the file."""
         if write_to is not None:
             target = context.build_dir / write_to
             if not target.parent.exists():
                 target.parent.mkdir(0o700, parents=True)
             with open(target, "w", encoding="utf-8", newline="") as fp:
                 fp.write(write_template.format(version))
+
+    def resolve_version_from_call(
+        self,
+        context: Context,
+        getter: str,
+        write_to: str | None = None,
+        write_template: str = "{}\n",
+    ) -> str:
+        matched = _attr_regex.match(getter)
+        if matched is None:
+            raise ConfigError(
+                "Invalid version getter, must be in the format of "
+                "`module:attribute`."
+            )
+        with patch_sys_path(context.root):
+            module = importlib.import_module(matched.group(1))
+            attrs = matched.group(2).split(".")
+            obj: Any = functools.reduce(getattr, attrs, module)
+            args_group = matched.group(3)
+            if args_group:
+                args = ast.literal_eval(args_group)
+            else:
+                args = ()
+            version = obj(*args)
+        self._write_version(context, version, write_to, write_template)
         return version

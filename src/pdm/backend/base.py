@@ -182,7 +182,7 @@ class Builder:
     def build(self, build_dir: str, **kwargs: Any) -> Path:
         """Build the package and return the path to the artifact."""
         context = self.build_context(Path(build_dir), **kwargs)
-        if self.config_settings.get("clean", True):
+        if not self.config_settings.get("no-clean"):
             self.clean(context)
         self.initialize(context)
         files = self.get_files(context)

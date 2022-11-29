@@ -1,0 +1,7 @@
+[build]
+publish = "site"
+command = """
+pip3 install -q pdm &&
+pdm install -dGdocs &&
+pdm run mkdocs build
+"""

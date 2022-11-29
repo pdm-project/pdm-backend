@@ -329,7 +329,7 @@ def test_build_wheel_write_version_to_file(project_with_scm: Path) -> None:
     }
     with builder:
         wheel_name = builder.build(project_with_scm / "dist")
-        with zipfile.ZipFile(project_with_scm / wheel_name) as zf:
+        with zipfile.ZipFile(wheel_name) as zf:
             version = zf.read("foo/__version__.py").decode("utf-8").strip()
             assert version == "0.1.0"
 
@@ -343,7 +343,7 @@ def test_build_wheel_write_version_to_file_template(project_with_scm: Path) -> N
     }
     with builder:
         wheel_name = builder.build(project_with_scm / "dist")
-        with zipfile.ZipFile(project_with_scm / wheel_name) as zf:
+        with zipfile.ZipFile(wheel_name) as zf:
             version = zf.read("foo/__version__.py").decode("utf-8").strip()
             assert version == '__version__ = "0.1.0"'
 
@@ -353,3 +353,22 @@ def test_override_scm_version_via_env_var(tmp_path: Path, monkeypatch) -> None:
     with build_fixture_project("demo-using-scm"):
         wheel_name = api.build_wheel(tmp_path.as_posix())
         assert wheel_name == "foo-1.0.0-py3-none-any.whl"
+
+
+@pytest.mark.parametrize("getter", ["get_version:run", "get_version:run()"])
+def test_get_version_from_call(project_with_scm: Path, getter: str) -> None:
+    builder = WheelBuilder(project_with_scm)
+    builder.config.data.setdefault("tool", {}).setdefault("pdm", {})["version"] = {
+        "source": "call",
+        "write_to": "foo/__version__.py",
+        "getter": getter,
+    }
+    project_with_scm.joinpath("get_version.py").write_text(
+        "def run(): return '1.1.1'\n"
+    )
+    with builder:
+        wheel_name = builder.build(project_with_scm / "dist")
+        assert wheel_name.name == "foo-1.1.1-py3-none-any.whl"
+        with zipfile.ZipFile(wheel_name) as zf:
+            version = zf.read("foo/__version__.py").decode("utf-8").strip()
+        assert version == "1.1.1"

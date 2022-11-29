@@ -22,7 +22,16 @@ T = TypeVar("T")
 
 
 class Config:
-    """The project config object for pdm backend."""
+    """The project config object for pdm backend.
+
+    Parameters:
+        root: The root directory of the project
+        data: The parsed pyproject.toml data
+
+    Attributes:
+        metadata (Metadata): The project metadata from the `project` table
+        build_config (BuildConfig): The build config from the `tool.pdm.build` table
+    """
 
     def __init__(self, root: Path, data: dict[str, Any]) -> None:
         self.validate(data)
@@ -128,8 +137,11 @@ class Config:
 
 
 class Metadata(Table):
+    """The project metadata table"""
+
     @property
     def readme_file(self) -> str | None:
+        """The readme file path, if not exists, returns None"""
         readme = self.get("readme")
         if not readme:
             return None
@@ -141,6 +153,7 @@ class Metadata(Table):
 
     @property
     def license_files(self) -> dict[str, list[str]]:
+        """The license files configuration"""
         subtable_files = None
         if (
             "license" in self
@@ -177,6 +190,7 @@ class Metadata(Table):
 
     @property
     def entry_points(self) -> dict[str, dict[str, str]]:
+        """The entry points mapping"""
         entry_points: dict[str, dict[str, str]] = self.get("entry-points", {})
         if "scripts" in self:
             entry_points["console_scripts"] = self["scripts"]
@@ -186,7 +200,7 @@ class Metadata(Table):
 
 
 class BuildConfig(Table):
-    """The [tool.pdm] table"""
+    """The `[tool.pdm.build]` table"""
 
     def __init__(self, root: Path, data: dict[str, Any]) -> None:
         self.root = root
@@ -194,6 +208,7 @@ class BuildConfig(Table):
 
     @property
     def custom_hook(self) -> str | None:
+        """The relative path to the custom hook or None if not exists"""
         script = self.get("custom-hook", "pdm_build.py")
         if (self.root / script).exists():
             return script
@@ -201,18 +216,22 @@ class BuildConfig(Table):
 
     @property
     def includes(self) -> list[str]:
+        """The includes setting"""
         return self.get("includes", [])
 
     @property
     def source_includes(self) -> list[str]:
+        """The source-includes setting"""
         return self.get("source-includes", [])
 
     @property
     def excludes(self) -> list[str]:
+        """The excludes setting"""
         return self.get("excludes", [])
 
     @property
     def run_setuptools(self) -> bool:
+        """Whether to run setuptools"""
         return self.get("run-setuptools", False)
 
     @property

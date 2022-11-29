@@ -23,12 +23,15 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
 ]
 
-dependencies = ["importlib-metadata>=3.6; python_version < \"3.10\""]
+dependencies = [
+    "importlib-metadata>=3.6; python_version < \"3.10\""
+]
 
 [project.urls]
 homepage = "https://pdm.fming.dev"
-repository = "https://github.com/pdm-project/pdm-pep517"
+repository = "https://github.com/pdm-project/pdm-backend"
 
+[project.optional-dependencies]
 [tool.pdm]
 version = {source = "file", path = "src/pdm/backend/__init__.py"}
 
@@ -47,14 +50,17 @@ test = [
 
 dev = [
     "editables",
-    "towncrier",
-    "parver~=0.3",
     "vendoring; python_version ~= '3.8'",
+]
+docs = [
+    "mkdocs>=1.4.2",
+    "mkdocstrings[python]>=0.19.0",
+    "mkdocs-material>=8.5.10",
 ]
 
 [tool.pdm.scripts]
 build = "python scripts/build.py"
-release = "python scripts/release.py"
+docs = "mkdocs serve"
 
 [build-system]
 requires = []
@@ -71,7 +77,7 @@ exclude = '''
   | build
   | dist
   | __pypackages__
-  | pdm/pep517/_vendor
+  | pdm/backend/_vendor
 )/
 '''
 
@@ -98,51 +104,3 @@ drop = [
 [tool.vendoring.license.directories]
 
 [tool.vendoring.license.fallback-urls]
-
-[tool.towncrier]
-package = "pdm"
-filename = "CHANGELOG.md"
-issue_format = "[#{issue}](https://github.com/pdm-project/pdm-pep517/issues/{issue})"
-directory = "news/"
-template = "news/towncrier_template.md"
-underlines = "-~^"
-
-  [[tool.towncrier.type]]
-  directory = "feature"
-  name = "Features & Improvements"
-  showcontent = true
-
-  [[tool.towncrier.type]]
-  directory = "bugfix"
-  name = "Bug Fixes"
-  showcontent = true
-
-  [[tool.towncrier.type]]
-  directory = "doc"
-  name = "Improved Documentation"
-  showcontent = true
-
-  [[tool.towncrier.type]]
-  directory = "dep"
-  name = "Dependencies"
-  showcontent = true
-
-  [[tool.towncrier.type]]
-  directory = "removal"
-  name = "Removals and Deprecations"
-  showcontent = true
-
-  [[tool.towncrier.type]]
-  directory = "misc"
-  name = "Miscellany"
-  showcontent = true
-
-[tool.pytest.ini_options]
-norecursedirs = ["fixtures", "__pypackages__"]
-markers = [
-    "deprecation: Test old features are deprecated",
-]
-filterwarnings = [
-    "ignore::DeprecationWarning",
-    "ignore::RuntimeWarning"
-]
