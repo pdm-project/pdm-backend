@@ -12,16 +12,28 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - run: npx changelogithub
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
       - uses: actions/setup-python@v4
         with:
           python-version: "3.10"
 
       - name: Build artifacts
         run: |
-          python -m install build
+          python -m pip install build
           python -m build
 
-      - name: Test build
+      - name: Test Build
         run: |
           pip install dist/*.whl
           pip uninstall -y pdm-pep517
