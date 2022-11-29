@@ -6,7 +6,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Mapping
 
-__version__ = "1.0.6"
+__version__ = "2.0.0a1"
 
 
 def get_requires_for_build_wheel(

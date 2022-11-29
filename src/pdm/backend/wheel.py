@@ -32,7 +32,7 @@ from pdm.backend.utils import (
 WHEEL_FILE_FORMAT = (
     """\
 Wheel-Version: 1.0
-Generator: pdm-pep517 %s
+Generator: pdm-backend %s
 Root-Is-Purelib: {is_purelib}
 Tag: {tag}
 """

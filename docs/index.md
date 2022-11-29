@@ -1,8 +1,8 @@
 # PDM-Backend
 
-[![PyPI](https://img.shields.io/pypi/v/pdm-pep517?label=PyPI)](https://pypi.org/project/pdm-pep517)
-[![Tests](https://github.com/pdm-project/pdm-pep517/actions/workflows/ci.yml/badge.svg)](https://github.com/pdm-project/pdm-pep517/actions/workflows/ci.yml)
-[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/pdm-project/pdm-pep517/master.svg)](https://results.pre-commit.ci/latest/github/pdm-project/pdm-pep517/master)
+[![PyPI](https://img.shields.io/pypi/v/pdm-backend?label=PyPI)](https://pypi.org/project/pdm-backend)
+[![Tests](https://github.com/pdm-project/pdm-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/pdm-project/pdm-backend/actions/workflows/ci.yml)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/pdm-project/pdm-backend/master.svg)](https://results.pre-commit.ci/latest/github/pdm-project/pdm-backend/master)
 [![pdm-managed](https://img.shields.io/badge/pdm-managed-blueviolet)](https://pdm.fming.dev)
 
 PDM-Backend is a build backend that supports the latest packaging standards, which includes:

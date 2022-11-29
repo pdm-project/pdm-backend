@@ -36,9 +36,9 @@ jobs:
       - name: Test Build
         run: |
           pip install dist/*.whl
-          pip uninstall -y pdm-pep517
+          pip uninstall -y pdm-backend
           pip install dist/*.tar.gz
-          pip uninstall -y pdm-pep517
+          pip uninstall -y pdm-backend
 
       - name: Upload to Pypi
         run: |
