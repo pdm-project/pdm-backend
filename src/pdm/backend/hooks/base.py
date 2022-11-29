@@ -105,5 +105,8 @@ class BuildHookInterface(Protocol):
         Parameters:
             context: The context for this build
             kwargs: The arguments to be passed to the setup() function
+
+        Note:
+            This hook will be called in the subprocess of running setup.py
         """
         ...

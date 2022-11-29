@@ -31,7 +31,7 @@ setup_kwargs = {{
 setup(**setup_kwargs)
 """
 
-CUSTOM_HOOK_TEMPLATE = """\
+HOOK_TEMPLATE = """\
 import pickle
 from pdm.backend.wheel import WheelBuilder
 
@@ -124,7 +124,6 @@ class SetuptoolsBuildHook:
     def format_setup_py(self, context: Context) -> str:
         before, extra, after = [], [], []
         meta = context.config.metadata
-        config = context.config.build_config
         kwargs = {
             "name": meta["name"],
             "version": meta["version"],
@@ -132,11 +131,8 @@ class SetuptoolsBuildHook:
             "url": (meta.get("project-urls", {})).get("homepage", ""),
         }
 
-        if config.custom_hook:
-            # Run the pdm_build_update_setup_kwargs hook to update the kwargs
-            after.append(
-                CUSTOM_HOOK_TEMPLATE.format(context_dump=pickle.dumps(context))
-            )
+        # Run the pdm_build_update_setup_kwargs hook to update the kwargs
+        after.append(HOOK_TEMPLATE.format(context_dump=pickle.dumps(context)))
 
         package_paths = context.config.convert_package_paths()
         if package_paths["packages"]:
