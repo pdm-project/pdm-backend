@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import atexit
-import os
 import pickle
 import shutil
 import subprocess
@@ -34,15 +33,13 @@ setup(**setup_kwargs)
 
 CUSTOM_HOOK_TEMPLATE = """\
 import pickle
+from pdm.backend.wheel import WheelBuilder
 
 context_dump = {context_dump!r}
-try:
-    from {hook_module} import pdm_build_update_setup_kwargs
-except ImportError:
-    pass
-else:
-    context = pickle.loads(context_dump)
-    pdm_build_update_setup_kwargs(context, setup_kwargs)
+context = pickle.loads(context_dump)
+builder = WheelBuilder(context.root, context.config_settings)
+builder.config = context.config
+builder.call_hook("pdm_build_update_setup_kwargs", context, setup_kwargs)
 """
 
 
@@ -70,7 +67,7 @@ class SetuptoolsBuildHook:
     def is_enabled(self, context: Context) -> bool:
         return context.target != "sdist" and context.config.build_config.run_setuptools
 
-    def pdm_build_initialize(self, context: Context) -> None:
+    def pdm_build_update_files(self, context: Context, files: dict[str, Path]) -> None:
         if context.target == "editable":
             self._build_inplace(context)
         else:
@@ -137,13 +134,8 @@ class SetuptoolsBuildHook:
 
         if config.custom_hook:
             # Run the pdm_build_update_setup_kwargs hook to update the kwargs
-            custom_hook_module = os.path.splitext(config.custom_hook)[0].replace(
-                "/", "."
-            )
             after.append(
-                CUSTOM_HOOK_TEMPLATE.format(
-                    hook_module=custom_hook_module, context_dump=pickle.dumps(context)
-                )
+                CUSTOM_HOOK_TEMPLATE.format(context_dump=pickle.dumps(context))
             )
 
         package_paths = context.config.convert_package_paths()
