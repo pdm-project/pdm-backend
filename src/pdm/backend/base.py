@@ -126,8 +126,8 @@ class Builder:
     ) -> None:
         """Call the hook on all registered hooks and skip if not implemented."""
         for hook in self._hooks:
-            if hasattr(hook, "is_enabled"):
-                if not hook.is_enabled(context):
+            if hasattr(hook, "pdm_build_hook_enabled"):
+                if not hook.pdm_build_hook_enabled(context):
                     continue
             if hasattr(hook, hook_name):
                 getattr(hook, hook_name)(context, *args, **kwargs)
@@ -182,7 +182,10 @@ class Builder:
     def build(self, build_dir: str, **kwargs: Any) -> Path:
         """Build the package and return the path to the artifact."""
         context = self.build_context(Path(build_dir), **kwargs)
-        if not self.config_settings.get("no-clean"):
+        if (
+            not self.config_settings.get("no-clean-build")
+            or os.getenv("PDM_BUILD_NO_CLEAN", "false").lower() != "false"
+        ):
             self.clean(context)
         self.initialize(context)
         files = self.get_files(context)

@@ -64,7 +64,7 @@ def _format_dict_list(data: dict[str, list[str]], indent: int = 4) -> str:
 class SetuptoolsBuildHook:
     """A build hook to run setuptools build command."""
 
-    def is_enabled(self, context: Context) -> bool:
+    def pdm_build_hook_enabled(self, context: Context) -> bool:
         return context.target != "sdist" and context.config.build_config.run_setuptools
 
     def pdm_build_update_files(self, context: Context, files: dict[str, Path]) -> None:

@@ -136,7 +136,7 @@ Some build frontends such as [build] and [pdm] supports passing options from com
 - `--python-tag=<tag>` Override the python implementation compatibility tag(e.g. `cp37`, `py3`, `pp3`)
 - `--py-limited-api=<abi>` Python tag (`cp32`|`cp33`|`cpNN`) for abi3 wheel tag
 - `--plat-name=<plat>` Override the platform name(e.g. `win_amd64`, `manylinux2010_x86_64`)
-- `no-clean` Don't clean the build directory before the build starts
+- `no-clean-build` Don't clean the build directory before the build starts, this can also work by setting env var `PDM_BUILD_NO_CLEAN` to `1`.
 
 For example, you can supply these options with [build]:
 

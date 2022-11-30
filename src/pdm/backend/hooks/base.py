@@ -49,7 +49,7 @@ class BuildHookInterface(Protocol):
     Custom hooks can implement part of the methods to provide corresponding abilities.
     """
 
-    def is_enabled(self, context: Context) -> bool:
+    def pdm_build_hook_enabled(self, context: Context) -> bool:
         """Return True if the hook is enabled for the current build and context
 
         Parameters:
@@ -107,6 +107,7 @@ class BuildHookInterface(Protocol):
             kwargs: The arguments to be passed to the setup() function
 
         Note:
-            This hook will be called in the subprocess of running setup.py
+            This hook will be called in the subprocess of running setup.py.
+            Any changes made to the context won't be written back.
         """
         ...

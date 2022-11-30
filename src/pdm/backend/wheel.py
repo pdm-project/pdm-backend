@@ -11,7 +11,7 @@ import tempfile
 import zipfile
 from base64 import urlsafe_b64encode
 from pathlib import Path
-from typing import IO, Any, Iterable, Mapping, NamedTuple
+from typing import IO, Any, Iterable, Mapping, NamedTuple, cast
 
 from pdm.backend import __version__
 from pdm.backend._vendor.packaging import tags
@@ -39,7 +39,7 @@ Tag: {tag}
     % __version__
 )
 
-PY_LIMITED_API_PATTERN = r"cp3\d"
+PY_LIMITED_API_PATTERN = r"cp3\d{1,2}"
 # Fix the date time for reproducible builds
 ZIPINFO_DEFAULT_DATE_TIME = (2016, 1, 1, 0, 0, 0)
 
@@ -60,29 +60,28 @@ class WheelBuilder(Builder):
     hooks = Builder.hooks + [SetuptoolsBuildHook()]
 
     def __init__(
-        self,
-        location: str | Path,
-        config_settings: Mapping[str, Any] | None = None,
+        self, location: str | Path, config_settings: Mapping[str, Any] | None = None
     ) -> None:
         super().__init__(location, config_settings)
-        self._parse_config_settings()
+        self.__tag: str | None = None
 
-    def _parse_config_settings(self) -> None:
-        self.python_tag = None
-        self.py_limited_api = None
-        self.plat_name = None
+    def _get_platform_tags(self) -> tuple[str | None, str | None, str | None]:
+        python_tag: str | None = None
+        py_limited_api: str | None = None
+        plat_name: str | None = None
         if not self.config_settings:
-            return
+            return python_tag, py_limited_api, plat_name
         if "--python-tag" in self.config_settings:
-            self.python_tag = self.config_settings["--python-tag"]
+            python_tag = self.config_settings["--python-tag"]
         if "--py-limited-api" in self.config_settings:
-            self.py_limited_api = self.config_settings["--py-limited-api"]
-            if not re.match(PY_LIMITED_API_PATTERN, self.py_limited_api):
+            py_limited_api = cast(str, self.config_settings["--py-limited-api"])
+            if not re.match(PY_LIMITED_API_PATTERN, py_limited_api):
                 raise ValueError(
                     "py-limited-api must match '%s'" % PY_LIMITED_API_PATTERN
                 )
         if "--plat-name" in self.config_settings:
-            self.plat_name = self.config_settings["--plat-name"]
+            plat_name = self.config_settings["--plat-name"]
+        return python_tag, py_limited_api, plat_name
 
     def prepare_metadata(self, metadata_directory: str) -> Path:
         """Write the dist-info files under the given directory"""
@@ -154,16 +153,20 @@ class WheelBuilder(Builder):
 
     @property
     def tag(self) -> str:
-        platform = self.plat_name
-        impl = self.python_tag
+        if self.__tag is None:
+            self.__tag = self._get_tag()
+        return self.__tag
+
+    def _get_tag(self) -> str:
+        impl, abi, platform = self._get_platform_tags()
         is_purelib = self.config.build_config.is_purelib
         if not is_purelib:
             if not platform:
                 platform = get_platform(self.location / "build")
             if not impl:
                 impl = tags.interpreter_name() + tags.interpreter_version()
-            if self.py_limited_api and impl.startswith("cp3"):
-                impl = self.py_limited_api
+            if abi and impl.startswith("cp3"):  # type: ignore[union-attr]
+                impl = abi
                 abi_tag = "abi3"
             else:
                 abi_tag = str(get_abi_tag()).lower()
@@ -178,14 +181,14 @@ class WheelBuilder(Builder):
                 else:
                     impl = "py3"
 
-        platform = platform.lower().replace("-", "_").replace(".", "_")
+        platform = platform.lower().replace("-", "_").replace(".", "_")  # type: ignore
         tag = (impl, abi_tag, platform)
         if not is_purelib:
             supported_tags = [(t.interpreter, t.abi, platform) for t in tags.sys_tags()]
             assert (
                 tag in supported_tags
             ), f"would build wheel with unsupported tag {tag}"
-        return "-".join(tag)
+        return "-".join(tag)  # type: ignore[arg-type]
 
     def _write_dist_info(self, parent: Path) -> Path:
         """write the dist-info directory and return the path to it"""

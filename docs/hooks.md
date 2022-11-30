@@ -70,17 +70,32 @@ Or, you can generate it anywhere and include the path explicitly.
 
 ## Enable the hook for a specific build target
 
-Sometimes you only want to activate the hook for a specific hook, you can define the `is_enabled()` hook:
+Sometimes you only want to activate the hook for a specific hook, you can define the `pdm_build_hook_enabled()` hook:
 
 === "pdm_build.py"
 
     ```python
-    def is_enabled(context):
+    def pdm_build_hook_enabled(context):
         # Only enable for sdist builds
         return context.target == "sdist"
     ```
 
 You can also look at the `context` object inside a specific hook to determine it should be called.
+
+
+## Build hooks flow
+
+The hooks are called in the following order:
+
+```mermaid
+flowchart TD
+    A{{pdm_build_hook_enabled?}}-->pdm_build_initialize
+    pdm_build_initialize-.run-setuptools.-> pdm_build_update_setup_kwargs
+    pdm_build_update_setup_kwargs-.->pdm_build_update_files
+    pdm_build_update_files --> pdm_build_finalize
+```
+
+Read the [API references](./api.md) for more details.
 
 ## Distribute the hook as a plugin
 
@@ -119,12 +134,12 @@ pdm-build-mypyc
 
     ```python
     class MypycBuildHook:
+        def pdm_build_hook_enabled(self, context):
+            return context.target == "wheel"
+
         def pdm_build_initialize(self, context):
             context.ensure_build_dir()
             mypyc_build(context.build_dir)
-
-        def is_enabled(self, context):
-            return context.target == "wheel"
     ```
 
 
