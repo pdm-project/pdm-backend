@@ -4,7 +4,7 @@
 name = "pdm-backend"
 description = "The build backend used by PDM that supports latest packaging standards"
 authors = [
-  {name = "Frost Ming", email = "mianghong@gmail.com"}
+  { name = "Frost Ming", email = "me@frostming.com" }
 ]
 license = {text = "MIT"}
 requires-python = ">=3.7"
@@ -28,12 +28,13 @@ dependencies = [
 ]
 
 [project.urls]
-homepage = "https://pdm.fming.dev"
-repository = "https://github.com/pdm-project/pdm-backend"
+Homepage = "https://github.com/pdm-project/pdm-backend"
+Repository = "https://github.com/pdm-project/pdm-backend"
+Documentation = "https://pdm-backend.fming.dev"
 
-[project.optional-dependencies]
-[tool.pdm]
-version = {source = "file", path = "src/pdm/backend/__init__.py"}
+[tool.pdm.version]
+source = "file"
+path = "src/pdm/backend/__init__.py"
 
 [tool.pdm.build]
 includes = ["src"]

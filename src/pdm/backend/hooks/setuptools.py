@@ -126,8 +126,8 @@ class SetuptoolsBuildHook:
         meta = context.config.metadata
         kwargs = {
             "name": meta["name"],
-            "version": meta["version"],
-            "description": meta["description"],
+            "version": meta.get("version", "0.0.0"),
+            "description": meta.get("description", "UNKNOWN"),
             "url": (meta.get("project-urls", {})).get("homepage", ""),
         }
 
