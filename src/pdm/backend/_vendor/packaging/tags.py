@@ -4,6 +4,7 @@
 
 import logging
 import platform
+import subprocess
 import sys
 import sysconfig
 from importlib.machinery import EXTENSION_SUFFIXES
@@ -36,7 +37,7 @@ INTERPRETER_SHORT_NAMES: Dict[str, str] = {
 }
 
 
-_32_BIT_INTERPRETER = sys.maxsize <= 2 ** 32
+_32_BIT_INTERPRETER = sys.maxsize <= 2**32
 
 
 class Tag:
@@ -90,7 +91,7 @@ class Tag:
         return f"{self._interpreter}-{self._abi}-{self._platform}"
 
     def __repr__(self) -> str:
-        return "<{self} @ {self_id}>".format(self=self, self_id=id(self))
+        return f"<{self} @ {id(self)}>"
 
 
 def parse_tag(tag: str) -> FrozenSet[Tag]:
@@ -192,7 +193,7 @@ def cpython_tags(
     if not python_version:
         python_version = sys.version_info[:2]
 
-    interpreter = "cp{}".format(_version_nodot(python_version[:2]))
+    interpreter = f"cp{_version_nodot(python_version[:2])}"
 
     if abis is None:
         if len(python_version) > 1:
@@ -207,7 +208,7 @@ def cpython_tags(
         except ValueError:
             pass
 
-    platforms = list(platforms or _platform_tags())
+    platforms = list(platforms or platform_tags())
     for abi in abis:
         for platform_ in platforms:
             yield Tag(interpreter, abi, platform_)
@@ -251,7 +252,7 @@ def generic_tags(
         interpreter = "".join([interp_name, interp_version])
     if abis is None:
         abis = _generic_abi()
-    platforms = list(platforms or _platform_tags())
+    platforms = list(platforms or platform_tags())
     abis = list(abis)
     if "none" not in abis:
         abis.append("none")
@@ -268,11 +269,11 @@ def _py_interpreter_range(py_version: PythonVersion) -> Iterator[str]:
     all previous versions of that major version.
     """
     if len(py_version) > 1:
-        yield "py{version}".format(version=_version_nodot(py_version[:2]))
-    yield "py{major}".format(major=py_version[0])
+        yield f"py{_version_nodot(py_version[:2])}"
+    yield f"py{py_version[0]}"
     if len(py_version) > 1:
         for minor in range(py_version[1] - 1, -1, -1):
-            yield "py{version}".format(version=_version_nodot((py_version[0], minor)))
+            yield f"py{_version_nodot((py_version[0], minor))}"
 
 
 def compatible_tags(
@@ -290,7 +291,7 @@ def compatible_tags(
     """
     if not python_version:
         python_version = sys.version_info[:2]
-    platforms = list(platforms or _platform_tags())
+    platforms = list(platforms or platform_tags())
     for version in _py_interpreter_range(python_version):
         for platform_ in platforms:
             yield Tag(version, "none", platform_)
@@ -356,6 +357,22 @@ def mac_platforms(
     version_str, _, cpu_arch = platform.mac_ver()
     if version is None:
         version = cast("MacVersion", tuple(map(int, version_str.split(".")[:2])))
+        if version == (10, 16):
+            # When built against an older macOS SDK, Python will report macOS 10.16
+            # instead of the real version.
+            version_str = subprocess.run(
+                [
+                    sys.executable,
+                    "-sS",
+                    "-c",
+                    "import platform; print(platform.mac_ver()[0])",
+                ],
+                check=True,
+                env={"SYSTEM_VERSION_COMPAT": "0"},
+                stdout=subprocess.PIPE,
+                universal_newlines=True,
+            ).stdout
+            version = cast("MacVersion", tuple(map(int, version_str.split(".")[:2])))
     else:
         version = version
     if arch is None:
@@ -431,7 +448,7 @@ def _generic_platforms() -> Iterator[str]:
     yield _normalize_string(sysconfig.get_platform())
 
 
-def _platform_tags() -> Iterator[str]:
+def platform_tags() -> Iterator[str]:
     """
     Provides the platform tags for this installation.
     """
@@ -481,4 +498,10 @@ def sys_tags(*, warn: bool = False) -> Iterator[Tag]:
     else:
         yield from generic_tags()
 
-    yield from compatible_tags()
+    if interp_name == "pp":
+        interp = "pp3"
+    elif interp_name == "cp":
+        interp = "cp" + interpreter_version(warn=warn)
+    else:
+        interp = None
+    yield from compatible_tags(interpreter=interp)
