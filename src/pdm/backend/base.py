@@ -6,7 +6,7 @@ import shutil
 import sys
 import warnings
 from pathlib import Path
-from typing import Any, Iterable, Mapping, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, TypeVar, cast
 
 from pdm.backend.config import Config
 from pdm.backend.exceptions import PDMWarning, ValidationError
@@ -14,6 +14,9 @@ from pdm.backend.hooks import BuildHookInterface, Context
 from pdm.backend.hooks.version import DynamicVersionBuildHook
 from pdm.backend.structures import FileMap
 from pdm.backend.utils import cd, import_module_at_path, is_python_package
+
+if TYPE_CHECKING:
+    from typing import SupportsIndex
 
 if sys.version_info >= (3, 10):
     from importlib.metadata import entry_points
@@ -102,6 +105,13 @@ class Builder:
         self.config_settings = dict(config_settings or {})
         self._hooks = list(self.get_hooks())
 
+    def __reduce_ex__(self, __protocol: SupportsIndex = 3) -> str | tuple[Any, ...]:
+        return (
+            self.__class__,
+            (self.location, self.config_settings),
+            {"config": self.config},
+        )
+
     def get_hooks(self) -> Iterable[BuildHookInterface]:
         """Load hooks in the following order:
 
@@ -137,13 +147,7 @@ class Builder:
         if not destination.exists():
             destination.mkdir(0o700, parents=True)
         return Context(
-            root=self.location,
-            config=self.config,
-            target=self.target,
-            build_dir=build_dir,
-            dist_dir=destination,
-            config_settings=self.config_settings,
-            kwargs=kwargs,
+            build_dir=build_dir, dist_dir=destination, kwargs=kwargs, builder=self
         )
 
     def __enter__(self: T) -> T:

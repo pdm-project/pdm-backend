@@ -74,7 +74,7 @@ class SetuptoolsBuildHook:
             self._build_lib(context)
 
     def _build_lib(self, context: Context) -> None:
-        context.ensure_build_dir()
+        build_dir = context.ensure_build_dir()
         setup_py = self.ensure_setup_py(context)
         with tempfile.TemporaryDirectory(prefix="pdm-build-") as temp_dir:
             build_args = [sys.executable, str(setup_py), "build", "-b", temp_dir]
@@ -88,9 +88,9 @@ class SetuptoolsBuildHook:
             # copy the files under temp_dir/lib.* to context.build_dir
             for file in lib_dir.iterdir():
                 if file.is_dir():
-                    shutil.copytree(file, context.build_dir / file.name)
+                    shutil.copytree(file, build_dir / file.name)
                 else:
-                    shutil.copy2(file, context.build_dir)
+                    shutil.copy2(file, build_dir)
 
     def _build_inplace(self, context: Context) -> None:
         setup_py = self.ensure_setup_py(context)
