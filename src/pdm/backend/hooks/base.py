@@ -8,6 +8,8 @@ from pdm.backend.config import Config
 
 if TYPE_CHECKING:
     from typing import Protocol
+
+    from pdm.backend.base import Builder
 else:
     Protocol = object
 
@@ -20,27 +22,42 @@ class Context:
     assign arbitrary attributes to this object.
 
     Attributes:
-        root: The project root directory
-        config: The parsed pyproject.toml as a Config object
-        target: The target to build, one of "sdist", "wheel", "editable"
         build_dir: The build directory for storing files generated during the build
         dist_dir: The directory to store the built artifacts
-        config_settings: The config settings passed to the hook
         kwargs: The extra args passed to the build method
+        builder: The builder associated with this build context
     """
 
-    root: Path
-    config: Config
-    target: str
     build_dir: Path
     dist_dir: Path
-    config_settings: dict[str, str]
     kwargs: dict[str, Any]
+    builder: Builder
 
-    def ensure_build_dir(self) -> None:
-        """Create if the build dir doesn't exist"""
+    @property
+    def config(self) -> Config:
+        """The parsed pyproject.toml as a Config object"""
+        return self.builder.config
+
+    @property
+    def root(self) -> Path:
+        """The project root directory"""
+        return self.builder.location
+
+    @property
+    def target(self) -> str:
+        """The target to build, one of 'sdist', 'wheel', 'editable'"""
+        return self.builder.target
+
+    @property
+    def config_settings(self) -> dict[str, str]:
+        """The config settings passed to the hook"""
+        return self.builder.config_settings
+
+    def ensure_build_dir(self) -> Path:
+        """Return the build dir and create if it doesn't exist"""
         if not self.build_dir.exists():
             self.build_dir.mkdir(mode=0o700, parents=True)
+        return self.build_dir
 
 
 class BuildHookInterface(Protocol):
