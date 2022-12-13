@@ -83,16 +83,6 @@ class WheelBuilder(Builder):
             plat_name = self.config_settings["--plat-name"]
         return python_tag, py_limited_api, plat_name
 
-    def prepare_metadata(self, metadata_directory: str) -> Path:
-        """Write the dist-info files under the given directory"""
-        context = self.build_context(Path(metadata_directory))
-        self.initialize(context)
-        return self._write_dist_info(Path(metadata_directory))
-
-    def initialize(self, context: Context) -> None:
-        self._fix_dependencies()
-        return super().initialize(context)
-
     def _fix_dependencies(self) -> None:
         """Fix the dependencies and remove dynamic variables from the metadata"""
         metadata = self.config.metadata
@@ -106,6 +96,16 @@ class WheelBuilder(Builder):
                 metadata["optional-dependencies"][name] = [
                     expand_vars(dep, root) for dep in deps
                 ]
+
+    def initialize(self, context: Context) -> None:
+        self._fix_dependencies()
+        return super().initialize(context)
+
+    def prepare_metadata(self, metadata_directory: str) -> Path:
+        """Write the dist-info files under the given directory"""
+        context = self.build_context(Path(metadata_directory))
+        self.initialize(context)
+        return self._write_dist_info(Path(metadata_directory))
 
     def _collect_files(self, context: Context, root: Path) -> FileMap:
         files = super()._collect_files(context, root)

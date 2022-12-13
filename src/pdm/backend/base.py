@@ -166,6 +166,7 @@ class Builder:
             shutil.rmtree(context.build_dir)
 
     def initialize(self, context: Context) -> None:
+        """Initialize the build context."""
         self.call_hook("pdm_build_initialize", context)
 
     def get_files(self, context: Context) -> Iterable[tuple[str, Path]]:

@@ -201,13 +201,18 @@ def expand_vars(line: str, root: str) -> str:
     """Expand environment variables in a string."""
     if "$" not in line:
         return line
-    line = line.replace("${PROJECT_ROOT}", root.lstrip("/"))
+
+    if "://" in line:
+        quote: Callable[[str], str] = urllib.parse.quote
+    else:
+        quote = str
+    line = line.replace("${PROJECT_ROOT}", quote(root).lstrip("/"))
 
     def replace_func(match: Match[str]) -> str:
         rv = os.getenv(match.group(1))
         if rv is None:
             return match.group(0)
-        return urllib.parse.quote(rv)
+        return quote(rv)
 
     return re.sub(r"\$\{(.+?)\}", replace_func, line)
 
