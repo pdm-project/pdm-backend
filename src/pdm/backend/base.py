@@ -23,12 +23,6 @@ if sys.version_info >= (3, 10):
 else:
     from importlib_metadata import entry_points
 
-METADATA_BASE = """\
-Metadata-Version: 2.1
-Name: {name}
-Version: {version}
-"""
-
 T = TypeVar("T", bound="Builder")
 
 
