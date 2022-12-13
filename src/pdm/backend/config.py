@@ -74,6 +74,10 @@ class Config:
         with open(path, "wb") as fp:
             tomli_w.dump(self.data, fp)
 
+    def for_hook(self, name: str) -> dict[str, Any]:
+        """Return the config data for the given hook."""
+        return self.build_config.get("hooks", {}).get(name, {})
+
     def convert_package_paths(self) -> dict[str, list | dict]:
         """Return a {package_dir, packages, package_data, exclude_package_data} dict."""
         packages = []
