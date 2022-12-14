@@ -33,12 +33,10 @@ setup(**setup_kwargs)
 
 HOOK_TEMPLATE = """\
 import pickle
-from pdm.backend.wheel import WheelBuilder
 
 context_dump = {context_dump!r}
 context = pickle.loads(context_dump)
-builder = WheelBuilder(context.root, context.config_settings)
-builder.config = context.config
+builder = context.builder
 builder.call_hook("pdm_build_update_setup_kwargs", context, setup_kwargs)
 """
 

@@ -33,8 +33,7 @@ Repository = "https://github.com/pdm-project/pdm-backend"
 Documentation = "https://pdm-backend.fming.dev"
 
 [tool.pdm.version]
-source = "file"
-path = "src/pdm/backend/__init__.py"
+source = "scm"
 
 [tool.pdm.build]
 includes = ["src"]

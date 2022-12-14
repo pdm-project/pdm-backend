@@ -7,13 +7,13 @@ import os
 import re
 import shutil
 import stat
+import sys
 import tempfile
 import zipfile
 from base64 import urlsafe_b64encode
 from pathlib import Path
 from typing import IO, Any, Iterable, Mapping, NamedTuple, cast
 
-from pdm.backend import __version__
 from pdm.backend._vendor.packaging import tags
 from pdm.backend._vendor.packaging.specifiers import SpecifierSet
 from pdm.backend.base import Builder
@@ -29,15 +29,17 @@ from pdm.backend.utils import (
     to_filename,
 )
 
-WHEEL_FILE_FORMAT = (
-    """\
+if sys.version_info < (3, 8):
+    from importlib_metadata import version as get_version
+else:
+    from importlib.metadata import version as get_version
+
+WHEEL_FILE_FORMAT = """\
 Wheel-Version: 1.0
-Generator: pdm-backend %s
+Generator: pdm-backend {version}
 Root-Is-Purelib: {is_purelib}
 Tag: {tag}
 """
-    % __version__
-)
 
 PY_LIMITED_API_PATTERN = r"cp3\d{1,2}"
 # Fix the date time for reproducible builds
@@ -255,7 +257,16 @@ class WheelBuilder(Builder):
         self._write_zip_info(zf, zi, buffer)
 
     def _write_wheel_file(self, fp: IO[str], is_purelib: bool) -> None:
-        fp.write(WHEEL_FILE_FORMAT.format(is_purelib=is_purelib, tag=self.tag))
+        try:
+            version = get_version("pdm-backend")
+        except ModuleNotFoundError:
+            version = "0.0.0+local"
+
+        fp.write(
+            WHEEL_FILE_FORMAT.format(
+                is_purelib=is_purelib, tag=self.tag, version=version
+            )
+        )
 
     def _write_entry_points(
         self, fp: IO[str], entry_points: dict[str, dict[str, str]]
