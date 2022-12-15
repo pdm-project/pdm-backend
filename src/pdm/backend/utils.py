@@ -225,5 +225,5 @@ def import_module_at_path(
     if spec is None:
         raise ValueError(f"Could not import module {module_name} from {src_path}")
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)  # type: ignore
+    spec.loader.exec_module(module)  # type: ignore[union-attr]
     return module

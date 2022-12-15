@@ -183,7 +183,7 @@ class WheelBuilder(Builder):
                 else:
                     impl = "py3"
 
-        platform = platform.lower().replace("-", "_").replace(".", "_")  # type: ignore
+        platform = platform.lower().replace("-", "_").replace(".", "_")  # type: ignore[union-attr]  # noqa: E501
         tag = (impl, abi_tag, platform)
         if not is_purelib:
             supported_tags = [(t.interpreter, t.abi, platform) for t in tags.sys_tags()]

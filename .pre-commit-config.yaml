@@ -3,6 +3,12 @@ ci:
 
 exclude: ^src/pdm/backend/_vendor
 repos:
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.9.0
+    hooks:
+      - id: python-check-blanket-noqa
+      - id: python-check-blanket-type-ignore
+
   - repo: https://github.com/psf/black
     rev: 22.10.0
     hooks:

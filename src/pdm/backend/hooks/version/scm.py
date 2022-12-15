@@ -317,7 +317,7 @@ def format_version(version: VersionInfo) -> str:
 
 def get_version_from_scm(root: str | Path) -> str:
     for func in (git_parse_version, hg_parse_version):
-        version = func(root)  # type: ignore
+        version = func(root)  # type: ignore[arg-type]
         if version:
             break
     else:
