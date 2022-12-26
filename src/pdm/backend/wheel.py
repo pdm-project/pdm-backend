@@ -36,7 +36,7 @@ else:
 
 WHEEL_FILE_FORMAT = """\
 Wheel-Version: 1.0
-Generator: pdm-backend {version}
+Generator: pdm-backend ({version})
 Root-Is-Purelib: {is_purelib}
 Tag: {tag}
 """
