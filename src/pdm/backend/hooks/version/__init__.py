@@ -44,6 +44,10 @@ class DynamicVersionBuildHook:
         if not version_config or "version" in metadata:
             if metadata.get("version") is None:
                 metadata["version"] = "0.0.0"
+            try:
+                metadata["dynamic"].remove("version")
+            except ValueError:
+                pass
             return
         if "version" not in metadata.get("dynamic", []):
             raise ValidationError(
