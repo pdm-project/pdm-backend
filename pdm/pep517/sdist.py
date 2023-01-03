@@ -98,7 +98,7 @@ class SdistBuilder(Builder):
         with open(self.location / "pyproject.toml", "rb") as f:
             pyproject = tomli.load(f)
         if self.meta.dynamic and "version" in self.meta.dynamic:
-            self.meta.data["version"] = self.meta.version
+            self.meta.data["version"] = self.meta_version
             self.meta.data["dynamic"].remove("version")
         pyproject["project"] = self.meta.data
         name = "pyproject.toml"
