@@ -17,7 +17,7 @@ On top of that, we also support some additional features.
 
 Then in `[tool.pdm.version]` table, specify how to get the version info. There are three ways supported:
 
-1. Read from a static string in the given file path:
+### Read from a static string in the given file path
 
 ```toml
 [tool.pdm.version]
@@ -31,7 +31,7 @@ In this way, the file MUST contain a line like:
 __version__ = "0.1.0" # Single quotes and double quotes are both OK, comments are allowed.
 ```
 
-2. Read from SCM tag, supporting `git` and `hg`:
+### Read from SCM tag, supporting `git` and `hg`
 
 ```toml
 [tool.pdm.version]
@@ -44,7 +44,7 @@ When building from a source tree where SCM is not available, you can use the env
 PDM_BUILD_SCM_VERSION=0.1.0 python -m build
 ```
 
-3. Get with a specific function:
+### Get with a specific function
 
 ```toml
 [tool.pdm.version]
