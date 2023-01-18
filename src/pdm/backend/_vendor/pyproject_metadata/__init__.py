@@ -10,7 +10,8 @@ import pathlib
 import re
 import typing
 
-from typing import Any, DefaultDict, Dict, List, Mapping, Optional, OrderedDict, Tuple, Union
+from collections.abc import Mapping
+from typing import Any
 
 import pdm.backend._vendor.packaging.markers as pkg_markers
 import pdm.backend._vendor.packaging.requirements as pkg_requirements
@@ -18,32 +19,28 @@ import pdm.backend._vendor.packaging.specifiers as pkg_specifiers
 import pdm.backend._vendor.packaging.version as pkg_version
 
 
-__version__ = '0.6.1'
+__version__ = '0.7.0'
 
 
 class ConfigurationError(Exception):
     '''Error in the backend metadata.'''
-    def __init__(self, msg: str, *, key: Optional[str] = None):
+    def __init__(self, msg: str, *, key: str | None = None):
         super().__init__(msg)
         self._key = key
 
     @property
-    def key(self) -> Optional[str]:  # pragma: no cover
+    def key(self) -> str | None:  # pragma: no cover
         return self._key
 
 
 class RFC822Message():
-    '''Simple RFC 822 message implementation.
-
-    Note: Does not support multiline fields, as Python packaging flavored
-    RFC 822 metadata does.
-    '''
+    '''Python-flavored RFC 822 message implementation.'''
 
     def __init__(self) -> None:
-        self.headers: OrderedDict[str, List[str]] = collections.OrderedDict()
-        self.body: Optional[str] = None
+        self.headers: collections.OrderedDict[str, list[str]] = collections.OrderedDict()
+        self.body: str | None = None
 
-    def __setitem__(self, name: str, value: Optional[str]) -> None:
+    def __setitem__(self, name: str, value: str | None) -> None:
         if not value:
             return
         if name not in self.headers:
@@ -87,7 +84,7 @@ class DataFetcher():
             val = val[part]
         return val
 
-    def get_str(self, key: str) -> Optional[str]:
+    def get_str(self, key: str) -> str | None:
         try:
             val = self.get(key)
             if not isinstance(val, str):
@@ -100,7 +97,7 @@ class DataFetcher():
         except KeyError:
             return None
 
-    def get_list(self, key: str) -> List[str]:
+    def get_list(self, key: str) -> list[str]:
         try:
             val = self.get(key)
             if not isinstance(val, list):
@@ -120,7 +117,7 @@ class DataFetcher():
         except KeyError:
             return []
 
-    def get_dict(self, key: str) -> Dict[str, str]:
+    def get_dict(self, key: str) -> dict[str, str]:
         try:
             val = self.get(key)
             if not isinstance(val, dict):
@@ -140,7 +137,7 @@ class DataFetcher():
         except KeyError:
             return {}
 
-    def get_people(self, key: str) -> List[Tuple[str, str]]:
+    def get_people(self, key: str) -> list[tuple[str, str]]:
         try:
             val = self.get(key)
             if not (
@@ -167,34 +164,34 @@ class DataFetcher():
 
 class License(typing.NamedTuple):
     text: str
-    file: Optional[pathlib.Path]
+    file: pathlib.Path | None
 
 
 class Readme(typing.NamedTuple):
     text: str
-    file: Optional[pathlib.Path]
+    file: pathlib.Path | None
     content_type: str
 
 
 @dataclasses.dataclass
 class StandardMetadata():
     name: str
-    version: Optional[pkg_version.Version] = None
-    description: Optional[str] = None
-    license: Optional[License] = None
-    readme: Optional[Readme] = None
-    requires_python: Optional[pkg_specifiers.SpecifierSet] = None
-    dependencies: List[pkg_requirements.Requirement] = dataclasses.field(default_factory=list)
-    optional_dependencies: Dict[str, List[pkg_requirements.Requirement]] = dataclasses.field(default_factory=dict)
-    entrypoints: Dict[str, Dict[str, str]] = dataclasses.field(default_factory=dict)
-    authors: List[Tuple[str, str]] = dataclasses.field(default_factory=list)
-    maintainers: List[Tuple[str, str]] = dataclasses.field(default_factory=list)
-    urls: Dict[str, str] = dataclasses.field(default_factory=dict)
-    classifiers: List[str] = dataclasses.field(default_factory=list)
-    keywords: List[str] = dataclasses.field(default_factory=list)
-    scripts: Dict[str, str] = dataclasses.field(default_factory=dict)
-    gui_scripts: Dict[str, str] = dataclasses.field(default_factory=dict)
-    dynamic: List[str] = dataclasses.field(default_factory=list)
+    version: pkg_version.Version | None = None
+    description: str | None = None
+    license: License | None = None
+    readme: Readme | None = None
+    requires_python: pkg_specifiers.SpecifierSet | None = None
+    dependencies: list[pkg_requirements.Requirement] = dataclasses.field(default_factory=list)
+    optional_dependencies: dict[str, list[pkg_requirements.Requirement]] = dataclasses.field(default_factory=dict)
+    entrypoints: dict[str, dict[str, str]] = dataclasses.field(default_factory=dict)
+    authors: list[tuple[str, str]] = dataclasses.field(default_factory=list)
+    maintainers: list[tuple[str, str]] = dataclasses.field(default_factory=list)
+    urls: dict[str, str] = dataclasses.field(default_factory=dict)
+    classifiers: list[str] = dataclasses.field(default_factory=list)
+    keywords: list[str] = dataclasses.field(default_factory=list)
+    scripts: dict[str, str] = dataclasses.field(default_factory=dict)
+    gui_scripts: dict[str, str] = dataclasses.field(default_factory=dict)
+    dynamic: list[str] = dataclasses.field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.name = re.sub(r'[-_.]+', '-', self.name).lower()
@@ -204,7 +201,7 @@ class StandardMetadata():
     def from_pyproject(
         cls,
         data: Mapping[str, Any],
-        project_dir: Union[str, os.PathLike[str]] = os.path.curdir,
+        project_dir: str | os.PathLike[str] = os.path.curdir,
     ) -> StandardMetadata:
         fetcher = DataFetcher(data)
         project_dir = pathlib.Path(project_dir)
@@ -311,14 +308,14 @@ class StandardMetadata():
                 raise ConfigurationError(f'Field cannot be dynamic: {field}')
             message['Dynamic'] = field
 
-    def _name_list(self, people: List[Tuple[str, str]]) -> str:
+    def _name_list(self, people: list[tuple[str, str]]) -> str:
         return ', '.join(
             name
             for name, email_ in people
             if not email_
         )
 
-    def _email_list(self, people: List[Tuple[str, str]]) -> str:
+    def _email_list(self, people: list[tuple[str, str]]) -> str:
         return ', '.join([
             '{}{}'.format(name, f' <{_email}>' if _email else '')
             for name, _email in people
@@ -339,7 +336,7 @@ class StandardMetadata():
         return requirement
 
     @staticmethod
-    def _get_license(fetcher: DataFetcher, project_dir: pathlib.Path) -> Optional[License]:
+    def _get_license(fetcher: DataFetcher, project_dir: pathlib.Path) -> License | None:
         if 'project.license' not in fetcher:
             return None
 
@@ -351,7 +348,7 @@ class StandardMetadata():
                     key=f'project.license.{field}',
                 )
 
-        file: Optional[pathlib.Path] = None
+        file: pathlib.Path | None = None
         filename = fetcher.get_str('project.license.file')
         text = fetcher.get_str('project.license.text')
 
@@ -368,20 +365,20 @@ class StandardMetadata():
                     f'License file not found (`{filename}`)',
                     key='project.license.file',
                 )
-            text = file.read_text()
+            text = file.read_text(encoding='utf-8')
 
         assert text is not None
         return License(text, file)
 
     @staticmethod
-    def _get_readme(fetcher: DataFetcher, project_dir: pathlib.Path) -> Optional[Readme]:  # noqa: C901
+    def _get_readme(fetcher: DataFetcher, project_dir: pathlib.Path) -> Readme | None:  # noqa: C901
         if 'project.readme' not in fetcher:
             return None
 
-        filename: Optional[str]
-        file: Optional[pathlib.Path] = None
-        text: Optional[str]
-        content_type: Optional[str]
+        filename: str | None
+        file: pathlib.Path | None = None
+        text: str | None
+        content_type: str | None
 
         readme = fetcher.get('project.readme')
         if isinstance(readme, str):
@@ -432,19 +429,19 @@ class StandardMetadata():
                     f'Readme file not found (`{filename}`)',
                     key='project.license.file',
                 )
-            text = file.read_text()
+            text = file.read_text(encoding='utf-8')
 
         assert text is not None
         return Readme(text, file, content_type)
 
     @staticmethod
-    def _get_dependencies(fetcher: DataFetcher) -> List[pkg_requirements.Requirement]:
+    def _get_dependencies(fetcher: DataFetcher) -> list[pkg_requirements.Requirement]:
         try:
             requirement_strings = fetcher.get_list('project.dependencies')
         except KeyError:
             return []
 
-        requirements: List[pkg_requirements.Requirement] = []
+        requirements: list[pkg_requirements.Requirement] = []
         for req in requirement_strings:
             try:
                 requirements.append(pkg_requirements.Requirement(req))
@@ -456,13 +453,13 @@ class StandardMetadata():
         return requirements
 
     @staticmethod
-    def _get_optional_dependencies(fetcher: DataFetcher) -> Dict[str, List[pkg_requirements.Requirement]]:
+    def _get_optional_dependencies(fetcher: DataFetcher) -> dict[str, list[pkg_requirements.Requirement]]:
         try:
             val = fetcher.get('project.optional-dependencies')
         except KeyError:
             return {}
 
-        requirements_dict: DefaultDict[str, List[pkg_requirements.Requirement]] = collections.defaultdict(list)
+        requirements_dict: collections.defaultdict[str, list[pkg_requirements.Requirement]] = collections.defaultdict(list)
         if not isinstance(val, dict):
             raise ConfigurationError(
                 'Field `project.optional-dependencies` has an invalid type, expecting a '
@@ -491,7 +488,7 @@ class StandardMetadata():
         return dict(requirements_dict)
 
     @staticmethod
-    def _get_entrypoints(fetcher: DataFetcher) -> Dict[str, Dict[str, str]]:
+    def _get_entrypoints(fetcher: DataFetcher) -> dict[str, dict[str, str]]:
         try:
             val = fetcher.get('project.entry-points')
         except KeyError:

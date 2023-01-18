@@ -148,7 +148,7 @@ def tag_to_version(tag: str) -> Version:
     version = tagdict.version
 
     if tagdict.suffix:
-        warnings.warn(f"tag {tag!r} will be stripped of its suffix '{tagdict.suffix}'")
+        warnings.warn(f"tag {tag!r} will be stripped of its suffix {tagdict.suffix!r}")
 
     return Version(version)
 
@@ -172,7 +172,7 @@ def git_parse_version(root: os.PathLike[Any]) -> VersionInfo | None:
         return None
 
     if os.path.isfile(os.path.join(root, ".git/shallow")):
-        warnings.warn(f'"{root}" is shallow and may cause errors')
+        warnings.warn(f"{root!r} is shallow and may cause errors")
     describe_cmd = [GIT, "describe", "--dirty", "--tags", "--long", "--match", "*.*"]
     ret, output, err = _subprocess_call(describe_cmd, root)
     branch = _git_get_branch(root)
