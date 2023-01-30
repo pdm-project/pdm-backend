@@ -14,8 +14,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable, NamedTuple
 
-from pdm.pep517._vendor.packaging.version import LegacyVersion, Version
-from pdm.pep517._vendor.packaging.version import parse as parse_version
+from pdm.pep517._vendor.packaging.version import Version
 
 DEFAULT_TAG_REGEX = re.compile(
     r"^(?:[\w-]+-)?(?P<version>[vV]?\d+(?:\.\d+){0,2}[^\+]*)(?:\+.*)?$"
@@ -53,7 +52,7 @@ def _subprocess_call(
 
 
 class VersionInfo(NamedTuple):
-    version: Version | LegacyVersion
+    version: Version
     distance: int | None
     dirty: bool
     node: str | None
@@ -61,7 +60,7 @@ class VersionInfo(NamedTuple):
 
 
 def meta(
-    tag: str | Version | LegacyVersion,
+    tag: str | Version,
     distance: int | None = None,
     dirty: bool = False,
     node: str | None = None,
@@ -136,7 +135,7 @@ def _parse_version_tag(tag: str) -> _ParseResult | None:
     return result
 
 
-def tag_to_version(tag: str) -> Version | LegacyVersion:
+def tag_to_version(tag: str) -> Version:
     """
     take a tag that might be prefixed with a keyword and return only the version part
     :param config: optional configuration object
@@ -151,10 +150,10 @@ def tag_to_version(tag: str) -> Version | LegacyVersion:
     if tagdict.suffix:
         warnings.warn(f"tag {tag!r} will be stripped of its suffix '{tagdict.suffix}'")
 
-    return parse_version(version)
+    return Version(version)
 
 
-def tags_to_versions(tags: Iterable[str]) -> list[Version | LegacyVersion]:
+def tags_to_versions(tags: Iterable[str]) -> list[Version]:
     """
     take tags that might be prefixed with a keyword and return only the version part
     :param tags: an iterable of tags
@@ -241,7 +240,7 @@ def _hg_tagdist_normalize_tagcommit(
         return meta(tag)
 
 
-def guess_next_version(tag_version: Version | LegacyVersion) -> str:
+def guess_next_version(tag_version: Version) -> str:
     version = _strip_local(str(tag_version))
     return _bump_dev(version) or _bump_regex(version)
 
