@@ -146,7 +146,7 @@ python -m build --sdist --wheel --outdir dist/ --config-setting="--python-tag=cp
 
 ## Environment variables
 
-- `SOURCE_DATE_EPOCH`: Set the date of the zipinfo in the wheel for reproducible builds. The default date is 2016/01/01.
+- `SOURCE_DATE_EPOCH`: Set the timestamp(seconds) of the zipinfo in the wheel for reproducible builds. The default date is 2016/01/01.
 
 [build]: https://pypi.org/project/build
 [pdm]: https://pypi.org/project/pdm
