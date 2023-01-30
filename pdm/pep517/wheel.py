@@ -12,6 +12,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import time
 import tokenize
 import zipfile
 from base64 import urlsafe_b64encode
@@ -36,6 +37,14 @@ Tag: {tag}
 )
 
 PY_LIMITED_API_PATTERN = r"cp3\d"
+try:
+    _env_date = time.gmtime(int(os.environ["SOURCE_DATE_EPOCH"]))[:6]
+except (ValueError, KeyError):
+    ZIPINFO_DATE_TIME = (2016, 1, 1, 0, 0, 0)
+else:
+    if _env_date[0] < 1980:
+        raise ValueError("zipinfo date can't be earlier than 1980")
+    ZIPINFO_DATE_TIME = _env_date
 
 
 class RecordEntry(NamedTuple):
@@ -46,7 +55,6 @@ class RecordEntry(NamedTuple):
 
 class WheelEntry(metaclass=abc.ABCMeta):
     # Fix the date time for reproducible builds
-    date_time = (2016, 1, 1, 0, 0, 0)
 
     def __init__(self, rel_path: str) -> None:
         self.rel_path = rel_path
@@ -56,7 +64,7 @@ class WheelEntry(metaclass=abc.ABCMeta):
         pass
 
     def build_zipinfo(self) -> zipfile.ZipInfo:
-        return zipfile.ZipInfo(self.rel_path, self.date_time)
+        return zipfile.ZipInfo(self.rel_path, ZIPINFO_DATE_TIME)
 
     def write_to_zip(self, zf: zipfile.ZipFile) -> RecordEntry:
         zi = self.build_zipinfo()
