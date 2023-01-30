@@ -9,6 +9,7 @@ import shutil
 import stat
 import sys
 import tempfile
+import time
 import zipfile
 from base64 import urlsafe_b64encode
 from pathlib import Path
@@ -43,7 +44,14 @@ Tag: {tag}
 
 PY_LIMITED_API_PATTERN = r"cp3\d{1,2}"
 # Fix the date time for reproducible builds
-ZIPINFO_DEFAULT_DATE_TIME = (2016, 1, 1, 0, 0, 0)
+try:
+    _env_date = time.gmtime(int(os.environ["SOURCE_DATE_EPOCH"]))[:6]
+except (ValueError, KeyError):
+    ZIPINFO_DATE_TIME = (2016, 1, 1, 0, 0, 0)
+else:
+    if _env_date[0] < 1980:
+        raise ValueError("zipinfo date can't be earlier than 1980")
+    ZIPINFO_DATE_TIME = _env_date
 
 
 def _open_for_write(path: str | Path) -> IO[str]:
@@ -219,7 +227,7 @@ class WheelBuilder(Builder):
     ) -> RecordEntry:
 
         self._show_add_file(rel_path, full_path)
-        zi = zipfile.ZipInfo(rel_path, ZIPINFO_DEFAULT_DATE_TIME)
+        zi = zipfile.ZipInfo(rel_path, ZIPINFO_DATE_TIME)
         st_mode = os.stat(full_path).st_mode
         zi.external_attr = (st_mode & 0xFFFF) << 16  # Unix attributes
 
@@ -244,7 +252,7 @@ class WheelBuilder(Builder):
         return urlsafe_b64encode(hashsum.digest()).decode("ascii").rstrip("=")
 
     def _write_record(self, zf: zipfile.ZipFile, records: list[RecordEntry]) -> None:
-        zi = zipfile.ZipInfo(f"{self.dist_info_name}/RECORD", ZIPINFO_DEFAULT_DATE_TIME)
+        zi = zipfile.ZipInfo(f"{self.dist_info_name}/RECORD", ZIPINFO_DATE_TIME)
         buffer = io.BytesIO()
         text_buffer = io.TextIOWrapper(buffer, encoding="utf-8", newline="")
 
