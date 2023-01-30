@@ -1,3 +1,14 @@
+## Release v1.1.0 (2023-01-30)
+
+### Features & Improvements
+
+- Support specifying wheel date by `SOURCE_DATE_EPOCH` environment variable. [#143](https://github.com/pdm-project/pdm-pep517/issues/143)
+
+### Bug Fixes
+
+- Ensure the version is not None when writing to pyproject.toml. [#141](https://github.com/pdm-project/pdm-pep517/issues/141)
+
+
 ## Release v1.0.6 (2022-11-24)
 
 ### Bug Fixes
