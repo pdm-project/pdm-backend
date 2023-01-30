@@ -1,3 +1,10 @@
+## Release v1.1.1 (2023-01-30)
+
+### Dependencies
+
+- Update vendored `packaging` to `23`. Remove vendored `pyparsing`. [#146](https://github.com/pdm-project/pdm-pep517/issues/146)
+
+
 ## Release v1.1.0 (2023-01-30)
 
 ### Features & Improvements
