@@ -44,6 +44,14 @@ When building from a source tree where SCM is not available, you can use the env
 PDM_BUILD_SCM_VERSION=0.1.0 python -m build
 ```
 
+You can specify another regex pattern to match the SCM tag, in which a `version` group is required:
+
+```toml
+[tool.pdm.version]
+source = "scm"
+tag-pattern =  r"^(?:\D*)?(?P<version>([1-9][0-9]*!)?(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*((a|b|c|rc)(0|[1-9][0-9]*))?(\.post(0|[1-9][0-9]*))?(\.dev(0|[1-9][0-9]*))?$)$"
+```
+
 ### Get with a specific function
 
 ```toml
