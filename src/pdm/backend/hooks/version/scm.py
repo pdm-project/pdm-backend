@@ -10,6 +10,7 @@ import shlex
 import shutil
 import subprocess
 import warnings
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable, NamedTuple
@@ -19,6 +20,11 @@ from pdm.backend._vendor.packaging.version import Version
 DEFAULT_TAG_REGEX = re.compile(
     r"^(?:[\w-]+-)?(?P<version>[vV]?\d+(?:\.\d+){0,2}[^\+]*)(?:\+.*)?$"
 )
+
+
+@dataclass(frozen=True)
+class Config:
+    tag_regex: re.Pattern
 
 
 def _subprocess_call(
@@ -60,6 +66,7 @@ class VersionInfo(NamedTuple):
 
 
 def meta(
+    config: Config,
     tag: str | Version,
     distance: int | None = None,
     dirty: bool = False,
@@ -67,7 +74,7 @@ def meta(
     branch: str | None = None,
 ) -> VersionInfo:
     if isinstance(tag, str):
-        tag = tag_to_version(tag)
+        tag = tag_to_version(config, tag)
     return VersionInfo(tag, distance, dirty, node, branch)
 
 
@@ -115,9 +122,9 @@ class _ParseResult(NamedTuple):
     suffix: str
 
 
-def _parse_version_tag(tag: str) -> _ParseResult | None:
+def _parse_version_tag(config: Config, tag: str) -> _ParseResult | None:
     tagstring = tag if not isinstance(tag, str) else str(tag)
-    match = DEFAULT_TAG_REGEX.match(tagstring)
+    match = config.tag_regex.match(tagstring)
 
     result = None
     if match:
@@ -135,12 +142,12 @@ def _parse_version_tag(tag: str) -> _ParseResult | None:
     return result
 
 
-def tag_to_version(tag: str) -> Version:
+def tag_to_version(config: Config, tag: str) -> Version:
     """
     take a tag that might be prefixed with a keyword and return only the version part
     :param config: optional configuration object
     """
-    tagdict = _parse_version_tag(tag)
+    tagdict = _parse_version_tag(config, tag)
     if not tagdict or not tagdict.version:
         warnings.warn(f"tag {tag!r} no version found")
         return Version("0.0.0")
@@ -153,16 +160,16 @@ def tag_to_version(tag: str) -> Version:
     return Version(version)
 
 
-def tags_to_versions(tags: Iterable[str]) -> list[Version]:
+def tags_to_versions(config: Config, tags: Iterable[str]) -> list[Version]:
     """
     take tags that might be prefixed with a keyword and return only the version part
     :param tags: an iterable of tags
     :param config: optional configuration object
     """
-    return [tag_to_version(tag) for tag in tags if tag]
+    return [tag_to_version(config, tag) for tag in tags if tag]
 
 
-def git_parse_version(root: os.PathLike[Any]) -> VersionInfo | None:
+def git_parse_version(root: os.PathLike[Any], config: Config) -> VersionInfo | None:
     GIT = shutil.which("git")
     if not GIT:
         return None
@@ -181,11 +188,13 @@ def git_parse_version(root: os.PathLike[Any]) -> VersionInfo | None:
         rev_node = _git_get_node(root)
         dirty = _git_is_dirty(root)
         if rev_node is None:
-            return meta("0.0", 0, dirty)
-        return meta("0.0", _git_count_all_nodes(root), dirty, f"g{rev_node}", branch)
+            return meta(config, "0.0", 0, dirty)
+        return meta(
+            config, "0.0", _git_count_all_nodes(root), dirty, f"g{rev_node}", branch
+        )
     else:
         tag, number, node, dirty = _git_parse_describe(output)
-        return meta(tag, number or None, dirty, node, branch)
+        return meta(config, tag, number or None, dirty, node, branch)
 
 
 def get_latest_normalizable_tag(root: os.PathLike[Any]) -> str:
@@ -213,7 +222,7 @@ def hg_get_graph_distance(root: os.PathLike[Any], rev1: str, rev2: str = ".") ->
 
 
 def _hg_tagdist_normalize_tagcommit(
-    root: os.PathLike[Any], tag: str, dist: int, node: str, branch: str
+    config: Config, root: os.PathLike[Any], tag: str, dist: int, node: str, branch: str
 ) -> VersionInfo:
     dirty = node.endswith("+")
     node = "h" + node.strip("+")
@@ -235,9 +244,9 @@ def _hg_tagdist_normalize_tagcommit(
         commits = "True"
 
     if commits or dirty:
-        return meta(tag, distance=dist, node=node, dirty=dirty, branch=branch)
+        return meta(config, tag, distance=dist, node=node, dirty=dirty, branch=branch)
     else:
-        return meta(tag)
+        return meta(config, tag)
 
 
 def guess_next_version(tag_version: Version) -> str:
@@ -266,7 +275,7 @@ def _bump_regex(version: str) -> str:
     return "%s%d" % (prefix, int(tail) + 1)
 
 
-def hg_parse_version(root: os.PathLike[Any]) -> VersionInfo | None:
+def hg_parse_version(root: os.PathLike[Any], config: Config) -> VersionInfo | None:
     if not shutil.which("hg"):
         return None
     _, output, _ = _subprocess_call("hg id -i -b -t", root)
@@ -278,13 +287,13 @@ def hg_parse_version(root: os.PathLike[Any]) -> VersionInfo | None:
     if "tip" in identity_data:
         # tip is not a real tag
         identity_data.remove("tip")
-    tags = tags_to_versions(identity_data)
+    tags = tags_to_versions(config, identity_data)
     dirty = node[-1] == "+"
     if tags:
-        return meta(tags[0], dirty=dirty, branch=branch)
+        return meta(config, tags[0], dirty=dirty, branch=branch)
 
     if node.strip("+") == "0" * 12:
-        return meta("0.0", dirty=dirty, branch=branch)
+        return meta(config, "0.0", dirty=dirty, branch=branch)
 
     try:
         tag = get_latest_normalizable_tag(root)
@@ -292,7 +301,7 @@ def hg_parse_version(root: os.PathLike[Any]) -> VersionInfo | None:
         if tag == "null":
             tag = "0.0"
             dist = int(dist) + 1
-        return _hg_tagdist_normalize_tagcommit(root, tag, dist, node, branch)
+        return _hg_tagdist_normalize_tagcommit(config, root, tag, dist, node, branch)
     except ValueError:
         return None  # unpacking failed, old hg
 
@@ -315,12 +324,13 @@ def format_version(version: VersionInfo) -> str:
     return main_version + local_version
 
 
-def get_version_from_scm(root: str | Path) -> str:
+def get_version_from_scm(root: str | Path, *, tag_regex: str | None = None) -> str:
+    config = Config(tag_regex=re.compile(tag_regex) if tag_regex else DEFAULT_TAG_REGEX)
     for func in (git_parse_version, hg_parse_version):
-        version = func(root)  # type: ignore
+        version = func(root, config)  # type: ignore
         if version:
             break
     else:
-        version = meta("0.0.0")
+        version = meta(config, "0.0.0")
     assert version is not None
     return format_version(version)

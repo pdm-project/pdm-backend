@@ -90,11 +90,12 @@ class DynamicVersionBuildHook:
         context: Context,
         write_to: str | None = None,
         write_template: str = "{}\n",
+        tag_regex: str | None = None,
     ) -> str:
         if "PDM_BUILD_SCM_VERSION" in os.environ:
             version = os.environ["PDM_BUILD_SCM_VERSION"]
         else:
-            version = get_version_from_scm(context.root)
+            version = get_version_from_scm(context.root, tag_regex=tag_regex)
 
         self._write_version(context, version, write_to, write_template)
         return version
