@@ -46,7 +46,7 @@ class DynamicVersionBuildHook:
                 metadata["version"] = "0.0.0"
             try:
                 metadata["dynamic"].remove("version")
-            except ValueError:
+            except (ValueError, KeyError):
                 pass
             return
         if "version" not in metadata.get("dynamic", []):
