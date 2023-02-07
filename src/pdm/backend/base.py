@@ -5,6 +5,7 @@ import os
 import shutil
 import sys
 import warnings
+from fnmatch import fnmatch
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Iterable, Mapping, TypeVar, cast
 
@@ -13,7 +14,7 @@ from pdm.backend.exceptions import PDMWarning, ValidationError
 from pdm.backend.hooks import BuildHookInterface, Context
 from pdm.backend.hooks.version import DynamicVersionBuildHook
 from pdm.backend.structures import FileMap
-from pdm.backend.utils import cd, import_module_at_path, is_python_package
+from pdm.backend.utils import import_module_at_path, is_python_package
 
 if TYPE_CHECKING:
     from typing import SupportsIndex
@@ -167,12 +168,11 @@ class Builder:
         """Get the files to add to the package, return a iterable of
         (relpath, path).
         """
-        files = self._collect_files(context, self.location)
+        files = self._collect_files(context)
         self.call_hook("pdm_build_update_files", context, files)
         # At this point, all files must be ready under the build_dir,
         # collect them now.
-        if context.build_dir.exists():
-            files.update(self._collect_files(context, context.build_dir))
+        files.update(self._collect_build_files(context))
         return sorted(files.items())
 
     def finalize(self, context: Context, artifact: Path) -> None:
@@ -204,9 +204,10 @@ class Builder:
         metadata = self.config.as_standard_metadata()
         return str(metadata.as_rfc822())
 
-    def _collect_files(self, context: Context, root: Path) -> FileMap:
+    def _collect_files(self, context: Context) -> FileMap:
         """Collect files to add to the artifact under the given root."""
-        includes, excludes = self._get_include_and_exclude_paths(root)
+        root = self.location
+        includes, excludes = self._get_include_and_exclude_paths()
         files = FileMap()
         for include_path in includes:
             path = root / include_path
@@ -224,6 +225,20 @@ class Builder:
 
                 files[rel_path] = p
 
+        return files
+
+    def _collect_build_files(self, context: Context) -> FileMap:
+        """Collect files from the build directory."""
+        files = FileMap()
+        if not context.build_dir.exists():
+            return files
+        _, excludes = self._get_include_and_exclude()
+        for p in context.build_dir.glob("**/*"):
+            if not p.is_file():
+                continue
+            rel_path = p.absolute().relative_to(context.build_dir).as_posix()
+            if not self._is_excluded(rel_path, excludes):
+                files[rel_path] = p
         return files
 
     def find_license_files(self) -> list[str]:
@@ -255,7 +270,7 @@ class Builder:
                 )
             return paths
 
-    def _get_include_and_exclude_paths(self, root: Path) -> tuple[list[str], list[str]]:
+    def _get_include_and_exclude(self) -> tuple[set[str], set[str]]:
         includes = set()
         excludes = set(self.DEFAULT_EXCLUDES)
         build_config = self.config.build_config
@@ -278,26 +293,29 @@ class Builder:
 
         includes.update(source_includes)
         excludes.update(meta_excludes)
+        return includes, excludes
 
-        with cd(root):
-            include_globs = {
-                os.path.normpath(path): key
-                for key in includes
-                for path in glob.iglob(key, recursive=True)
-            }
+    def _get_include_and_exclude_paths(self) -> tuple[list[str], list[str]]:
+        includes, excludes = self._get_include_and_exclude()
+        include_globs = {
+            os.path.normpath(path): key
+            for key in includes
+            for path in glob.iglob(key, recursive=True)
+        }
 
-            excludes_globs = {
-                os.path.normpath(path): key
-                for key in excludes
-                for path in glob.iglob(key, recursive=True)
-            }
+        excludes_globs = {
+            os.path.normpath(path): key
+            for key in excludes
+            for path in glob.iglob(key, recursive=True)
+        }
 
         include_paths, exclude_paths = _merge_globs(include_globs, excludes_globs)
         return sorted(include_paths), sorted(exclude_paths)
 
-    def _is_excluded(self, path: str, exclude_paths: list[str]) -> bool:
+    def _is_excluded(self, path: str, exclude_paths: Iterable[str]) -> bool:
         return any(
             is_same_or_descendant_path(path, exclude_path)
+            or fnmatch(path, exclude_path)
             for exclude_path in exclude_paths
         )
 

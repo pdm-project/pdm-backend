@@ -63,8 +63,8 @@ class SdistBuilder(Builder):
         context.ensure_build_dir()
         context.config.write_to(context.build_dir / "pyproject.toml")
 
-    def _collect_files(self, context: Context, root: Path) -> FileMap:
-        files = super()._collect_files(context, root)
+    def _collect_files(self, context: Context) -> FileMap:
+        files = super()._collect_files(context)
         local_hook = self.config.build_config.custom_hook
 
         additional_files: Iterable[str] = filter(
@@ -76,7 +76,7 @@ class SdistBuilder(Builder):
                 *self.find_license_files(),
             ),
         )
-
+        root = self.location
         for file in additional_files:
             if root.joinpath(file).exists():
                 files[file] = root / file
