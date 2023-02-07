@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import os
 import tarfile
-import tempfile
 from copy import copy
+from io import BytesIO
 from pathlib import Path
+from posixpath import join as pjoin
 from typing import Iterable
 
 from pdm.backend.base import Builder
@@ -43,6 +44,9 @@ def clean_tarinfo(tar_info: tarfile.TarInfo) -> tarfile.TarInfo:
     ti.uname = ""
     ti.gname = ""
     ti.mode = normalize_file_permissions(ti.mode)
+
+    if "SOURCE_DATE_EPOCH" in os.environ:
+        ti.mtime = int(os.environ["SOURCE_DATE_EPOCH"])
 
     return ti
 
@@ -86,26 +90,23 @@ class SdistBuilder(Builder):
         dist_info = f"{context.config.metadata['name']}-{version}"
 
         target = context.dist_dir / f"{dist_info}.tar.gz"
-        tar = tarfile.open(target, mode="w:gz", format=tarfile.PAX_FORMAT)
 
-        try:
+        with tarfile.open(target, mode="w:gz", format=tarfile.PAX_FORMAT) as tar:
             for relpath, path in files:
-                tar.add(
-                    path,
-                    arcname=os.path.join(dist_info, relpath),
-                    recursive=False,
-                )
+                tar_info = tar.gettarinfo(path, pjoin(dist_info, relpath))
+                tar_info = clean_tarinfo(tar_info)
+                if tar_info.isreg():
+                    with path.open("rb") as f:
+                        tar.addfile(tar_info, f)
+                else:
+                    tar.addfile(tar_info)
                 self._show_add_file(relpath, path)
 
-            fd, temp_name = tempfile.mkstemp(prefix="pkg-info")
             pkg_info = self.format_pkginfo().encode("utf-8")
-            with open(fd, "wb") as f:
-                f.write(pkg_info)
-            tar.add(
-                temp_name, arcname=os.path.join(dist_info, "PKG-INFO"), recursive=False
-            )
+            tar_info = tarfile.TarInfo(pjoin(dist_info, "PKG-INFO"))
+            tar_info.size = len(pkg_info)
+            tar_info = clean_tarinfo(tar_info)
+            tar.addfile(tar_info, BytesIO(pkg_info))
             self._show_add_file("PKG-INFO", Path("PKG-INFO"))
-        finally:
-            tar.close()
 
         return target
