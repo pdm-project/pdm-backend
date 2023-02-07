@@ -401,7 +401,7 @@ def calculate_macosx_platform_tag(archive_root: str | Path, platform_tag: str) -
     assert len(base_version) == 2
     start_version = base_version
     versions_dict = {}
-    for (dirpath, _, filenames) in os.walk(archive_root):
+    for dirpath, _, filenames in os.walk(archive_root):
         for filename in filenames:
             if filename.endswith(".dylib") or filename.endswith(".so"):
                 lib_path = os.path.join(dirpath, filename)
