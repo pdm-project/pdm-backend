@@ -225,7 +225,6 @@ class WheelBuilder(Builder):
     def _add_file_to_zip(
         self, zf: zipfile.ZipFile, rel_path: str, full_path: Path
     ) -> RecordEntry:
-
         self._show_add_file(rel_path, full_path)
         zi = zipfile.ZipInfo(rel_path, ZIPINFO_DATE_TIME)
         st_mode = os.stat(full_path).st_mode
