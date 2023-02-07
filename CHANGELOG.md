@@ -1,3 +1,10 @@
+## Release v1.1.2 (2023-02-07)
+
+### Features & Improvements
+
+- Support overriding the mtime of tarinfo objects with `SOURCE_DATE_EPOCH` env var. [#149](https://github.com/pdm-project/pdm-pep517/issues/149)
+
+
 ## Release v1.1.1 (2023-01-30)
 
 ### Dependencies
