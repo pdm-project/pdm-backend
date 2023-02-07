@@ -104,7 +104,7 @@ def test_merge_includes_and_excludes(
         assert (data_b in include_files) == data_b_exist
 
 
-def test_license_file_globs_no_matching(tmp_path: Path) -> None:
+def test_license_file_globs_no_matching() -> None:
     builder = WheelBuilder(FIXTURES / "projects/demo-no-license")
     with builder:
         with pytest.warns(UserWarning) as warns:
@@ -117,7 +117,7 @@ def test_license_file_globs_no_matching(tmp_path: Path) -> None:
     )
 
 
-def test_license_file_paths_no_matching(tmp_path: Path) -> None:
+def test_license_file_paths_no_matching() -> None:
     builder = WheelBuilder(FIXTURES / "projects/demo-no-license")
     builder.config.metadata["license-files"] = {"paths": ["LICENSE"]}
     with builder:
@@ -126,7 +126,7 @@ def test_license_file_paths_no_matching(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize("key", ["paths", "globs"])
-def test_license_file_explicit_empty(recwarn, key, tmp_path) -> None:
+def test_license_file_explicit_empty(recwarn, key) -> None:
     builder = WheelBuilder(FIXTURES / "projects/demo-no-license")
     builder.config.metadata["license-files"] = {key: []}
     with builder:
@@ -135,8 +135,21 @@ def test_license_file_explicit_empty(recwarn, key, tmp_path) -> None:
     assert len(recwarn) == 0
 
 
-def test_reuse_spec_licenses_dir(tmp_path) -> None:
+def test_reuse_spec_licenses_dir() -> None:
     builder = WheelBuilder(FIXTURES / "projects/demo-reuse-spec")
     with builder:
         license_files = builder.find_license_files()
     assert license_files == ["LICENSES/MPL-2.0.txt"]
+
+
+def test_collect_build_files_with_src_layout(tmp_path) -> None:
+    builder = WheelBuilder(FIXTURES / "projects/demo-src-package")
+    with builder:
+        context = builder.build_context(tmp_path)
+        builder.clean(context)
+        builder.initialize(context)
+        build_dir = context.ensure_build_dir()
+        (build_dir / "my_package").mkdir()
+        (build_dir / "my_package" / "hello.py").write_text("print('hello')\n")
+        files = dict(builder.get_files(context))
+        assert "my_package/hello.py" in files

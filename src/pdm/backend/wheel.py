@@ -117,11 +117,10 @@ class WheelBuilder(Builder):
         self.initialize(context)
         return self._write_dist_info(Path(metadata_directory))
 
-    def _collect_files(self, context: Context, root: Path) -> FileMap:
-        files = super()._collect_files(context, root)
-        if root == self.location:
-            self._fix_package_dir(files)
-            files.update(self._get_metadata_files(context))
+    def _collect_files(self, context: Context) -> FileMap:
+        files = super()._collect_files(context)
+        self._fix_package_dir(files)
+        files.update(self._get_metadata_files(context))
         return files
 
     def _fix_package_dir(self, files: FileMap) -> None:

@@ -87,8 +87,10 @@ write_template = "__version__ = '{}'"
 ```
 
 !!! note
-    `pdm-backend` will rewrite the whole file each time, so you can't have additional contents in that file.
+    The path in `write_to` is relative to the root of the wheel file, hence the `package-dir` part should be stripped.
 
+!!! note
+    `pdm-backend` will rewrite the whole file each time, so you can't have additional contents in that file.
 
 ## Variables expansion
 

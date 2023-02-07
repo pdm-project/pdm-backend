@@ -174,6 +174,8 @@ def test_build_with_cextension(tmp_path: Path) -> None:
         assert (
             "my_package/hellomodule.c" not in zip_names
         ), "Not collect c files while building wheel"
+        extension_suffix = ".pyd" if sys.platform == "win32" else ".so"
+        assert any(name.endswith(extension_suffix) for name in zip_names)
 
         tar_names = get_tarball_names(tmp_path / sdist_name)
         assert "demo-package-0.1.0/my_package/__init__.py" in tar_names
@@ -195,6 +197,8 @@ def test_build_with_cextension_in_src(tmp_path: Path) -> None:
         assert (
             "my_package/hellomodule.c" not in zip_names
         ), "Not collect c files while building wheel"
+        extension_suffix = ".pyd" if sys.platform == "win32" else ".so"
+        assert any(name.endswith(extension_suffix) for name in zip_names)
 
         tar_names = get_tarball_names(tmp_path / sdist_name)
         assert "demo-package-0.1.0/src/my_package/__init__.py" in tar_names
