@@ -2,8 +2,8 @@ import io
 import itertools
 import os
 import tarfile
-import tempfile
 from copy import copy
+from posixpath import join as pjoin
 from typing import Any, Iterator
 
 from pdm.pep517._vendor import tomli, tomli_w
@@ -41,6 +41,8 @@ def clean_tarinfo(tar_info: tarfile.TarInfo) -> tarfile.TarInfo:
     ti.uname = ""
     ti.gname = ""
     ti.mode = normalize_file_permissions(ti.mode)
+    if "SOURCE_DATE_EPOCH" in os.environ:
+        ti.mtime = int(os.environ["SOURCE_DATE_EPOCH"])
 
     return ti
 
@@ -71,20 +73,19 @@ class SdistBuilder(Builder):
                 if str(relpath) == "pyproject.toml":
                     self._add_pyproject(tar, tar_dir)
                 else:
-                    tar.add(
-                        relpath,
-                        arcname=os.path.join(tar_dir, str(relpath)),
-                        recursive=False,
-                    )
+                    tarinfo = tar.gettarinfo(relpath, pjoin(tar_dir, relpath))
+                    tarinfo = clean_tarinfo(tarinfo)
+                    if tarinfo.isreg():
+                        with open(relpath, "rb") as f:
+                            tar.addfile(tarinfo, f)
+                    else:
+                        tar.addfile(tarinfo)
                 print(f" - Adding {relpath}")
 
-            fd, temp_name = tempfile.mkstemp(prefix="pkg-info")
             pkg_info = self.format_pkginfo(False).encode("utf-8")
-            with open(fd, "wb") as f:
-                f.write(pkg_info)
-            tar.add(
-                temp_name, arcname=os.path.join(tar_dir, "PKG-INFO"), recursive=False
-            )
+            tarinfo = clean_tarinfo(tarfile.TarInfo(pjoin(tar_dir, "PKG-INFO")))
+            tarinfo.size = len(pkg_info)
+            tar.addfile(tarinfo, io.BytesIO(pkg_info))
             print(" - Adding PKG-INFO")
         finally:
             tar.close()
@@ -102,9 +103,10 @@ class SdistBuilder(Builder):
             self.meta.data["dynamic"].remove("version")
         pyproject["project"] = self.meta.data
         name = "pyproject.toml"
-        tarinfo = tar.gettarinfo(name, os.path.join(tar_dir, name))
+        tarinfo = tar.gettarinfo(name, pjoin(tar_dir, name))
         bio = io.BytesIO()
         tomli_w.dump(pyproject, bio)
         tarinfo.size = len(bio.getvalue())
+        tarinfo = clean_tarinfo(tarinfo)
         bio.seek(0)
         tar.addfile(tarinfo, bio)
