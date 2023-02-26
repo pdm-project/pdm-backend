@@ -20,14 +20,6 @@ from pdm.backend._vendor.packaging.version import InvalidVersion, Version
 from pdm.backend.macosx_platform import calculate_macosx_platform_tag
 
 
-def safe_name(name: str) -> str:
-    """Convert an arbitrary string to a standard distribution name
-
-    Any runs of non-alphanumeric/. characters are replaced with a single '-'.
-    """
-    return re.sub("[^A-Za-z0-9.]+", "-", name)
-
-
 def safe_version(version: str) -> str:
     """
     Convert an arbitrary string to a standard version string

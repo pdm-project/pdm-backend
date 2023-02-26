@@ -8,8 +8,10 @@ from pathlib import Path
 from posixpath import join as pjoin
 from typing import Iterable
 
+from pdm.backend._vendor.packaging.utils import canonicalize_name
 from pdm.backend.base import Builder
 from pdm.backend.hooks import Context
+from pdm.backend.utils import safe_version, to_filename
 
 
 def normalize_file_permissions(st_mode: int) -> int:
@@ -83,8 +85,9 @@ class SdistBuilder(Builder):
     def build_artifact(
         self, context: Context, files: Iterable[tuple[str, Path]]
     ) -> Path:
-        version: str = context.config.metadata["version"]
-        dist_info = f"{context.config.metadata['name']}-{version}"
+        version = to_filename(safe_version(context.config.metadata["version"]))
+        name = to_filename(canonicalize_name(context.config.metadata["name"]))
+        dist_info = f"{name}-{version}"
 
         target = context.dist_dir / f"{dist_info}.tar.gz"
 

@@ -6,9 +6,10 @@ from pathlib import Path
 
 from editables import EditableProject
 
+from pdm.backend._vendor.packaging.utils import canonicalize_name
 from pdm.backend.exceptions import ConfigError, PDMWarning
 from pdm.backend.hooks.base import Context
-from pdm.backend.utils import safe_name, to_filename
+from pdm.backend.utils import to_filename
 from pdm.backend.wheel import WheelBuilder
 
 
@@ -54,7 +55,7 @@ class EditableBuildHook:
         config = context.config
         try:
             editables = EditableProject(
-                to_filename(safe_name(config.metadata["name"])),
+                to_filename(canonicalize_name(config.metadata["name"])),
                 context.root.as_posix(),
             )
         except ValueError as e:

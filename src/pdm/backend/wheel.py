@@ -17,6 +17,7 @@ from typing import IO, Any, Iterable, Mapping, NamedTuple, cast
 
 from pdm.backend._vendor.packaging import tags
 from pdm.backend._vendor.packaging.specifiers import SpecifierSet
+from pdm.backend._vendor.packaging.utils import canonicalize_name
 from pdm.backend.base import Builder
 from pdm.backend.hooks import Context
 from pdm.backend.hooks.setuptools import SetuptoolsBuildHook
@@ -24,7 +25,6 @@ from pdm.backend.utils import (
     expand_vars,
     get_abi_tag,
     get_platform,
-    safe_name,
     safe_version,
     to_filename,
 )
@@ -143,7 +143,7 @@ class WheelBuilder(Builder):
 
     @property
     def name_version(self) -> str:
-        name = to_filename(safe_name(self.config.metadata["name"]))
+        name = to_filename(canonicalize_name(self.config.metadata["name"]))
         version = to_filename(safe_version(self.config.metadata["version"]))
         return f"{name}-{version}"
 
