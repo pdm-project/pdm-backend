@@ -173,7 +173,7 @@ class Builder:
         # At this point, all files must be ready under the build_dir,
         # collect them now.
         files.update(self._collect_build_files(context))
-        return sorted(files.items())
+        return files.items()
 
     def finalize(self, context: Context, artifact: Path) -> None:
         self.call_hook("pdm_build_finalize", context, artifact)
@@ -187,7 +187,7 @@ class Builder:
         ):
             self.clean(context)
         self.initialize(context)
-        files = self.get_files(context)
+        files = sorted(self.get_files(context))
         artifact = self.build_artifact(context, files)
         self.finalize(context, artifact)
         return artifact
