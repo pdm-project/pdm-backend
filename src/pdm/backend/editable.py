@@ -34,7 +34,8 @@ class EditableBuildHook:
 
     def pdm_build_update_files(self, context: Context, files: dict[str, Path]) -> None:
         packages: list[str] = context.config.convert_package_paths()["packages"]
-        proxied = {p.replace(".", "/") for p in packages}
+        package_dir = context.config.build_config.package_dir
+        proxied = {os.path.join(package_dir, p.replace(".", "/")) for p in packages}
         for relpath in list(files):
             if os.path.splitext(relpath)[1] in (".py", ".pyc", ".pyo"):
                 # All .py[cod] files are proxied

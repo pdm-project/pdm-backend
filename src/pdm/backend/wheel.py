@@ -20,7 +20,6 @@ from pdm.backend._vendor.packaging.specifiers import SpecifierSet
 from pdm.backend.base import Builder
 from pdm.backend.hooks import Context
 from pdm.backend.hooks.setuptools import SetuptoolsBuildHook
-from pdm.backend.structures import FileMap
 from pdm.backend.utils import (
     expand_vars,
     get_abi_tag,
@@ -117,22 +116,14 @@ class WheelBuilder(Builder):
         self.initialize(context)
         return self._write_dist_info(Path(metadata_directory))
 
-    def _collect_files(self, context: Context) -> FileMap:
-        files = super()._collect_files(context)
-        self._fix_package_dir(files)
-        files.update(self._get_metadata_files(context))
-        return files
-
-    def _fix_package_dir(self, files: FileMap) -> None:
-        """remove the package-dir part from the relative paths"""
+    def get_files(self, context: Context) -> Iterable[tuple[str, Path]]:
         package_dir = self.config.build_config.package_dir
-        if not package_dir:
-            return
-        common_prefix = f"{package_dir}/"
-        for rel_path, full_path in list(files.items()):
-            if rel_path.startswith(common_prefix):
-                files[rel_path[len(common_prefix) :]] = full_path
-                del files[rel_path]
+        for relpath, path in super().get_files(context):
+            # remove the package-dir part from the relative paths
+            if package_dir and relpath.startswith(package_dir + "/"):
+                relpath = relpath[len(package_dir) + 1 :]
+            yield relpath, path
+        yield from self._get_metadata_files(context)
 
     def build_artifact(
         self, context: Context, files: Iterable[tuple[str, Path]]

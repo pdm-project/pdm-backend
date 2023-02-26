@@ -248,7 +248,9 @@ def test_build_editable_src(tmp_path: Path) -> None:
             namelist = zf.namelist()
             assert "demo_package.pth" in namelist
             assert "_editable_impl_demo_package.py" in namelist
-            assert "my_package/data.json" not in namelist
+            assert (
+                "my_package/data.json" not in namelist
+            ), "data files in proxy modules are excluded"
             assert "data_out.json" in namelist
 
             pth_content = zf.read("demo_package.pth").decode("utf-8").strip()

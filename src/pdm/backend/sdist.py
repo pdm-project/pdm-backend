@@ -10,7 +10,6 @@ from typing import Iterable
 
 from pdm.backend.base import Builder
 from pdm.backend.hooks import Context
-from pdm.backend.structures import FileMap
 
 
 def normalize_file_permissions(st_mode: int) -> int:
@@ -63,8 +62,8 @@ class SdistBuilder(Builder):
         context.ensure_build_dir()
         context.config.write_to(context.build_dir / "pyproject.toml")
 
-    def _collect_files(self, context: Context) -> FileMap:
-        files = super()._collect_files(context)
+    def get_files(self, context: Context) -> Iterable[tuple[str, Path]]:
+        yield from super().get_files(context)
         local_hook = self.config.build_config.custom_hook
 
         additional_files: Iterable[str] = filter(
@@ -79,9 +78,7 @@ class SdistBuilder(Builder):
         root = self.location
         for file in additional_files:
             if root.joinpath(file).exists():
-                files[file] = root / file
-
-        return files
+                yield file, root / file
 
     def build_artifact(
         self, context: Context, files: Iterable[tuple[str, Path]]
