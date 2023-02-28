@@ -287,4 +287,4 @@ class WheelBuilder(Builder):
         for root, _, files in os.walk(path):
             relroot = os.path.relpath(root, os.path.dirname(path))
             for file in files:
-                yield (os.path.join(relroot, file), Path(root) / file)
+                yield (Path(relroot, file).as_posix(), Path(root) / file)
