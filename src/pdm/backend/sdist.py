@@ -57,23 +57,18 @@ class SdistBuilder(Builder):
 
     target = "sdist"
 
-    def initialize(self, context: Context) -> None:
-        super().initialize(context)
-        # Save the config to build_dir/pyprojec.toml so that any
-        # modification to the pyproject.toml will be saved in the sdist.
-        context.ensure_build_dir()
-        context.config.write_to(context.build_dir / "pyproject.toml")
-
     def get_files(self, context: Context) -> Iterable[tuple[str, Path]]:
         yield from super().get_files(context)
         local_hook = self.config.build_config.custom_hook
+        context.ensure_build_dir()
+        context.config.write_to(context.build_dir / "pyproject.toml")
+        yield "pyproject.toml", context.build_dir / "pyproject.toml"
 
         additional_files: Iterable[str] = filter(
             None,
             (
                 local_hook,
                 self.config.metadata.readme_file,
-                "pyproject.toml",
                 *self.find_license_files(),
             ),
         )
