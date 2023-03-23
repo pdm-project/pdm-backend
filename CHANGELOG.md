@@ -1,3 +1,8 @@
+## Release v1.1.3 (2023-03-23)
+
+No significant changes.
+
+
 ## Release v1.1.2 (2023-02-07)
 
 ### Features & Improvements
