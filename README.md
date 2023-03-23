@@ -1,5 +1,7 @@
 # PDM-PEP517
 
+**This project has been renamed and re-published as [pdm-backend](https://pypi.org/project/pdm-backend)**
+
 Yet another [PEP 517][1] backend.
 
 [![PyPI](https://img.shields.io/pypi/v/pdm-pep517?label=PyPI)](https://pypi.org/project/pdm-pep517)
