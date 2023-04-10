@@ -261,7 +261,7 @@ class WheelBuilder(Builder):
 
         fp.write(
             WHEEL_FILE_FORMAT.format(
-                is_purelib=is_purelib, tag=self.tag, version=version
+                is_purelib=str(is_purelib).lower(), tag=self.tag, version=version
             )
         )
 
