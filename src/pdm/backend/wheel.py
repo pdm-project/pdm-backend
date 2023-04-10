@@ -4,7 +4,6 @@ import csv
 import hashlib
 import io
 import os
-import re
 import shutil
 import stat
 import sys
@@ -41,7 +40,6 @@ Root-Is-Purelib: {is_purelib}
 Tag: {tag}
 """
 
-PY_LIMITED_API_PATTERN = r"cp3\d{1,2}"
 # Fix the date time for reproducible builds
 try:
     _env_date = time.gmtime(int(os.environ["SOURCE_DATE_EPOCH"]))[:6]
@@ -84,10 +82,6 @@ class WheelBuilder(Builder):
             python_tag = self.config_settings["--python-tag"]
         if "--py-limited-api" in self.config_settings:
             py_limited_api = cast(str, self.config_settings["--py-limited-api"])
-            if not re.match(PY_LIMITED_API_PATTERN, py_limited_api):
-                raise ValueError(
-                    "py-limited-api must match '%s'" % PY_LIMITED_API_PATTERN
-                )
         if "--plat-name" in self.config_settings:
             plat_name = self.config_settings["--plat-name"]
         return python_tag, py_limited_api, plat_name
@@ -165,15 +159,12 @@ class WheelBuilder(Builder):
                 platform = get_platform(self.location / "build")
             if not impl:
                 impl = tags.interpreter_name() + tags.interpreter_version()
-            if abi and impl.startswith("cp3"):  # type: ignore[union-attr]
-                impl = abi
-                abi_tag = "abi3"
-            else:
-                abi_tag = str(get_abi_tag()).lower()
+            if not abi:
+                abi = str(get_abi_tag()).lower()
         else:
             if not platform:
                 platform = "any"
-            abi_tag = "none"
+            abi = "none"
             if not impl:
                 requires_python = self.config.metadata.get("requires-python", "")
                 if SpecifierSet(requires_python).contains("2.7"):
@@ -182,7 +173,7 @@ class WheelBuilder(Builder):
                     impl = "py3"
 
         platform = platform.lower().replace("-", "_").replace(".", "_")  # type: ignore
-        tag = (impl, abi_tag, platform)
+        tag = (impl, abi, platform)
         if not is_purelib:
             supported_tags = [(t.interpreter, t.abi, platform) for t in tags.sys_tags()]
             assert (
