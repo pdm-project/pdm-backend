@@ -1,3 +1,10 @@
+## Release v1.1.4 (2023-04-12)
+
+### Bug Fixes
+
+- Fix the Root-Is-Purelib to "true" instead of "True" to follow the spec of PEP 427. [#165](https://github.com/pdm-project/pdm-pep517/issues/165)
+
+
 ## Release v1.1.3 (2023-03-23)
 
 No significant changes.
