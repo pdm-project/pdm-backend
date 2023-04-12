@@ -14,10 +14,10 @@ class PDMWarning(UserWarning):
 
 
 class ValidationError(ConfigError):
-    def __init__(self, summary: str, details: str) -> None:
+    def __init__(self, summary: str, key: str | None = None) -> None:
         super().__init__(summary)
-        self.summary = summary
-        self.details = details
+        self.key = key
 
     def __str__(self) -> str:
-        return f"{self.summary}\n{self.details}"
+        prefix = f"{self.key}: " if self.key else ""
+        return f"{prefix}{self.args[0]}"

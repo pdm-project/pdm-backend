@@ -19,7 +19,7 @@ import pdm.backend._vendor.packaging.specifiers as pkg_specifiers
 import pdm.backend._vendor.packaging.version as pkg_version
 
 
-__version__ = '0.7.0'
+__version__ = '0.7.1'
 
 
 class ConfigurationError(Exception):

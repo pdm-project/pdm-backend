@@ -97,7 +97,7 @@ class SdistBuilder(Builder):
                     tar.addfile(tar_info)
                 self._show_add_file(relpath, path)
 
-            pkg_info = self.format_pkginfo().encode("utf-8")
+            pkg_info = self.config.to_coremetadata().encode("utf-8")
             tar_info = tarfile.TarInfo(pjoin(dist_info, "PKG-INFO"))
             tar_info.size = len(pkg_info)
             tar_info = clean_tarinfo(tar_info)

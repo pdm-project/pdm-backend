@@ -1,5 +1,5 @@
 diff --git a/src/pdm/backend/_vendor/pyproject_metadata/__init__.py b/src/pdm/backend/_vendor/pyproject_metadata/__init__.py
-index 37f6708..8897c69 100644
+index d792d06..0f6544b 100644
 --- a/src/pdm/backend/_vendor/pyproject_metadata/__init__.py
 +++ b/src/pdm/backend/_vendor/pyproject_metadata/__init__.py
 @@ -13,10 +13,10 @@ import typing
@@ -16,7 +16,7 @@ index 37f6708..8897c69 100644
 +import pdm.backend._vendor.packaging.version as pkg_version
  
  
- __version__ = '0.7.0'
+ __version__ = '0.7.1'
 @@ -176,13 +176,13 @@ class Readme(typing.NamedTuple):
  @dataclasses.dataclass
  class StandardMetadata():

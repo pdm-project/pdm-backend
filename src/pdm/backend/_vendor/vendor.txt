@@ -1,5 +1,4 @@
 packaging==22.0
 tomli==2.0.1
 tomli_w==1.0.0
-validate-pyproject==0.10.1
-pyproject-metadata==0.7.0
+pyproject-metadata==0.7.1

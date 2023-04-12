@@ -200,10 +200,6 @@ class Builder:
         """
         raise NotImplementedError()
 
-    def format_pkginfo(self) -> str:
-        metadata = self.config.as_standard_metadata()
-        return str(metadata.as_rfc822())
-
     def _collect_files(self, context: Context) -> FileMap:
         """Collect files to add to the artifact under the given root."""
         root = self.location

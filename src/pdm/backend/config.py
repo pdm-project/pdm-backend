@@ -7,8 +7,7 @@ from pathlib import Path
 from typing import Any, TypeVar
 
 from pdm.backend._vendor import tomli_w
-from pdm.backend._vendor.pyproject_metadata import StandardMetadata
-from pdm.backend._vendor.validate_pyproject import api, errors
+from pdm.backend._vendor.pyproject_metadata import ConfigurationError, StandardMetadata
 from pdm.backend.exceptions import ConfigError, ValidationError
 from pdm.backend.structures import Table
 from pdm.backend.utils import find_packages_iter
@@ -34,7 +33,7 @@ class Config:
     """
 
     def __init__(self, root: Path, data: dict[str, Any]) -> None:
-        self.validate(data)
+        self.validate(data, root)
         self.root = root
         self.data = data
         self.metadata = Metadata(data["project"])
@@ -42,18 +41,18 @@ class Config:
             root, data.setdefault("tool", {}).get("pdm", {}).get("build", {})
         )
 
-    def as_standard_metadata(self) -> StandardMetadata:
-        """Return the metadata as a StandardMetadata object."""
-        return StandardMetadata.from_pyproject(self.data, project_dir=self.root)
+    def to_coremetadata(self) -> str:
+        """Return the metadata as a Core Metadata string."""
+        metadata = StandardMetadata.from_pyproject(self.data, project_dir=self.root)
+        return str(metadata.as_rfc822())
 
-    @staticmethod
-    def validate(data: dict[str, Any]) -> None:
+    @classmethod
+    def validate(cls, data: dict[str, Any], root: Path) -> None:
         """Validate the pyproject.toml data."""
-        validator = api.Validator()
         try:
-            validator(data)
-        except errors.ValidationError as e:
-            raise ValidationError(e.summary, e.details) from e
+            StandardMetadata.from_pyproject(data, project_dir=root)
+        except ConfigurationError as e:
+            raise ValidationError(e.args[0], e.key) from e
 
     @classmethod
     def from_pyproject(cls, root: str | Path) -> Config:

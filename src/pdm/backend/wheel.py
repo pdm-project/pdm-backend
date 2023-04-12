@@ -195,7 +195,7 @@ class WheelBuilder(Builder):
             self._write_wheel_file(f, is_purelib=self.config.build_config.is_purelib)
 
         with _open_for_write(dist_info / "METADATA") as f:
-            f.write(self.format_pkginfo())
+            f.write(self.config.to_coremetadata())
 
         for file in self.find_license_files():
             target = dist_info / "licenses" / file
