@@ -306,7 +306,7 @@ def test_build_purelib_project_with_build(tmp_path: Path) -> None:
             )
             version = zf.read("my_package/version.foo").decode("utf-8").strip()
             assert version == "0.1.0"
-            assert wheel_metadata["Root-Is-Purelib"] == "True"
+            assert wheel_metadata["Root-Is-Purelib"] == "true"
 
 
 @pytest.mark.skipif(

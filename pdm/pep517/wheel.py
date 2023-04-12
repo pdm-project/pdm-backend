@@ -347,7 +347,7 @@ class WheelBuilder(Builder):
     def _write_wheel_file(self, fp: TextIO) -> None:
         fp.write(
             WHEEL_FILE_FORMAT.format(
-                is_purelib=self.meta.config.is_purelib, tag=self.tag
+                is_purelib=str(self.meta.config.is_purelib).lower(), tag=self.tag
             )
         )
 
