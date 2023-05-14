@@ -133,3 +133,43 @@ dependencies = [
 
 !!! note
     The relative paths will be expanded into the absolute paths on the local machine. So it makes no sense to include them in a distribution, since others who install the package will not have the same paths.
+
+## Building nested namespace packages
+
+If your package belongs to a namespace `somenamespace` inside a "base" package, which is structured similarly to:
+
+```
+basepackage/
+  __init__.py
+  somemodule.py
+  somemodule1.py
+  ...
+  somenamespace/
+    builtin_namespace_package/
+      __init__.py
+      ...
+    builtin_namespace_package1/
+      __init__.py
+      ...
+    ...
+pyproject.toml
+```
+
+Which requires you to structure your package similarly to:
+
+```
+basepackage/
+  somenamespace/
+    my_namespace_package/
+      __init__.py
+      ...
+pyproject.toml
+```
+
+PDM-Backend might be unable to automatically find your `my_namespace_package` package, resulting in empty package installations. In order to manually specify namespace package you need to include it using
+the `tool.pdm.build.includes` config option:
+
+```toml
+[tool.pdm.build]
+includes = ["basepackage/somenamespace/my_namespace_package"]
+```
