@@ -183,7 +183,7 @@ class Builder:
         context = self.build_context(Path(build_dir), **kwargs)
         if (
             not self.config_settings.get("no-clean-build")
-            or os.getenv("PDM_BUILD_NO_CLEAN", "false").lower() != "false"
+            or os.getenv("PDM_BUILD_NO_CLEAN", "false").lower() == "false"
         ):
             self.clean(context)
         self.initialize(context)
