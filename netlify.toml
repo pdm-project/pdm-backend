@@ -2,5 +2,6 @@
 publish = "site"
 command = """
 pip3 install -U mkdocs "mkdocstrings[python]" mkdocs-material
+pip3 install .
 mkdocs build
 """
