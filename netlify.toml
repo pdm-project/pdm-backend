@@ -1,7 +1,7 @@
 [build]
 publish = "site"
 command = """
-pip3 install -q pdm &&
-pdm install -v -dGdocs &&
-pdm run mkdocs build
+pip3 install -U mkdocs "mkdocstrings[python]" mkdocs-material
+pip3 install .
+mkdocs build
 """
