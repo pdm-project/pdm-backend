@@ -1,7 +1,9 @@
 import email
+import os
 import sys
 import zipfile
 from pathlib import Path
+from typing import Generator
 
 import pytest
 
@@ -378,3 +380,68 @@ def test_get_version_from_call(project_with_scm: Path, getter: str) -> None:
         with zipfile.ZipFile(wheel_name) as zf:
             version = zf.read("foo/__version__.py").decode("utf-8").strip()
         assert version == "1.1.1"
+
+
+@pytest.fixture
+def build_clean_env() -> Generator[None, None, None]:
+    bkup = os.environ.get("PDM_BUILD_NO_CLEAN")
+    os.environ["PDM_BUILD_NO_CLEAN"] = "true"
+    yield
+    if bkup:
+        os.environ["PDM_BUILD_NO_CLEAN"] = bkup
+    else:
+        del os.environ["PDM_BUILD_NO_CLEAN"]
+
+
+@pytest.mark.parametrize(
+    "settings, cleanup", [(False, True), (True, False), (None, False)]
+)
+def test_clean_not_called_if_envset(
+    project_with_scm: Path, build_clean_env, settings: bool, cleanup: bool
+) -> None:
+    builder = WheelBuilder(
+        project_with_scm, config_settings={"no-clean-build": settings}
+    )
+    builder.config.data.setdefault("tool", {}).setdefault("pdm", {})["version"] = {
+        "source": "scm",
+        "write_to": "foo/__version__.py",
+    }
+
+    test_file = project_with_scm / "build" / "testfile"
+    os.makedirs(project_with_scm / "build", exist_ok=True)
+    open(test_file, "a").close()
+    assert os.path.exists(test_file)
+
+    with builder:
+        builder.build(project_with_scm / "dist")
+        if cleanup:
+            assert not os.path.exists(test_file)
+        else:
+            assert os.path.exists(test_file)
+
+
+@pytest.mark.parametrize(
+    "settings, cleanup", [(False, True), (True, False), (None, True)]
+)
+def test_clean_not_called_if_envset_notset(
+    project_with_scm: Path, settings: bool, cleanup: bool
+) -> None:
+    builder = WheelBuilder(
+        project_with_scm, config_settings={"no-clean-build": settings}
+    )
+    builder.config.data.setdefault("tool", {}).setdefault("pdm", {})["version"] = {
+        "source": "scm",
+        "write_to": "foo/__version__.py",
+    }
+
+    test_file = project_with_scm / "build" / "testfile"
+    os.makedirs(project_with_scm / "build", exist_ok=True)
+    open(test_file, "a").close()
+    assert os.path.exists(test_file)
+
+    with builder:
+        builder.build(project_with_scm / "dist")
+        if cleanup:
+            assert not os.path.exists(test_file)
+        else:
+            assert os.path.exists(test_file)
