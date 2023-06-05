@@ -185,12 +185,6 @@ class Builder:
 
         if self.config_settings.get("no-clean-build") is not None:
             should_clean = not self.config_settings.get("no-clean-build")
-            print(
-                "SHOULD CLEAN",
-                should_clean,
-                "NOCLEANBUILD",
-                self.config_settings.get("no-clean-build"),
-            )
         elif os.getenv("PDM_BUILD_NO_CLEAN") is not None:
             should_clean = os.getenv("PDM_BUILD_NO_CLEAN") == "false"
 
