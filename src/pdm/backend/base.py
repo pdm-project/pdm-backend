@@ -181,11 +181,22 @@ class Builder:
     def build(self, build_dir: str, **kwargs: Any) -> Path:
         """Build the package and return the path to the artifact."""
         context = self.build_context(Path(build_dir), **kwargs)
-        if (
-            not self.config_settings.get("no-clean-build")
-            or os.getenv("PDM_BUILD_NO_CLEAN", "false").lower() == "false"
-        ):
+        should_clean = True
+
+        if self.config_settings.get("no-clean-build") is not None:
+            should_clean = not self.config_settings.get("no-clean-build")
+            print(
+                "SHOULD CLEAN",
+                should_clean,
+                "NOCLEANBUILD",
+                self.config_settings.get("no-clean-build"),
+            )
+        elif os.getenv("PDM_BUILD_NO_CLEAN") is not None:
+            should_clean = os.getenv("PDM_BUILD_NO_CLEAN") == "false"
+
+        if should_clean:
             self.clean(context)
+
         self.initialize(context)
         files = sorted(self.get_files(context))
         artifact = self.build_artifact(context, files)
