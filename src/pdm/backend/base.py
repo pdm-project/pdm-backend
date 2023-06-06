@@ -138,7 +138,7 @@ class Builder:
                 getattr(hook, hook_name)(context, *args, **kwargs)
 
     def build_context(self, destination: Path, **kwargs: Any) -> Context:
-        build_dir = self.location / "build"
+        build_dir = self.location / ".pdm-build"
         if not destination.exists():
             destination.mkdir(0o700, parents=True)
         return Context(

@@ -56,7 +56,8 @@ class Context:
     def ensure_build_dir(self) -> Path:
         """Return the build dir and create if it doesn't exist"""
         if not self.build_dir.exists():
-            self.build_dir.mkdir(mode=0o700, parents=True)
+            self.build_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+            (self.build_dir / ".gitignore").write_text("*\n")
         return self.build_dir
 
 

@@ -184,7 +184,7 @@ class WheelBuilder(Builder):
     def _write_dist_info(self, parent: Path) -> Path:
         """write the dist-info directory and return the path to it"""
         dist_info = parent / self.dist_info_name
-        dist_info.mkdir(0o700, parents=True, exist_ok=True)
+        dist_info.mkdir(0o700, exist_ok=True)
         meta = self.config.metadata
         entry_points = meta.entry_points
         if entry_points:
@@ -271,7 +271,7 @@ class WheelBuilder(Builder):
         if context.kwargs.get("metadata_directory"):
             return self._iter_files_in_directory(context.kwargs["metadata_directory"])
         else:
-            dist_info = self._write_dist_info(context.build_dir)
+            dist_info = self._write_dist_info(context.ensure_build_dir())
             return self._iter_files_in_directory(str(dist_info))
 
     def _iter_files_in_directory(self, path: str) -> Iterable[tuple[str, Path]]:
