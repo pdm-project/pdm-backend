@@ -3,7 +3,6 @@ import os
 import sys
 import zipfile
 from pathlib import Path
-from typing import Generator
 
 import pytest
 
@@ -382,34 +381,25 @@ def test_get_version_from_call(project_with_scm: Path, getter: str) -> None:
         assert version == "1.1.1"
 
 
-@pytest.fixture
-def build_clean_env() -> Generator[None, None, None]:
-    bkup = os.environ.get("PDM_BUILD_NO_CLEAN")
-    os.environ["PDM_BUILD_NO_CLEAN"] = "true"
-    yield
-    if bkup:
-        os.environ["PDM_BUILD_NO_CLEAN"] = bkup
-    else:
-        del os.environ["PDM_BUILD_NO_CLEAN"]
-
-
 @pytest.mark.parametrize(
-    "settings, cleanup", [(False, True), (True, False), (None, False)]
+    "settings, cleanup", [("true", False), ("false", True), ("0", True), ("1", False)]
 )
 def test_clean_not_called_if_envset(
-    project_with_scm: Path, build_clean_env, settings: bool, cleanup: bool
+    project_with_scm: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    settings: str,
+    cleanup: bool,
 ) -> None:
-    builder = WheelBuilder(
-        project_with_scm, config_settings={"no-clean-build": settings}
-    )
+    monkeypatch.setenv("PDM_BUILD_NO_CLEAN", settings)
+    builder = WheelBuilder(project_with_scm)
     builder.config.data.setdefault("tool", {}).setdefault("pdm", {})["version"] = {
         "source": "scm",
         "write_to": "foo/__version__.py",
     }
 
-    test_file = project_with_scm / "build" / "testfile"
-    os.makedirs(project_with_scm / "build", exist_ok=True)
-    open(test_file, "a").close()
+    test_file = project_with_scm / ".pdm-build" / "testfile"
+    os.makedirs(project_with_scm / ".pdm-build", exist_ok=True)
+    test_file.touch()
     assert os.path.exists(test_file)
 
     with builder:
@@ -421,9 +411,9 @@ def test_clean_not_called_if_envset(
 
 
 @pytest.mark.parametrize(
-    "settings, cleanup", [(False, True), (True, False), (None, True)]
+    "settings, cleanup", [("", False), (True, False), (None, False)]
 )
-def test_clean_not_called_if_envset_notset(
+def test_clean_not_called_if_config_settings_exist(
     project_with_scm: Path, settings: bool, cleanup: bool
 ) -> None:
     builder = WheelBuilder(
@@ -434,9 +424,9 @@ def test_clean_not_called_if_envset_notset(
         "write_to": "foo/__version__.py",
     }
 
-    test_file = project_with_scm / "build" / "testfile"
-    os.makedirs(project_with_scm / "build", exist_ok=True)
-    open(test_file, "a").close()
+    test_file = project_with_scm / ".pdm-build" / "testfile"
+    os.makedirs(project_with_scm / ".pdm-build", exist_ok=True)
+    test_file.touch()
     assert os.path.exists(test_file)
 
     with builder:
