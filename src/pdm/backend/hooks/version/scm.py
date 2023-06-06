@@ -13,9 +13,12 @@ import warnings
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Iterable, NamedTuple
+from typing import TYPE_CHECKING, Iterable, NamedTuple
 
 from pdm.backend._vendor.packaging.version import Version
+
+if TYPE_CHECKING:
+    from _typeshed import StrPath
 
 DEFAULT_TAG_REGEX = re.compile(
     r"^(?:[\w-]+-)?(?P<version>[vV]?\d+(?:\.\d+){0,2}[^\+]*)(?:\+.*)?$"
@@ -29,7 +32,7 @@ class Config:
 
 def _subprocess_call(
     cmd: str | list[str],
-    cwd: os.PathLike | None = None,
+    cwd: StrPath | None = None,
     extra_env: dict[str, str] | None = None,
 ) -> tuple[int, str, str]:
     # adapted from pre-commit
@@ -78,26 +81,26 @@ def meta(
     return VersionInfo(tag, distance, dirty, node, branch)
 
 
-def _git_get_branch(root: os.PathLike[Any]) -> str | None:
+def _git_get_branch(root: StrPath) -> str | None:
     ret, out, _ = _subprocess_call("git rev-parse --abbrev-ref HEAD", root)
     if not ret:
         return out
     return None
 
 
-def _git_is_dirty(root: os.PathLike[Any]) -> bool:
+def _git_is_dirty(root: StrPath) -> bool:
     _, out, _ = _subprocess_call("git status --porcelain --untracked-files=no", root)
     return bool(out)
 
 
-def _git_get_node(root: os.PathLike[Any]) -> str | None:
+def _git_get_node(root: StrPath) -> str | None:
     ret, out, _ = _subprocess_call("git rev-parse --verify --quiet HEAD", root)
     if not ret:
         return out[:7]
     return None
 
 
-def _git_count_all_nodes(root: os.PathLike[Any]) -> int:
+def _git_count_all_nodes(root: StrPath) -> int:
     _, out, _ = _subprocess_call("git rev-list HEAD", root)
     return out.count("\n") + 1
 
@@ -169,35 +172,35 @@ def tags_to_versions(config: Config, tags: Iterable[str]) -> list[Version]:
     return [tag_to_version(config, tag) for tag in tags if tag]
 
 
-def git_parse_version(root: os.PathLike[Any], config: Config) -> VersionInfo | None:
+def git_parse_version(root: StrPath, config: Config) -> VersionInfo | None:
     GIT = shutil.which("git")
     if not GIT:
         return None
 
     ret, repo, _ = _subprocess_call([GIT, "rev-parse", "--show-toplevel"], root)
-    if ret or not os.path.samefile(root, repo):
+    if ret or not repo:
         return None
 
-    if os.path.isfile(os.path.join(root, ".git/shallow")):
-        warnings.warn(f"{root!r} is shallow and may cause errors")
+    if os.path.isfile(os.path.join(repo, ".git/shallow")):
+        warnings.warn(f"{repo!r} is shallow and may cause errors")
     describe_cmd = [GIT, "describe", "--dirty", "--tags", "--long", "--match", "*.*"]
-    ret, output, err = _subprocess_call(describe_cmd, root)
-    branch = _git_get_branch(root)
+    ret, output, err = _subprocess_call(describe_cmd, repo)
+    branch = _git_get_branch(repo)
 
     if ret:
-        rev_node = _git_get_node(root)
-        dirty = _git_is_dirty(root)
+        rev_node = _git_get_node(repo)
+        dirty = _git_is_dirty(repo)
         if rev_node is None:
             return meta(config, "0.0", 0, dirty)
         return meta(
-            config, "0.0", _git_count_all_nodes(root), dirty, f"g{rev_node}", branch
+            config, "0.0", _git_count_all_nodes(repo), dirty, f"g{rev_node}", branch
         )
     else:
         tag, number, node, dirty = _git_parse_describe(output)
         return meta(config, tag, number or None, dirty, node, branch)
 
 
-def get_latest_normalizable_tag(root: os.PathLike[Any]) -> str:
+def get_latest_normalizable_tag(root: StrPath) -> str:
     # Gets all tags containing a '.' from oldest to newest
     cmd = [
         "hg",
@@ -215,14 +218,14 @@ def get_latest_normalizable_tag(root: os.PathLike[Any]) -> str:
     return tag
 
 
-def hg_get_graph_distance(root: os.PathLike[Any], rev1: str, rev2: str = ".") -> int:
+def hg_get_graph_distance(root: StrPath, rev1: str, rev2: str = ".") -> int:
     cmd = ["hg", "log", "-q", "-r", f"{rev1}::{rev2}"]
     _, out, _ = _subprocess_call(cmd, root)
     return len(out.strip().splitlines()) - 1
 
 
 def _hg_tagdist_normalize_tagcommit(
-    config: Config, root: os.PathLike[Any], tag: str, dist: int, node: str, branch: str
+    config: Config, root: StrPath, tag: str, dist: int, node: str, branch: str
 ) -> VersionInfo:
     dirty = node.endswith("+")
     node = "h" + node.strip("+")
@@ -275,7 +278,7 @@ def _bump_regex(version: str) -> str:
     return "%s%d" % (prefix, int(tail) + 1)
 
 
-def hg_parse_version(root: os.PathLike[Any], config: Config) -> VersionInfo | None:
+def hg_parse_version(root: StrPath, config: Config) -> VersionInfo | None:
     if not shutil.which("hg"):
         return None
     _, output, _ = _subprocess_call("hg id -i -b -t", root)
