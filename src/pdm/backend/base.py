@@ -182,7 +182,7 @@ class Builder:
         """Build the package and return the path to the artifact."""
         context = self.build_context(Path(build_dir), **kwargs)
         if not (
-            self.config_settings.get("no-clean-build")
+            "no-clean-build" in self.config_settings
             or os.getenv("PDM_BUILD_NO_CLEAN", "false").lower() not in ("0", "false")
         ):
             self.clean(context)
