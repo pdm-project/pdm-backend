@@ -84,7 +84,7 @@ def _find_top_packages(root: str) -> list[str]:
 class Builder:
     """Base class for building and distributing a package from given path."""
 
-    DEFAULT_EXCLUDES = ["build"]
+    DEFAULT_EXCLUDES = [".pdm-build"]
 
     target: str
     hooks: list[BuildHookInterface] = [DynamicVersionBuildHook()]
@@ -181,11 +181,20 @@ class Builder:
     def build(self, build_dir: str, **kwargs: Any) -> Path:
         """Build the package and return the path to the artifact."""
         context = self.build_context(Path(build_dir), **kwargs)
-        if (
-            not self.config_settings.get("no-clean-build")
-            or os.getenv("PDM_BUILD_NO_CLEAN", "false").lower() == "false"
-        ):
+        should_clean = True
+
+        if "no-clean-build" in self.config_settings:
+            should_clean = False
+        elif "PDM_BUILD_NO_CLEAN" in os.environ:
+            should_clean = os.getenv("PDM_BUILD_NO_CLEAN", "0").lower() in (
+                "0",
+                "false",
+                "no",
+            )
+
+        if should_clean:
             self.clean(context)
+
         self.initialize(context)
         files = sorted(self.get_files(context))
         artifact = self.build_artifact(context, files)
