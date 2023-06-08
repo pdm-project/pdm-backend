@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Iterable
 
 from pdm.backend.config import Config
 
@@ -59,6 +59,13 @@ class Context:
             self.build_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
             (self.build_dir / ".gitignore").write_text("*\n")
         return self.build_dir
+
+    def expand_paths(self, path: str) -> Iterable[Path]:
+        plib_path = Path(path)
+        if plib_path.parts and plib_path.parts[0] == "${BUILD_DIR}":
+            return self.build_dir.glob(Path(*plib_path.parts[1:]).as_posix())
+
+        return self.root.glob(path)
 
 
 class BuildHookInterface(Protocol):

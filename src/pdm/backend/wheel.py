@@ -28,6 +28,10 @@ from pdm.backend.utils import (
     to_filename,
 )
 
+SCHEME_NAMES = frozenset(
+    ["purelib", "platlib", "include", "platinclude", "scripts", "data"]
+)
+
 if sys.version_info < (3, 8):
     from importlib_metadata import version as get_version
 else:
@@ -71,6 +75,13 @@ class WheelBuilder(Builder):
     ) -> None:
         super().__init__(location, config_settings)
         self.__tag: str | None = None
+
+    def scheme_path(self, name: str, relative: str) -> str:
+        if name not in SCHEME_NAMES:
+            raise ValueError(
+                f"Unknown scheme name {name!r}, must be one of {SCHEME_NAMES}"
+            )
+        return f"{self.name_version}.data/{name}/{relative}"
 
     def _get_platform_tags(self) -> tuple[str | None, str | None, str | None]:
         python_tag: str | None = None
@@ -118,6 +129,22 @@ class WheelBuilder(Builder):
                 relpath = relpath[len(package_dir) + 1 :]
             yield relpath, path
         yield from self._get_metadata_files(context)
+        yield from self._get_wheel_data(context)
+
+    def _get_wheel_data(self, context: Context) -> Iterable[tuple[str, Path]]:
+        for name, paths in context.config.build_config.wheel_data.items():
+            for path in paths:
+                relative_to: str | None = None
+                if not isinstance(path, str):
+                    relative_to = path.get("relative-to")
+                    path = path["path"]
+                for child in context.expand_paths(path):
+                    relpath = (
+                        child.relative_to(relative_to).as_posix()
+                        if relative_to
+                        else child.name
+                    )
+                    yield self.scheme_path(name, relpath), child
 
     def build_artifact(
         self, context: Context, files: Iterable[tuple[str, Path]]
