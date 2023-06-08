@@ -1,4 +1,4 @@
-# API References
+# API Reference
 
 ::: pdm.backend.hooks.base
     options:

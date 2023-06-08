@@ -82,6 +82,17 @@ Sometimes you only want to activate the hook for a specific hook, you can define
 
 You can also look at the `context` object inside a specific hook to determine it should be called.
 
+## Change the build directory
+
+By default, build files will be written to `.pdm-build` directory under the project root. You can change it by setting `context.build_dir`.
+However, since the build clean will be run before `pdm_build_initialize`, this must be done in the `pdm_build_clean` hook:
+
+=== "pdm_build.py"
+
+    ```python
+    def pdm_build_clean(context):
+        context.build_dir = Path(make_temp_dir())
+    ```
 
 ## Build hooks flow
 
@@ -89,13 +100,16 @@ The hooks are called in the following order:
 
 ```mermaid
 flowchart TD
-    A{{pdm_build_hook_enabled?}}-->pdm_build_initialize
-    pdm_build_initialize-.run-setuptools.-> pdm_build_update_setup_kwargs
-    pdm_build_update_setup_kwargs-.->pdm_build_update_files
-    pdm_build_update_files --> pdm_build_finalize
+    A{{pdm_build_hook_enabled?}} --> pdm_build_clean
+    pdm_build_clean --> pdm_build_initialize
+    pdm_build_initialize --> B{{run-setuptools?}}
+    B --> |yes|C[pdm_build_update_setup_kwargs]
+    B --> |no|D[pdm_build_update_files]
+    C --> D
+    D --> pdm_build_finalize
 ```
 
-Read the [API references](./api.md) for more details.
+Read the [API reference](./api.md) for more details.
 
 ## Distribute the hook as a plugin
 
