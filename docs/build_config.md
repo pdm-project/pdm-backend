@@ -195,6 +195,29 @@ If neither `includes` and `excludes` is specified, the backend can determine the
     `*.pyc`, `__pycache__/` and `build/` are always excluded.
 
 
+### Wheel data files
+
+You can include additional files that are not normally installed inside site-packages directory, with `tool.pdm.build.wheel-data` table:
+
+```toml
+[tool.pdm.build.wheel-data]
+# Install all files under scripts/ to the $prefix/bin directory
+scripts = ["scripts/*"]
+# Install all files under include/ to the $prefix/include directory recursively, keeping the directory structure
+include = [{path = "include/**/*.h", relative-to = "include/"}]
+```
+
+The key is the name of the install scheme, and should be one of `scripts`, `purelib`, `platlib`, `include`, `platinclude` and `data`.
+And each value should be a list of items, which may contain the following attributes:
+
+- `path`: The path pattern to match the files to be included.
+- `relative-to`: if specified, the relative paths of the matched files will be calculated based on this directory,
+otherwise the files will be flattened and installed directly under the scheme directory.
+
+In both attributes, you can use `${BUILD_DIR}` to refer to the build directory.
+
+These files will be packaged into the `{name}-{version}.data/{scheme}` directory in the wheel distribution.
+
 ## Local build hooks
 
 You can specify a custom script to be executed before the build process, which can be used to generate files or modify the metadata.

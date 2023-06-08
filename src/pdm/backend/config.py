@@ -4,7 +4,7 @@ import glob
 import os
 import sys
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from pdm.backend._vendor import tomli_w
 from pdm.backend._vendor.pyproject_metadata import ConfigurationError, StandardMetadata
@@ -18,6 +18,14 @@ else:
     import pdm.backend._vendor.tomli as tomllib
 
 T = TypeVar("T")
+
+if TYPE_CHECKING:
+    from typing import TypedDict
+
+    DataSpecDict = TypedDict(
+        "DataSpecDict", {"path": str, "relative-to": str}, total=False
+    )
+    DataSpec = DataSpecDict | str
 
 
 class Config:
@@ -257,3 +265,8 @@ class BuildConfig(Table):
         - path: the legacy .pth file method(default)
         """
         return self.get("editable-backend", "path")
+
+    @property
+    def wheel_data(self) -> dict[str, list[DataSpec]]:
+        """The wheel data configuration"""
+        return self.get("wheel-data", {})

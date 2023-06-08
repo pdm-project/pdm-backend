@@ -28,3 +28,7 @@ includes = [
 excludes = [
     "my_package/*.json"
 ]
+source-includes = ["scripts/"]
+
+[tool.pdm.build.wheel-data]
+scripts = ["scripts/*"]

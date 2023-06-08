@@ -84,17 +84,23 @@ def test_build_package_include(tmp_path: Path) -> None:
         assert wheel_name == "demo_package-0.1.0-py3-none-any.whl"
 
         tar_names = get_tarball_names(tmp_path / sdist_name)
-        zip_names = get_wheel_names(tmp_path / wheel_name)
 
         assert "demo_package-0.1.0/my_package/__init__.py" in tar_names
         assert "demo_package-0.1.0/my_package/data.json" not in tar_names
         assert "demo_package-0.1.0/requirements.txt" in tar_names
         assert "demo_package-0.1.0/data_out.json" in tar_names
 
-        assert "my_package/__init__.py" in zip_names
-        assert "my_package/data.json" not in zip_names
-        assert "requirements.txt" in zip_names
-        assert "data_out.json" in zip_names
+        with zipfile.ZipFile(tmp_path / wheel_name) as zf:
+            zip_names = zf.namelist()
+            assert "my_package/__init__.py" in zip_names
+            assert "my_package/data.json" not in zip_names
+            assert "requirements.txt" in zip_names
+            assert "data_out.json" in zip_names
+            assert "demo_package-0.1.0.data/scripts/my_script.sh" in zip_names
+            if os.name != "nt":
+                info = zf.getinfo("demo_package-0.1.0.data/scripts/my_script.sh")
+                filemode = info.external_attr >> 16
+                assert filemode & 0o111
 
 
 def test_namespace_package_by_include(tmp_path: Path) -> None:
