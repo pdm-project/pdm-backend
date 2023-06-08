@@ -332,8 +332,9 @@ def get_version_from_scm(root: str | Path, *, tag_regex: str | None = None) -> s
     for func in (git_parse_version, hg_parse_version):
         version = func(root, config)  # type: ignore
         if version:
-            break
-    else:
-        version = meta(config, "0.0.0")
-    assert version is not None
-    return format_version(version)
+            return format_version(version)
+    raise ValueError(
+        "Cannot find the version from SCM or SCM isn't detected. \n"
+        "You can still specify the version via environment variable "
+        "`PDM_BUILD_SCM_VERSION`."
+    )
