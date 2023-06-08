@@ -97,9 +97,10 @@ def test_build_package_include(tmp_path: Path) -> None:
             assert "requirements.txt" in zip_names
             assert "data_out.json" in zip_names
             assert "demo_package-0.1.0.data/scripts/my_script.sh" in zip_names
-            info = zf.getinfo("demo_package-0.1.0.data/scripts/my_script.sh")
-            filemode = info.external_attr >> 16
-            assert filemode & 0o111
+            if os.name != "nt":
+                info = zf.getinfo("demo_package-0.1.0.data/scripts/my_script.sh")
+                filemode = info.external_attr >> 16
+                assert filemode & 0o111
 
 
 def test_namespace_package_by_include(tmp_path: Path) -> None:
