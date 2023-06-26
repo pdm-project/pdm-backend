@@ -52,6 +52,8 @@ class Config:
     def to_coremetadata(self) -> str:
         """Return the metadata as a Core Metadata string."""
         metadata = StandardMetadata.from_pyproject(self.data, project_dir=self.root)
+        # Fix the name field to unnormalized form.
+        metadata.name = self.metadata["name"]
         return str(metadata.as_rfc822())
 
     @classmethod
