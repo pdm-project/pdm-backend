@@ -24,6 +24,7 @@ from pdm.backend.utils import (
     expand_vars,
     get_abi_tag,
     get_platform,
+    normalize_file_permissions,
     safe_version,
     to_filename,
 )
@@ -150,7 +151,12 @@ class WheelBuilder(Builder):
         self, context: Context, files: Iterable[tuple[str, Path]]
     ) -> Path:
         records: list[RecordEntry] = []
-        with tempfile.NamedTemporaryFile(suffix=".whl", delete=False) as fp:
+        fd, temp_name = tempfile.mkstemp(suffix=".whl")
+        st_mode = os.stat(temp_name).st_mode
+        new_mode = normalize_file_permissions(st_mode)
+        os.chmod(temp_name, new_mode)
+
+        with os.fdopen(fd, "w+b") as fp:
             with zipfile.ZipFile(fp, "w", compression=zipfile.ZIP_DEFLATED) as zf:
                 for rel_path, full_path in files:
                     records.append(self._add_file_to_zip(zf, rel_path, full_path))
@@ -159,7 +165,7 @@ class WheelBuilder(Builder):
         target = context.dist_dir / f"{self.name_version}-{self.tag}.whl"
         if target.exists():
             target.unlink()
-        shutil.move(fp.name, target)
+        shutil.move(temp_name, target)
         return target
 
     @property
@@ -235,8 +241,9 @@ class WheelBuilder(Builder):
     ) -> RecordEntry:
         self._show_add_file(rel_path, full_path)
         zi = zipfile.ZipInfo(rel_path, ZIPINFO_DATE_TIME)
-        st_mode = os.stat(full_path).st_mode
-        zi.external_attr = (st_mode & 0xFFFF) << 16  # Unix attributes
+        st_mode = full_path.stat().st_mode
+        new_mode = normalize_file_permissions(st_mode)
+        zi.external_attr = (new_mode & 0xFFFF) << 16  # Unix attributes
 
         if stat.S_ISDIR(st_mode):
             zi.external_attr |= 0x10  # MS-DOS directory flag
@@ -251,11 +258,9 @@ class WheelBuilder(Builder):
         zf: zipfile.ZipFile, zi: zipfile.ZipInfo, src: IO[bytes]
     ) -> str:
         hashsum = hashlib.sha256()
-        for buf in iter(lambda: src.read(2**16), b""):
-            hashsum.update(buf)
-
-        src.seek(0)
-        zf.writestr(zi, src.read(), compress_type=zipfile.ZIP_DEFLATED)
+        data = src.read()
+        hashsum.update(data)
+        zf.writestr(zi, data, compress_type=zipfile.ZIP_DEFLATED)
         return urlsafe_b64encode(hashsum.digest()).decode("ascii").rstrip("=")
 
     def _write_record(self, zf: zipfile.ZipFile, records: list[RecordEntry]) -> None:
