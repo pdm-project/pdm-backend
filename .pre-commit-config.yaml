@@ -21,13 +21,13 @@ repos:
         exclude: ^.*/?setup\.py$
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.3.0
+    rev: v1.4.1
     hooks:
       - id: mypy
         exclude: ^(src/pdm/backend/_vendor|tests|scripts)
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.4.0
+    rev: v3.8.0
     hooks:
       - id: pyupgrade
         args:
