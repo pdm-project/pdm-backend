@@ -20,6 +20,7 @@ from pdm.backend._vendor.packaging.utils import canonicalize_name
 from pdm.backend.base import Builder
 from pdm.backend.hooks import Context
 from pdm.backend.hooks.setuptools import SetuptoolsBuildHook
+from pdm.backend.structures import FileMap
 from pdm.backend.utils import (
     expand_vars,
     get_abi_tag,
@@ -122,13 +123,23 @@ class WheelBuilder(Builder):
         self.initialize(context)
         return self._write_dist_info(Path(metadata_directory))
 
-    def get_files(self, context: Context) -> Iterable[tuple[str, Path]]:
+    def _collect_files(self, context: Context) -> FileMap:
         package_dir = self.config.build_config.package_dir
-        for relpath, path in super().get_files(context):
+        result = FileMap()
+
+        def clean_prefix(relpath: str) -> str:
             # remove the package-dir part from the relative paths
             if package_dir and relpath.startswith(package_dir + "/"):
                 relpath = relpath[len(package_dir) + 1 :]
-            yield relpath, path
+            return relpath
+
+        result.update(
+            (clean_prefix(k), v) for k, v in super()._collect_files(context).items()
+        )
+        return result
+
+    def get_files(self, context: Context) -> Iterable[tuple[str, Path]]:
+        yield from super().get_files(context)
         yield from self._get_metadata_files(context)
         yield from self._get_wheel_data(context)
 
