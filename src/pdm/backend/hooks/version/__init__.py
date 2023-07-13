@@ -108,7 +108,11 @@ class DynamicVersionBuildHook:
         write_template: str = "{}\n",
     ) -> None:
         """Write the resolved version to the file."""
-        if write_to is not None and context.target != "sdist":
+        if write_to is not None:
+            if context.target == "sdist" and context.config.build_config.package_dir:
+                write_to = os.path.join(
+                    context.config.build_config.package_dir, write_to
+                )
             target = context.build_dir / write_to
             if not target.parent.exists():
                 target.parent.mkdir(0o700, parents=True)
