@@ -113,7 +113,10 @@ class DynamicVersionBuildHook:
                 write_to = os.path.join(
                     context.config.build_config.package_dir, write_to
                 )
-            target = context.build_dir / write_to
+            if context.target == "editable":
+                target = Path(context.config.build_config.package_dir or ".") / write_to
+            else:
+                target = context.build_dir / write_to
             if not target.parent.exists():
                 target.parent.mkdir(0o700, parents=True)
             with open(target, "w", encoding="utf-8", newline="") as fp:
