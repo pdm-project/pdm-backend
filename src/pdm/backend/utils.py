@@ -198,7 +198,7 @@ def expand_vars(line: str, root: str) -> str:
         quote: Callable[[str], str] = urllib.parse.quote
     else:
         quote = str
-    line = line.replace("${PROJECT_ROOT}", quote(root).lstrip("/"))
+    line = line.replace("${PROJECT_ROOT}", root.lstrip("/"))
 
     def replace_func(match: Match[str]) -> str:
         rv = os.getenv(match.group(1))
