@@ -14,7 +14,7 @@ from pdm.backend.exceptions import PDMWarning, ValidationError
 from pdm.backend.hooks import BuildHookInterface, Context
 from pdm.backend.hooks.version import DynamicVersionBuildHook
 from pdm.backend.structures import FileMap
-from pdm.backend.utils import import_module_at_path, is_python_package
+from pdm.backend.utils import expand_vars, import_module_at_path, is_python_package
 
 if TYPE_CHECKING:
     from typing import SupportsIndex
@@ -160,8 +160,23 @@ class Builder:
         if context.build_dir.exists():
             shutil.rmtree(context.build_dir)
 
+    def _fix_dependencies(self) -> None:
+        """Fix the dependencies and remove dynamic variables from the metadata"""
+        metadata = self.config.metadata
+        root = self.location.as_posix()
+        if metadata.get("dependencies"):
+            metadata["dependencies"] = [
+                expand_vars(dep, root) for dep in metadata["dependencies"]
+            ]
+        if metadata.get("optional-dependencies"):
+            for name, deps in metadata["optional-dependencies"].items():
+                metadata["optional-dependencies"][name] = [
+                    expand_vars(dep, root) for dep in deps
+                ]
+
     def initialize(self, context: Context) -> None:
         """Initialize the build context."""
+        self._fix_dependencies()
         self.call_hook("pdm_build_initialize", context)
 
     def get_files(self, context: Context) -> Iterable[tuple[str, Path]]:

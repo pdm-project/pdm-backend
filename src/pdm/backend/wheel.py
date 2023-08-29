@@ -22,7 +22,6 @@ from pdm.backend.hooks import Context
 from pdm.backend.hooks.setuptools import SetuptoolsBuildHook
 from pdm.backend.structures import FileMap
 from pdm.backend.utils import (
-    expand_vars,
     get_abi_tag,
     get_platform,
     normalize_file_permissions,
@@ -98,24 +97,6 @@ class WheelBuilder(Builder):
         if "--plat-name" in self.config_settings:
             plat_name = self.config_settings["--plat-name"]
         return python_tag, py_limited_api, plat_name
-
-    def _fix_dependencies(self) -> None:
-        """Fix the dependencies and remove dynamic variables from the metadata"""
-        metadata = self.config.metadata
-        root = self.location.as_posix()
-        if metadata.get("dependencies"):
-            metadata["dependencies"] = [
-                expand_vars(dep, root) for dep in metadata["dependencies"]
-            ]
-        if metadata.get("optional-dependencies"):
-            for name, deps in metadata["optional-dependencies"].items():
-                metadata["optional-dependencies"][name] = [
-                    expand_vars(dep, root) for dep in deps
-                ]
-
-    def initialize(self, context: Context) -> None:
-        self._fix_dependencies()
-        return super().initialize(context)
 
     def prepare_metadata(self, metadata_directory: str) -> Path:
         """Write the dist-info files under the given directory"""
