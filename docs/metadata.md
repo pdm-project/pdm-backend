@@ -49,7 +49,7 @@ You can specify another regex pattern to match the SCM tag, in which a `version`
 ```toml
 [tool.pdm.version]
 source = "scm"
-tag-pattern =  r"^(?:\D*)?(?P<version>([1-9][0-9]*!)?(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*((a|b|c|rc)(0|[1-9][0-9]*))?(\.post(0|[1-9][0-9]*))?(\.dev(0|[1-9][0-9]*))?$)$"
+tag_regex = '^(?:\D*)?(?P<version>([1-9][0-9]*!)?(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*((a|b|c|rc)(0|[1-9][0-9]*))?(\.post(0|[1-9][0-9]*))?(\.dev(0|[1-9][0-9]*))?$)$'
 ```
 
 ### Get with a specific function
