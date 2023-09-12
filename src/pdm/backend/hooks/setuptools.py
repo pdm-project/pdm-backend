@@ -59,6 +59,15 @@ def _format_dict_list(data: dict[str, list[str]], indent: int = 4) -> str:
     return "\n".join(result)
 
 
+def _recursive_copy_files(src: Path, dest: Path) -> None:
+    if src.is_file():
+        shutil.copy2(src, dest)
+    else:
+        dest.mkdir(exist_ok=True)
+        for child in src.iterdir():
+            _recursive_copy_files(child, dest / child.name)
+
+
 class SetuptoolsBuildHook:
     """A build hook to run setuptools build command."""
 
@@ -84,11 +93,7 @@ class SetuptoolsBuildHook:
             if not lib_dir:
                 return
             # copy the files under temp_dir/lib.* to context.build_dir
-            for file in lib_dir.iterdir():
-                if file.is_dir():
-                    shutil.copytree(file, build_dir / file.name)
-                else:
-                    shutil.copy2(file, build_dir)
+            _recursive_copy_files(lib_dir, build_dir)
 
     def _build_inplace(self, context: Context) -> None:
         setup_py = self.ensure_setup_py(context)
