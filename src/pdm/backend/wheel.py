@@ -4,6 +4,7 @@ import csv
 import hashlib
 import io
 import os
+import posixpath
 import shutil
 import stat
 import sys
@@ -293,13 +294,19 @@ class WheelBuilder(Builder):
     def _get_metadata_files(self, context: Context) -> Iterable[tuple[str, Path]]:
         """Generate the metadata files for the wheel."""
         if context.kwargs.get("metadata_directory"):
-            return self._iter_files_in_directory(context.kwargs["metadata_directory"])
+            return self._iter_metadata_files(context.kwargs["metadata_directory"])
         else:
             dist_info = self._write_dist_info(context.ensure_build_dir())
-            return self._iter_files_in_directory(str(dist_info))
+            return self._iter_metadata_files(str(dist_info))
 
-    def _iter_files_in_directory(self, path: str) -> Iterable[tuple[str, Path]]:
+    def _iter_metadata_files(self, path: str) -> Iterable[tuple[str, Path]]:
+        dist_info_name = self.dist_info_name
         for root, _, files in os.walk(path):
-            relroot = os.path.relpath(root, os.path.dirname(path))
             for file in files:
-                yield (Path(relroot, file).as_posix(), Path(root) / file)
+                # the relative path is concated with the dist-info name
+                # so that the dist info name is always consistent with the current build
+                # e.g. <path>/METADATA -> <name>-<version>.dist-info/METADATA
+                relpath = posixpath.join(
+                    dist_info_name, Path(root, file).relative_to(path).as_posix()
+                )
+                yield relpath, Path(root, file)
