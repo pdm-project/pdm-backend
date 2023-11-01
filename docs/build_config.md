@@ -101,7 +101,7 @@ in to the distribution.
 
 ### Include files in a namespace package
 
-A [PEP 427](https://www.python.org/dev/peps/pep-0427/) namespace package is a package that is split across multiple directories on the filesystem. It is a directory without an `__init__.py` file. For example, this is a Python package with nested namespace packages:
+A [PEP 420](https://www.python.org/dev/peps/pep-0420/) namespace package is a package that is split across multiple directories on the filesystem. It is a directory without an `__init__.py` file. For example, this is a Python package with nested namespace packages:
 
 ```
 basepackage/
