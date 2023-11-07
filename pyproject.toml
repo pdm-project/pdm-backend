@@ -30,7 +30,7 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/pdm-project/pdm-backend"
 Repository = "https://github.com/pdm-project/pdm-backend"
-Documentation = "https://pdm-backend.fming.dev"
+Documentation = "https://backend.pdm-project.org"
 
 [tool.pdm.version]
 source = "scm"

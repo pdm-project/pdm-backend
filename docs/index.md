@@ -3,7 +3,7 @@
 [![PyPI](https://img.shields.io/pypi/v/pdm-backend?label=PyPI)](https://pypi.org/project/pdm-backend)
 [![Tests](https://github.com/pdm-project/pdm-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/pdm-project/pdm-backend/actions/workflows/ci.yml)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/pdm-project/pdm-backend/main.svg)](https://results.pre-commit.ci/latest/github/pdm-project/pdm-backend/main)
-[![pdm-managed](https://img.shields.io/badge/pdm-managed-blueviolet)](https://pdm.fming.dev)
+[![pdm-managed](https://img.shields.io/badge/pdm-managed-blueviolet)][PDM]
 
 PDM-Backend is a build backend that supports the latest packaging standards, which includes:
 
@@ -27,7 +27,7 @@ build-backend = "pdm.backend"
 
 It is recommended to use [PDM] to manage your project, which will automatically generate the above configuration for you.
 
-[PDM]: https://pdm.fming.dev
+[PDM]: https://pdm-project.org
 
 Write the project metadata in `pyproject.toml` in [PEP 621] format:
 

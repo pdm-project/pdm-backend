@@ -50,7 +50,7 @@ $ pdm install
 
 It will create a virtualenv at `$PWD/.venv` and install all dependencies into it.
 
-[pdm-install]: https://pdm.fming.dev/latest/#installation
+[pdm-install]: https://pdm-project.org/latest/#installation
 
 ### Run tests
 
