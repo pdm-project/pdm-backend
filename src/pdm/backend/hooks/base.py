@@ -61,11 +61,16 @@ class Context:
         return self.build_dir
 
     def expand_paths(self, path: str) -> Iterable[Path]:
+        def path_filter(p: Path) -> bool:
+            return p.is_file() or p.is_symlink()
+
         plib_path = Path(path)
         if plib_path.parts and plib_path.parts[0] == "${BUILD_DIR}":
-            return self.build_dir.glob(Path(*plib_path.parts[1:]).as_posix())
+            return filter(
+                path_filter, self.build_dir.glob(Path(*plib_path.parts[1:]).as_posix())
+            )
 
-        return self.root.glob(path)
+        return filter(path_filter, self.root.glob(path))
 
 
 class BuildHookInterface(Protocol):
