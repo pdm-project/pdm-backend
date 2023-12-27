@@ -31,4 +31,4 @@ excludes = [
 source-includes = ["scripts/"]
 
 [tool.pdm.build.wheel-data]
-scripts = ["scripts/*"]
+scripts = ["scripts/**/*"]

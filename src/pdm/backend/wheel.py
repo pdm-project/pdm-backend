@@ -128,9 +128,10 @@ class WheelBuilder(Builder):
     def _get_wheel_data(self, context: Context) -> Iterable[tuple[str, Path]]:
         for name, paths in context.config.build_config.wheel_data.items():
             for path in paths:
-                relative_to: str | None = None
+                relative_to: Path | None = None
                 if not isinstance(path, str):
-                    relative_to = path.get("relative-to")
+                    if path.get("relative-to"):
+                        relative_to = context.root / path["relative-to"]
                     path = path["path"]
                 for child in context.expand_paths(path):
                     relpath = (
