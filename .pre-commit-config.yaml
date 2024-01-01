@@ -4,7 +4,7 @@ ci:
 exclude: ^src/pdm/backend/_vendor
 repos:
   - repo: https://github.com/psf/black
-    rev: 23.11.0
+    rev: 23.12.1
     hooks:
       - id: black
   - repo: https://github.com/PyCQA/flake8
@@ -15,13 +15,13 @@ repos:
           - flake8-bugbear
 
   - repo: https://github.com/PyCQA/isort
-    rev: 5.12.0
+    rev: 5.13.2
     hooks:
       - id: isort
         exclude: ^.*/?setup\.py$
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.7.1
+    rev: v1.8.0
     hooks:
       - id: mypy
         exclude: ^(src/pdm/backend/_vendor|tests|scripts)
