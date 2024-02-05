@@ -1,6 +1,7 @@
 """
 This is a simple script to call pdm-pep517's backend apis to make release artifacts.
 """
+
 import argparse
 import logging
 import os

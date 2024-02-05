@@ -7,6 +7,7 @@ Currently only for MacOSX
 Adapted from
 https://github.com/pypa/wheel/blob/6e86e6b886/src/wheel/macosx_libfile.py
 """
+
 from __future__ import annotations
 
 import ctypes

@@ -2,6 +2,7 @@
 module to get version from tag of SCM repository.
 Adapted from setuptools-scm. Currently only support git and hg.
 """
+
 from __future__ import annotations
 
 import os
