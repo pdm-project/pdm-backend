@@ -18,19 +18,11 @@ def is_subpath(path: str, parent: str) -> bool:
 
 
 class EditableBuildHook:
-    @staticmethod
-    def editable_version(version: str) -> str:
-        if "+" in version:
-            return f"{version}.editable"
-        return f"{version}+editable"
-
     def pdm_build_initialize(self, context: Context) -> None:
         editables = self._prepare_editable(context)
         context.config.metadata.setdefault("dependencies", []).extend(
             editables.dependencies()
         )
-        version = context.config.metadata["version"]
-        context.config.metadata["version"] = self.editable_version(version)
         context.editables = editables
 
     def pdm_build_update_files(self, context: Context, files: dict[str, Path]) -> None:

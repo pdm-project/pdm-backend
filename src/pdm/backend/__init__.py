@@ -8,7 +8,7 @@ from typing import Any, Mapping
 
 
 def get_requires_for_build_wheel(
-    config_settings: Mapping[str, Any] | None = None
+    config_settings: Mapping[str, Any] | None = None,
 ) -> list[str]:
     """
     Returns an additional list of requirements for building, as PEP508 strings,
@@ -26,7 +26,7 @@ def get_requires_for_build_wheel(
 
 
 def get_requires_for_build_sdist(
-    config_settings: Mapping[str, Any] | None = None
+    config_settings: Mapping[str, Any] | None = None,
 ) -> list[str]:
     """There isn't any requirement for building a sdist at this point."""
     return []
@@ -67,7 +67,7 @@ def build_sdist(
 
 
 def get_requires_for_build_editable(
-    config_settings: Mapping[str, Any] | None = None
+    config_settings: Mapping[str, Any] | None = None,
 ) -> list[str]:
     """
     Returns an additional list of requirements for building, as PEP508 strings,

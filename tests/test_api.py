@@ -253,10 +253,10 @@ def test_build_editable(dist: Path, fixture_project: Path) -> None:
         namelist = zf.namelist()
         assert "demo_package.pth" in namelist
         assert "_editable_impl_demo_package.py" in namelist
-        assert "demo_package-0.1.0+editable.dist-info/licenses/LICENSE" in namelist
+        assert "demo_package-0.1.0.dist-info/licenses/LICENSE" in namelist
 
         metadata = email.message_from_bytes(
-            zf.read("demo_package-0.1.0+editable.dist-info/METADATA")
+            zf.read("demo_package-0.1.0.dist-info/METADATA")
         )
         assert "editables" in metadata.get_all("Requires-Dist", [])
 
@@ -313,7 +313,7 @@ def test_build_editable_pep420(dist: Path, fixture_project: Path) -> None:
         assert "__editables_demo_package.py" not in namelist
 
         metadata = email.message_from_bytes(
-            zf.read("demo_package-0.1.0+editable.dist-info/METADATA")
+            zf.read("demo_package-0.1.0.dist-info/METADATA")
         )
         assert "editables" not in metadata.get_all("Requires-Dist", [])
 
@@ -324,7 +324,7 @@ def test_build_editable_pep420(dist: Path, fixture_project: Path) -> None:
 @pytest.mark.parametrize("name", ["demo-package"])
 def test_prepare_metadata_for_editable(dist: Path) -> None:
     dist_info = api.prepare_metadata_for_build_editable(dist.as_posix())
-    assert dist_info == "demo_package-0.1.0+editable.dist-info"
+    assert dist_info == "demo_package-0.1.0.dist-info"
     with (dist / dist_info / "METADATA").open("rb") as metadata:
         deps = email.message_from_binary_file(metadata).get_all("Requires-Dist")
     assert "editables" in deps

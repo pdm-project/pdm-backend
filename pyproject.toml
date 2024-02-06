@@ -67,19 +67,24 @@ requires = []
 build-backend = "pdm.backend.intree"
 backend-path = ["src"]
 
-[tool.black]
-line-length = 88
-exclude = '''
-/(
-    \.eggs
-  | \.git
-  | \.mypy_cache
-  | build
-  | dist
-  | __pypackages__
-  | pdm/backend/_vendor
-)/
-'''
+[tool.ruff]
+src = ["src"]
+target-version = "py38"
+exclude = ["tests/fixtures"]
+
+[tool.ruff.lint]
+extend-select = [
+  "I",    # isort
+  "C4",   # flake8-comprehensions
+  "W",    # pycodestyle
+  "YTT",  # flake8-2020
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.isort]
+known-first-party = ["pdm.backend"]
 
 [tool.vendoring]
 destination = "src/pdm/backend/_vendor/"
