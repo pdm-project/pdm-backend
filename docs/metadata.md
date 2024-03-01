@@ -52,6 +52,25 @@ source = "scm"
 tag_regex = '^(?:\D*)?(?P<version>([1-9][0-9]*!)?(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*((a|b|c|rc)(0|[1-9][0-9]*))?(\.post(0|[1-9][0-9]*))?(\.dev(0|[1-9][0-9]*))?$)$'
 ```
 
+To customize the format of the version string, specify the `version_format` option with a format function:
+
+```toml
+[tool.pdm.version]
+source = "scm"
+version_format = "mypackage.version:format_version"
+```
+
+```python
+# mypackage/version.py
+from pdm.backend.hooks.version import SCMVersion
+
+def format_version(version: SCMVersion) -> str:
+    if version.distance is None:
+        return str(version.version)
+    else:
+        return f"{version.version}.post{version.distance}"
+```
+
 ### Get with a specific function
 
 ```toml

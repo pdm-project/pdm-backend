@@ -399,6 +399,19 @@ def test_override_scm_version_via_env_var(
 
 
 @pytest.mark.usefixtures("scm")
+@pytest.mark.parametrize("name", ["demo-using-scm"])
+def test_build_wheel_custom_version_format(fixture_project: Path, dist) -> None:
+    builder = WheelBuilder(fixture_project)
+    builder.config.data.setdefault("tool", {}).setdefault("pdm", {})["version"] = {
+        "source": "scm",
+        "version_format": "version:format_version",
+    }
+    with builder:
+        wheel = builder.build(dist)
+        assert wheel.name == "foo-0.1.0rc0-py3-none-any.whl"
+
+
+@pytest.mark.usefixtures("scm")
 @pytest.mark.parametrize("getter", ["get_version:run", "get_version:run()"])
 @pytest.mark.parametrize("name", ["demo-using-scm"])
 def test_get_version_from_call(fixture_project: Path, getter: str, dist: Path) -> None:
