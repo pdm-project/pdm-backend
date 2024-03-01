@@ -75,14 +75,14 @@ class DynamicVersionBuildHook:
         write_to: str | None = None,
         write_template: str = "{}\n",
         tag_regex: str | None = None,
-        format_version: str | None = None,
+        version_format: str | None = None,
     ) -> str:
         if "PDM_BUILD_SCM_VERSION" in os.environ:
             version = os.environ["PDM_BUILD_SCM_VERSION"]
         else:
-            if format_version is not None:
+            if version_format is not None:
                 version_formatter, _ = evaluate_module_attribute(
-                    format_version, context.root
+                    version_format, context.root
                 )
             else:
                 version_formatter = None

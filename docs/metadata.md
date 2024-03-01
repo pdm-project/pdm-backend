@@ -52,12 +52,12 @@ source = "scm"
 tag_regex = '^(?:\D*)?(?P<version>([1-9][0-9]*!)?(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*((a|b|c|rc)(0|[1-9][0-9]*))?(\.post(0|[1-9][0-9]*))?(\.dev(0|[1-9][0-9]*))?$)$'
 ```
 
-To customize the format of the version string, specify the `format_version` option with a format function:
+To customize the format of the version string, specify the `version_format` option with a format function:
 
 ```toml
 [tool.pdm.version]
 source = "scm"
-format_version = "mypackage.version:format_version"
+version_format = "mypackage.version:format_version"
 ```
 
 ```python

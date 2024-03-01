@@ -404,7 +404,7 @@ def test_build_wheel_custom_version_format(fixture_project: Path, dist) -> None:
     builder = WheelBuilder(fixture_project)
     builder.config.data.setdefault("tool", {}).setdefault("pdm", {})["version"] = {
         "source": "scm",
-        "format_version": "version:format_version",
+        "version_format": "version:format_version",
     }
     with builder:
         wheel = builder.build(dist)
