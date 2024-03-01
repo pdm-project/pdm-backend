@@ -1,31 +1,15 @@
 from __future__ import annotations
 
-import ast
-import contextlib
-import functools
-import importlib
 import os
 import re
-import sys
 import warnings
 from pathlib import Path
-from typing import Any, Generator
 
 from pdm.backend.exceptions import ConfigError, PDMWarning, ValidationError
 from pdm.backend.hooks.base import Context
+from pdm.backend.hooks.version.scm import SCMVersion as SCMVersion
 from pdm.backend.hooks.version.scm import get_version_from_scm
-
-_attr_regex = re.compile(r"([\w.]+)\s*:\s*([\w.]+)\s*(\([^)]+\))?")
-
-
-@contextlib.contextmanager
-def patch_sys_path(path: str | Path) -> Generator[None, None, None]:
-    old_path = sys.path[:]
-    sys.path.insert(0, str(path))
-    try:
-        yield
-    finally:
-        sys.path[:] = old_path
+from pdm.backend.utils import evaluate_module_attribute
 
 
 class DynamicVersionBuildHook:
@@ -91,11 +75,20 @@ class DynamicVersionBuildHook:
         write_to: str | None = None,
         write_template: str = "{}\n",
         tag_regex: str | None = None,
+        format_version: str | None = None,
     ) -> str:
         if "PDM_BUILD_SCM_VERSION" in os.environ:
             version = os.environ["PDM_BUILD_SCM_VERSION"]
         else:
-            version = get_version_from_scm(context.root, tag_regex=tag_regex)
+            if format_version is not None:
+                version_formatter, _ = evaluate_module_attribute(
+                    format_version, context.root
+                )
+            else:
+                version_formatter = None
+            version = get_version_from_scm(
+                context.root, tag_regex=tag_regex, version_formatter=version_formatter
+            )
 
         self._write_version(context, version, write_to, write_template)
         return version
@@ -129,21 +122,7 @@ class DynamicVersionBuildHook:
         write_to: str | None = None,
         write_template: str = "{}\n",
     ) -> str:
-        matched = _attr_regex.match(getter)
-        if matched is None:
-            raise ConfigError(
-                "Invalid version getter, must be in the format of "
-                "`module:attribute`."
-            )
-        with patch_sys_path(context.root):
-            module = importlib.import_module(matched.group(1))
-            attrs = matched.group(2).split(".")
-            obj: Any = functools.reduce(getattr, attrs, module)
-            args_group = matched.group(3)
-            if args_group:
-                args = ast.literal_eval(args_group)
-            else:
-                args = ()
-            version = obj(*args)
+        version_getter, args = evaluate_module_attribute(getter, context.root)
+        version = version_getter(*args)
         self._write_version(context, version, write_to, write_template)
         return version

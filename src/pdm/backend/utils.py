@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import ast
+import contextlib
+import functools
 import importlib.util
 import os
 import re
@@ -11,12 +14,13 @@ import warnings
 from contextlib import contextmanager
 from fnmatch import fnmatchcase
 from pathlib import Path
-from typing import Callable, Generator, Iterable, Match
+from typing import Any, Callable, Generator, Iterable, Match
 
 from pdm.backend._vendor.packaging import tags
 from pdm.backend._vendor.packaging.markers import Marker
 from pdm.backend._vendor.packaging.requirements import Requirement
 from pdm.backend._vendor.packaging.version import InvalidVersion, Version
+from pdm.backend.exceptions import ConfigError
 from pdm.backend.macosx_platform import calculate_macosx_platform_tag
 
 
@@ -234,3 +238,46 @@ def normalize_file_permissions(st_mode: int) -> int:
         new_mode |= 0o111  # Executable: 644 -> 755
 
     return new_mode
+
+
+@contextlib.contextmanager
+def patch_sys_path(path: str | Path) -> Generator[None, None, None]:
+    old_path = sys.path[:]
+    sys.path.insert(0, str(path))
+    try:
+        yield
+    finally:
+        sys.path[:] = old_path
+
+
+_attr_regex = re.compile(r"([\w.]+):([\w.]+)\s*(\([^)]+\))?")
+
+
+def evaluate_module_attribute(
+    expression: str, context: Path | None = None
+) -> tuple[Any, tuple[Any, ...]]:
+    """Evaluate the value of an expression like '<module>:<attribute>'
+
+    Returns:
+        the object and the calling arguments if any
+    """
+    if context is None:
+        cm = contextlib.nullcontext()
+    else:
+        cm = patch_sys_path(context)  # type: ignore[assignment]
+
+    matched = _attr_regex.match(expression)
+    if matched is None:
+        raise ConfigError(
+            "Invalid expression, must be in the format of " "`module:attribute`."
+        )
+    with cm:
+        module = importlib.import_module(matched.group(1))
+        attrs = matched.group(2).split(".")
+        obj: Any = functools.reduce(getattr, attrs, module)
+        args_group = matched.group(3)
+        if args_group:
+            args = ast.literal_eval(args_group)
+        else:
+            args = ()
+        return obj, args

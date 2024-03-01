@@ -13,7 +13,7 @@ import warnings
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable, NamedTuple
+from typing import TYPE_CHECKING, Callable, Iterable, NamedTuple
 
 from pdm.backend._vendor.packaging.version import Version
 
@@ -60,7 +60,7 @@ def _subprocess_call(
     )
 
 
-class VersionInfo(NamedTuple):
+class SCMVersion(NamedTuple):
     version: Version
     distance: int | None
     dirty: bool
@@ -75,10 +75,10 @@ def meta(
     dirty: bool = False,
     node: str | None = None,
     branch: str | None = None,
-) -> VersionInfo:
+) -> SCMVersion:
     if isinstance(tag, str):
         tag = tag_to_version(config, tag)
-    return VersionInfo(tag, distance, dirty, node, branch)
+    return SCMVersion(tag, distance, dirty, node, branch)
 
 
 def _git_get_branch(root: StrPath) -> str | None:
@@ -172,7 +172,7 @@ def tags_to_versions(config: Config, tags: Iterable[str]) -> list[Version]:
     return [tag_to_version(config, tag) for tag in tags if tag]
 
 
-def git_parse_version(root: StrPath, config: Config) -> VersionInfo | None:
+def git_parse_version(root: StrPath, config: Config) -> SCMVersion | None:
     GIT = shutil.which("git")
     if not GIT:
         return None
@@ -226,7 +226,7 @@ def hg_get_graph_distance(root: StrPath, rev1: str, rev2: str = ".") -> int:
 
 def _hg_tagdist_normalize_tagcommit(
     config: Config, root: StrPath, tag: str, dist: int, node: str, branch: str
-) -> VersionInfo:
+) -> SCMVersion:
     dirty = node.endswith("+")
     node = "h" + node.strip("+")
 
@@ -278,7 +278,7 @@ def _bump_regex(version: str) -> str:
     return "%s%d" % (prefix, int(tail) + 1)
 
 
-def hg_parse_version(root: StrPath, config: Config) -> VersionInfo | None:
+def hg_parse_version(root: StrPath, config: Config) -> SCMVersion | None:
     if not shutil.which("hg"):
         return None
     _, output, _ = _subprocess_call("hg id -i -b -t", root)
@@ -309,7 +309,7 @@ def hg_parse_version(root: StrPath, config: Config) -> VersionInfo | None:
         return None  # unpacking failed, old hg
 
 
-def format_version(version: VersionInfo) -> str:
+def format_version(version: SCMVersion) -> str:
     if version.distance is None:
         main_version = str(version.version)
     else:
@@ -327,12 +327,19 @@ def format_version(version: VersionInfo) -> str:
     return main_version + local_version
 
 
-def get_version_from_scm(root: str | Path, *, tag_regex: str | None = None) -> str:
+def get_version_from_scm(
+    root: str | Path,
+    *,
+    tag_regex: str | None = None,
+    version_formatter: Callable[[SCMVersion], str] | None = None,
+) -> str:
     config = Config(tag_regex=re.compile(tag_regex) if tag_regex else DEFAULT_TAG_REGEX)
     for func in (git_parse_version, hg_parse_version):
         version = func(root, config)  # type: ignore
         if version:
-            return format_version(version)
+            if version_formatter is None:
+                version_formatter = format_version
+            return version_formatter(version)
     raise ValueError(
         "Cannot find the version from SCM or SCM isn't detected. \n"
         "You can still specify the version via environment variable "
