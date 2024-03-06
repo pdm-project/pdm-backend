@@ -2,6 +2,7 @@
 module to get version from tag of SCM repository.
 Adapted from setuptools-scm. Currently only support git and hg.
 """
+
 from __future__ import annotations
 
 import os
@@ -11,7 +12,7 @@ import shutil
 import subprocess
 import warnings
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Iterable, NamedTuple
 
@@ -323,7 +324,7 @@ def format_version(version: SCMVersion) -> str:
         clean_format = "+{node}"
         dirty_format = "+{node}.d{time:%Y%m%d}"
     fmt = dirty_format if version.dirty else clean_format
-    local_version = fmt.format(node=version.node, time=datetime.utcnow())
+    local_version = fmt.format(node=version.node, time=datetime.now(tz=timezone.utc))
     return main_version + local_version
 
 
