@@ -31,6 +31,8 @@ plugins:
         python:
           options:
             docstring_style: google
+  - "mkdocs-version-annotations":
+      version_added_admonition: "tip"
 
 nav:
   - Home: index.md

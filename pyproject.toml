@@ -32,36 +32,6 @@ Homepage = "https://github.com/pdm-project/pdm-backend"
 Repository = "https://github.com/pdm-project/pdm-backend"
 Documentation = "https://backend.pdm-project.org"
 
-[tool.pdm.version]
-source = "scm"
-
-[tool.pdm.build]
-includes = ["src"]
-package-dir = "src"
-source-includes = ["tests"]
-
-[tool.pdm.dev-dependencies]
-test = [
-    "pytest",
-    "pytest-cov",
-    "pytest-xdist",
-    "setuptools",
-]
-
-dev = [
-    "editables",
-    "vendoring; python_version ~= '3.8'",
-]
-docs = [
-    "mkdocs>=1.4.2",
-    "mkdocstrings[python]>=0.19.0",
-    "mkdocs-material>=8.5.10",
-]
-
-[tool.pdm.scripts]
-build = "python scripts/build.py"
-docs = "mkdocs serve"
-
 [build-system]
 requires = []
 build-backend = "pdm.backend.intree"
@@ -104,8 +74,33 @@ drop = [
     "**/*_test.py"
 ]
 
-[tool.vendoring.typing-stubs]
+[tool.pdm.version]
+source = "scm"
 
-[tool.vendoring.license.directories]
+[tool.pdm.build]
+includes = ["src"]
+package-dir = "src"
+source-includes = ["tests"]
 
-[tool.vendoring.license.fallback-urls]
+[tool.pdm.dev-dependencies]
+test = [
+    "pytest",
+    "pytest-cov",
+    "pytest-xdist",
+    "setuptools",
+]
+
+dev = [
+    "editables",
+    "vendoring; python_version ~= '3.8'",
+]
+docs = [
+    "mkdocs>=1.4.2",
+    "mkdocstrings[python]>=0.19.0",
+    "mkdocs-material>=8.5.10",
+    "mkdocs-version-annotations>=1.0.0",
+]
+
+[tool.pdm.scripts]
+build = "python scripts/build.py"
+docs = "mkdocs serve"

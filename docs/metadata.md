@@ -52,6 +52,8 @@ source = "scm"
 tag_regex = '^(?:\D*)?(?P<version>([1-9][0-9]*!)?(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*((a|b|c|rc)(0|[1-9][0-9]*))?(\.post(0|[1-9][0-9]*))?(\.dev(0|[1-9][0-9]*))?$)$'
 ```
 
++++ 2.2.0
+
 To customize the format of the version string, specify the `version_format` option with a format function:
 
 ```toml
@@ -85,7 +87,7 @@ You can also supply it with literal arguments:
 getter = "mypackage.version.get_version('dev')"
 ```
 
-## Writing dynamic version to file
+### Writing dynamic version to file
 
 You can instruct `pdm-backend` to write back the dynamic version to a file. It is supported for all sources but `file`.
 
