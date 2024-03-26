@@ -44,6 +44,15 @@ When building from a source tree where SCM is not available, you can use the env
 PDM_BUILD_SCM_VERSION=0.1.0 python -m build
 ```
 
++++ 2.2.0
+
+Alternatively, you can specify a default version in the configuration:
+
+```toml
+[tool.pdm.version]
+fallback_version = "0.0.0"
+```
+
 You can specify another regex pattern to match the SCM tag, in which a `version` group is required:
 
 ```toml

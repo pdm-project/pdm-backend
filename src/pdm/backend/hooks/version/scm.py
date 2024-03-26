@@ -333,7 +333,7 @@ def get_version_from_scm(
     *,
     tag_regex: str | None = None,
     version_formatter: Callable[[SCMVersion], str] | None = None,
-) -> str:
+) -> str | None:
     config = Config(tag_regex=re.compile(tag_regex) if tag_regex else DEFAULT_TAG_REGEX)
     for func in (git_parse_version, hg_parse_version):
         version = func(root, config)  # type: ignore
@@ -341,8 +341,4 @@ def get_version_from_scm(
             if version_formatter is None:
                 version_formatter = format_version
             return version_formatter(version)
-    raise ValueError(
-        "Cannot find the version from SCM or SCM isn't detected. \n"
-        "You can still specify the version via environment variable "
-        "`PDM_BUILD_SCM_VERSION`."
-    )
+    return None

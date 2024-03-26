@@ -76,6 +76,7 @@ class DynamicVersionBuildHook:
         write_template: str = "{}\n",
         tag_regex: str | None = None,
         version_format: str | None = None,
+        fallback_version: str | None = None,
     ) -> str:
         if "PDM_BUILD_SCM_VERSION" in os.environ:
             version = os.environ["PDM_BUILD_SCM_VERSION"]
@@ -89,6 +90,15 @@ class DynamicVersionBuildHook:
             version = get_version_from_scm(
                 context.root, tag_regex=tag_regex, version_formatter=version_formatter
             )
+            if version is None:
+                if fallback_version is not None:
+                    version = fallback_version
+                else:
+                    raise ConfigError(
+                        "Cannot find the version from SCM or SCM isn't detected. \n"
+                        "You can still specify the version via environment variable "
+                        "`PDM_BUILD_SCM_VERSION`, or specify `fallback_version` config."
+                    )
 
         self._write_version(context, version, write_to, write_template)
         return version
