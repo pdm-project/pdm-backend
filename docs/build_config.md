@@ -239,6 +239,26 @@ include = [{path = "headers/**/*.h", relative-to = "headers/"}]
 data = [{path = "share/**/*", relative-to = "."}]
 ```
 
+!!! warning
+    If you use [pyproject-build](https://github.com/pypa/build) to build your distributions,
+    note that its default behavior is to build the wheel from the contents of the sdist.
+    It means that if you don't include your data files to the sdist, they won't be included in the wheel.
+    To disable this default mode of pyproject-build, explicitely pass it the `-w`, `--wheel` flag.
+    But to be safe, and allow others to build your project with `pyproject-build` or `python -m build`,
+    you should [include your data files to the sdist](#include-or-exclude-files), for example with:
+
+    ```toml
+    [tool.pdm.build]
+    package-dir = "src"
+    source-includes = ["share"]
+
+    [tool.pdm.build.wheel-data]
+    data = [
+        {path = "share/**/*", relative-to = "."},
+    ]
+    ```
+    
+
 ## Local build hooks
 
 You can specify a custom script to be executed before the build process, which can be used to generate files or modify the metadata.
