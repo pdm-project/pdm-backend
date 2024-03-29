@@ -1,0 +1,18 @@
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[project]
+authors = [
+    {name = "Corporation, Inc.", email = "corporation@example.com"},
+    {name = "Example", email = "example@example.com"},
+]
+name = "demo-metadata-test"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+dependencies = []
+description = ""
+readme = "README.md"
+version = "3.2.1"
+
+[project.optional-dependencies]

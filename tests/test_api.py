@@ -1,6 +1,7 @@
 import email
 import os
 import sys
+import tarfile
 import zipfile
 from pathlib import Path
 
@@ -161,6 +162,27 @@ def test_build_explicit_package_dir(dist: Path) -> None:
 
     assert "my_package/__init__.py" in zip_names
     assert "my_package/data.json" in zip_names
+
+
+@pytest.mark.parametrize("name", ["demo-metadata-test"])
+def test_demo_metadata_test__sdist__pkg_info(
+    dist: Path, name: str, tmp_path: Path
+) -> None:
+    filename = api.build_sdist(dist.as_posix())
+    with tarfile.open(dist / filename) as archive:
+        archive.extractall(tmp_path)
+    pkg_info_path = next(tmp_path.rglob("PKG-INFO"))
+    parsed_pkg_info = email.message_from_bytes(pkg_info_path.read_bytes())
+    assert dict(parsed_pkg_info) == {
+        "Author-Email": '"Corporation, Inc." <corporation@example.com>, Example '
+        "<example@example.com>",
+        "Description-Content-Type": "text/markdown",
+        "License": "MIT",
+        "Metadata-Version": "2.1",
+        "Name": name,
+        "Requires-Python": ">=3.8",
+        "Version": "3.2.1",
+    }
 
 
 @pytest.mark.parametrize("name", ["demo-package"])
