@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import glob
 import os
+import shutil
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeVar
 
-from pdm.backend._vendor import tomli_w
+from pdm.backend._vendor import tomli_w  # noqa: F401
 from pdm.backend._vendor.pyproject_metadata import ConfigurationError, StandardMetadata
 from pdm.backend.exceptions import ConfigError, ValidationError
 from pdm.backend.structures import Table
@@ -79,9 +80,10 @@ class Config:
         return cls(root, data)
 
     def write_to(self, path: str | Path) -> None:
-        """Write the pyproject.toml file to the given path."""
-        with open(path, "wb") as fp:
-            tomli_w.dump(self.data, fp)
+        """Copy the original pyproject.toml file to the given path."""
+        original = self.root / "pyproject.toml"
+        with original.open("rb") as read, open(path, "wb") as write:
+            shutil.copyfileobj(read, write)
 
     def for_hook(self, name: str) -> dict[str, Any]:
         """Return the config data for the given hook."""
