@@ -1,7 +1,7 @@
 [build]
 publish = "site"
 command = """
-pip3 install -U mkdocs "mkdocstrings[python]" mkdocs-material
+pip3 install -U "markdown<3.6" mkdocs "mkdocstrings[python]" mkdocs-material mkdocs-version-annotations
 pip3 install .
 mkdocs build
 """
