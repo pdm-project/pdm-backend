@@ -2,10 +2,10 @@
 
 First off, thanks for taking the time to contribute! Contributions include but are not restricted to:
 
-- Reporting bugs
-- Contributing to code
-- Writing tests
-- Writing documents
+* Reporting bugs
+* Contributing to code
+* Writing tests
+* Writing documents
 
 The following is a set of guidelines for contributing.
 
@@ -29,9 +29,11 @@ this section.
    where `fork` is the remote name of the fork repository.
 
 **ProTips:**
+
 1. Don't modify code on the main branch, the main branch should always keep in track with origin/main.
 
    To update main branch to date:
+
    ```bash
    $ git pull origin main
    # In rare cases that your local main branch diverges from the remote main:
@@ -69,5 +71,5 @@ $ pre-commit install
 $ pre-commit run --all-files
 ```
 
-PDM uses `black` coding style and `isort` for sorting import statements, if you are not following them,
-the CI will fail and your Pull Request will not be merged.
+PDM uses `ruff` for code style and linting, if you are not following its
+suggestions, the CI will fail and your Pull Request will not be merged.
