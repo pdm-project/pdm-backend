@@ -4,6 +4,7 @@ import os
 import re
 import warnings
 from pathlib import Path
+from typing import Callable
 
 from pdm.backend.exceptions import ConfigError, PDMWarning, ValidationError
 from pdm.backend.hooks.base import Context
@@ -17,8 +18,6 @@ class DynamicVersionBuildHook:
 
     Currently supports `file` and `scm` sources.
     """
-
-    supported_sources = ("file", "scm", "call")
 
     def pdm_build_initialize(self, context: Context) -> None:
         version_config = (
@@ -42,17 +41,15 @@ class DynamicVersionBuildHook:
         source: str = version_config.get("source")
         if not source:
             raise ConfigError("tool.pdm.version.source is required")
-        if source not in self.supported_sources:
+        if source not in _SUPPORTED_SOURCES:
             warnings.warn(
                 f"Invalid version source {source}, must be one of "
-                f"{', '.join(self.supported_sources)}",
+                f"{', '.join(_SUPPORTED_SOURCES.keys())}",
                 PDMWarning,
             )
             return
         options = {k: v for k, v in version_config.items() if k != "source"}
-        metadata["version"] = getattr(self, f"resolve_version_from_{source}")(
-            context, **options
-        )
+        metadata["version"] = _SUPPORTED_SOURCES[source](self, context, **options)
         metadata["dynamic"].remove("version")
 
     def resolve_version_from_file(self, context: Context, path: str) -> str:
@@ -136,3 +133,10 @@ class DynamicVersionBuildHook:
         version = version_getter(*args)
         self._write_version(context, version, write_to, write_template)
         return version
+
+
+_SUPPORTED_SOURCES: dict[str, Callable[..., str]] = {
+    "file": DynamicVersionBuildHook.resolve_version_from_file,
+    "scm": DynamicVersionBuildHook.resolve_version_from_scm,
+    "call": DynamicVersionBuildHook.resolve_version_from_call,
+}
