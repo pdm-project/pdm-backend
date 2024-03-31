@@ -36,6 +36,27 @@ jobs:
         run: |
           python -m pip install -U pip pytest setuptools editables
           pip install .
+      - name: Install Mercurial
+        shell: bash
+        run: |
+          case "$RUNNER_OS" in
+            "Linux")
+              sudo apt install mercurial
+              ;;
+            "Windows")
+              choco install hg
+              ;;
+            "macOS")
+              brew install mercurial
+              ;;
+            "*")
+              echo "$RUNNER_OS not supported"
+              exit 1
+              ;;
+          esac
+
+          echo "[ui]" >> ~/.hgrc
+          echo "username = \"John Doe <ci@test.org>\"" >> ~/.hgrc
       - name: Run Tests
         run: |
           git config --global user.name "John Doe"

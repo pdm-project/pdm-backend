@@ -53,13 +53,24 @@ Alternatively, you can specify a default version in the configuration:
 fallback_version = "0.0.0"
 ```
 
-You can specify another regex pattern to match the SCM tag, in which a `version` group is required:
+To control which scm tags are used to generate the version, you can use two
+fields: `tag_filter` and `tag_regex`.
 
 ```toml
 [tool.pdm.version]
 source = "scm"
-tag_regex = '^(?:\D*)?(?P<version>([1-9][0-9]*!)?(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*((a|b|c|rc)(0|[1-9][0-9]*))?(\.post(0|[1-9][0-9]*))?(\.dev(0|[1-9][0-9]*))?$)$'
+tag_filter = "test/*"
+tag_regex = '^test/(?:\D*)?(?P<version>([1-9][0-9]*!)?(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*((a|b|c|rc)(0|[1-9][0-9]*))?(\.post(0|[1-9][0-9]*))?(\.dev(0|[1-9][0-9]*))?$)$'
 ```
+
+`tag_filter` filters the set of tags which are considered as candidates to
+capture your project's version. For `git` repositories, this field is a glob
+matched against the tag. For `hg` repositories, it is a regular expression used
+with the `latesttag` function.
+
+`tag_regex` configures how you extract a version from a tag. It is applied after
+`tag_filter` extracts candidate tags to extract the version from that tag. It is
+a python style regular expression.
 
 +++ 2.2.0
 
@@ -117,10 +128,10 @@ write_template = "__version__ = '{}'"
 ```
 
 !!! note
-    The path in `write_to` is relative to the root of the wheel file, hence the `package-dir` part should be stripped.
+The path in `write_to` is relative to the root of the wheel file, hence the `package-dir` part should be stripped.
 
 !!! note
-    `pdm-backend` will rewrite the whole file each time, so you can't have additional contents in that file.
+`pdm-backend` will rewrite the whole file each time, so you can't have additional contents in that file.
 
 ## Variables expansion
 
@@ -159,7 +170,7 @@ dependencies = [
 ```
 
 !!! note
-    The triple slashes `///` is required for the compatibility of Windows and POSIX systems.
+The triple slashes `///` is required for the compatibility of Windows and POSIX systems.
 
 !!! note
-    The relative paths will be expanded into the absolute paths on the local machine. So it makes no sense to include them in a distribution, since others who install the package will not have the same paths.
+The relative paths will be expanded into the absolute paths on the local machine. So it makes no sense to include them in a distribution, since others who install the package will not have the same paths.

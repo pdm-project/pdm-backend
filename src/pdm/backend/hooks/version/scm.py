@@ -14,7 +14,7 @@ import warnings
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Iterable, NamedTuple
+from typing import TYPE_CHECKING, Callable, NamedTuple
 
 from pdm.backend._vendor.packaging.version import Version
 
@@ -29,6 +29,7 @@ DEFAULT_TAG_REGEX = re.compile(
 @dataclass(frozen=True)
 class Config:
     tag_regex: re.Pattern
+    tag_filter: str | None
 
 
 def _subprocess_call(
@@ -164,28 +165,27 @@ def tag_to_version(config: Config, tag: str) -> Version:
     return Version(version)
 
 
-def tags_to_versions(config: Config, tags: Iterable[str]) -> list[Version]:
-    """
-    take tags that might be prefixed with a keyword and return only the version part
-    :param tags: an iterable of tags
-    :param config: optional configuration object
-    """
-    return [tag_to_version(config, tag) for tag in tags if tag]
-
-
 def git_parse_version(root: StrPath, config: Config) -> SCMVersion | None:
-    GIT = shutil.which("git")
-    if not GIT:
+    git = shutil.which("git")
+    if not git:
         return None
 
-    ret, repo, _ = _subprocess_call([GIT, "rev-parse", "--show-toplevel"], root)
+    ret, repo, _ = _subprocess_call([git, "rev-parse", "--show-toplevel"], root)
     if ret or not repo:
         return None
 
     if os.path.isfile(os.path.join(repo, ".git/shallow")):
         warnings.warn(f"{repo!r} is shallow and may cause errors")
-    describe_cmd = [GIT, "describe", "--dirty", "--tags", "--long", "--match", "*.*"]
-    ret, output, err = _subprocess_call(describe_cmd, repo)
+    describe_cmd = [
+        git,
+        "describe",
+        "--dirty",
+        "--tags",
+        "--long",
+        "--match",
+        config.tag_filter or "*.*",
+    ]
+    ret, output, _ = _subprocess_call(describe_cmd, repo)
     branch = _git_get_branch(repo)
 
     if ret:
@@ -201,54 +201,44 @@ def git_parse_version(root: StrPath, config: Config) -> SCMVersion | None:
         return meta(config, tag, number or None, dirty, node, branch)
 
 
-def get_latest_normalizable_tag(root: StrPath) -> str:
-    # Gets all tags containing a '.' from oldest to newest
-    cmd = [
-        "hg",
-        "log",
-        "-r",
-        "ancestors(.) and tag('re:\\.')",
-        "--template",
-        "{tags}\n",
-    ]
-    _, output, _ = _subprocess_call(cmd, root)
-    outlines = output.split()
-    if not outlines:
-        return "null"
-    tag = outlines[-1].split()[-1]
-    return tag
+def get_distance_revset(tag: str | None) -> str:
+    return (
+        "(branch(.)"  # look for revisions in this branch only
+        " and {rev}::."  # after the last tag
+        # ignore commits that only modify .hgtags and nothing else:
+        " and (merge() or file('re:^(?!\\.hgtags).*$'))"
+        " and not {rev})"  # ignore the tagged commit itself
+    ).format(rev=f"tag({tag!r})" if tag is not None else "null")
 
 
-def hg_get_graph_distance(root: StrPath, rev1: str, rev2: str = ".") -> int:
-    cmd = ["hg", "log", "-q", "-r", f"{rev1}::{rev2}"]
+def hg_get_graph_distance(root: StrPath, tag: str | None) -> int:
+    cmd = ["hg", "log", "-q", "-r", get_distance_revset(tag)]
     _, out, _ = _subprocess_call(cmd, root)
-    return len(out.strip().splitlines()) - 1
+    return len(out.strip().splitlines())
 
 
 def _hg_tagdist_normalize_tagcommit(
-    config: Config, root: StrPath, tag: str, dist: int, node: str, branch: str
+    config: Config,
+    root: StrPath,
+    tag: str,
+    dist: int,
+    node: str,
+    branch: str,
+    dirty: bool,
 ) -> SCMVersion:
-    dirty = node.endswith("+")
-    node = "h" + node.strip("+")
-
     # Detect changes since the specified tag
-    revset = (
-        "(branch(.)"  # look for revisions in this branch only
-        " and tag({tag!r})::."  # after the last tag
-        # ignore commits that only modify .hgtags and nothing else:
-        " and (merge() or file('re:^(?!\\.hgtags).*$'))"
-        " and not tag({tag!r}))"  # ignore the tagged commit itself
-    ).format(tag=tag)
     if tag != "0.0":
         _, commits, _ = _subprocess_call(
-            ["hg", "log", "-r", revset, "--template", "{node|short}"],
+            ["hg", "log", "-r", get_distance_revset(tag), "--template", "{node|short}"],
             root,
         )
     else:
         commits = "True"
 
     if commits or dirty:
-        return meta(config, tag, distance=dist, node=node, dirty=dirty, branch=branch)
+        return meta(
+            config, tag, distance=dist or None, node=node, dirty=dirty, branch=branch
+        )
     else:
         return meta(config, tag)
 
@@ -280,32 +270,40 @@ def _bump_regex(version: str) -> str:
 
 
 def hg_parse_version(root: StrPath, config: Config) -> SCMVersion | None:
-    if not shutil.which("hg"):
+    hg = shutil.which("hg")
+    if not hg:
         return None
-    _, output, _ = _subprocess_call("hg id -i -b -t", root)
-    identity_data = output.split()
-    if not identity_data:
-        return None
-    node = identity_data.pop(0)
-    branch = identity_data.pop(0)
-    if "tip" in identity_data:
-        # tip is not a real tag
-        identity_data.remove("tip")
-    tags = tags_to_versions(config, identity_data)
-    dirty = node[-1] == "+"
-    if tags:
-        return meta(config, tags[0], dirty=dirty, branch=branch)
 
-    if node.strip("+") == "0" * 12:
-        return meta(config, "0.0", dirty=dirty, branch=branch)
+    tag_filter = config.tag_filter or "\\."
+    _, output, _ = _subprocess_call(
+        [
+            hg,
+            "log",
+            "-r",
+            ".",
+            "--template",
+            f"{{latesttag(r're:{tag_filter}')}}-{{node|short}}-{{branch}}",
+        ],
+        root,
+    )
+    tag: str | None
+    tag, node, branch = output.rsplit("-", 2)
+    # If no tag exists passes the tag filter.
+    if tag == "null":
+        tag = None
 
+    _, id_output, _ = _subprocess_call(
+        [hg, "id", "-i"],
+        root,
+    )
+    dirty = id_output.endswith("+")
     try:
-        tag = get_latest_normalizable_tag(root)
         dist = hg_get_graph_distance(root, tag)
-        if tag == "null":
+        if tag is None:
             tag = "0.0"
-            dist = int(dist) + 1
-        return _hg_tagdist_normalize_tagcommit(config, root, tag, dist, node, branch)
+        return _hg_tagdist_normalize_tagcommit(
+            config, root, tag, dist, node, branch, dirty=dirty
+        )
     except ValueError:
         return None  # unpacking failed, old hg
 
@@ -332,11 +330,15 @@ def get_version_from_scm(
     root: str | Path,
     *,
     tag_regex: str | None = None,
+    tag_filter: str | None = None,
     version_formatter: Callable[[SCMVersion], str] | None = None,
 ) -> str | None:
-    config = Config(tag_regex=re.compile(tag_regex) if tag_regex else DEFAULT_TAG_REGEX)
+    config = Config(
+        tag_regex=re.compile(tag_regex) if tag_regex else DEFAULT_TAG_REGEX,
+        tag_filter=tag_filter,
+    )
     for func in (git_parse_version, hg_parse_version):
-        version = func(root, config)  # type: ignore
+        version = func(root, config)
         if version:
             if version_formatter is None:
                 version_formatter = format_version
