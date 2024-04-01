@@ -201,14 +201,17 @@ You can include additional files that are not normally installed inside site-pac
 
 ```toml
 [tool.pdm.build.wheel-data]
-# Install all files under scripts/ to the $prefix/bin directory
+# Install all files under scripts/ to the $prefix/bin directory.
 scripts = ["scripts/*"]
-# Install all files under include/ to the $prefix/include directory recursively, keeping the directory structure
-include = [{path = "include/**/*.h", relative-to = "include/"}]
+# Install all *.h files under headers/ (recursively) to the $prefix/include directory,
+# flattening all files into one directory:
+# headers/folder1/file1.h -> $prefix/include/file1.h
+# headers/folder2/file2.h -> $prefix/include/file2.h
+include = [{path = "headers/**/*.h"}]
 ```
 
-The key is the name of the install scheme, and should be one of `scripts`, `purelib`, `platlib`, `include`, `platinclude` and `data`.
-And each value should be a list of items, which may contain the following attributes:
+The keys are the name of the install scheme, and should be amongst `scripts`, `purelib`, `platlib`, `include`, `platinclude` and `data`.
+The values should be lists of items, which may contain the following attributes:
 
 - `path`: The path pattern to match the files to be included.
 - `relative-to`: if specified, the relative paths of the matched files will be calculated based on this directory,
@@ -217,6 +220,44 @@ otherwise the files will be flattened and installed directly under the scheme di
 In both attributes, you can use `${BUILD_DIR}` to refer to the build directory.
 
 These files will be packaged into the `{name}-{version}.data/{scheme}` directory in the wheel distribution.
+
+Advanced examples:
+
+```toml
+[tool.pdm.build.wheel-data]
+# Install all *.h files under headers/ (recursively) to the $prefix/include directory,
+# keeping the directory structure (thanks to relative-to).
+# We make the destination paths relative to "headers"
+# so that "headers" does not appear in the destination paths:
+# headers/folder1/file1.h -> $prefix/include/folder1/file1.h
+include = [{path = "headers/**/*.h", relative-to = "headers/"}]
+# Install all files under share/ (recursively) to the $prefix/data directory,
+# keeping the directory structure (thanks to relative-to).
+# We make the destination paths relative to "."
+# to preserve the exact same directory structure in the destination:
+# share/man/man1/project.1 -> $prefix/data/share/man/man1/project.1
+data = [{path = "share/**/*", relative-to = "."}]
+```
+
+!!! warning
+    If you use [pyproject-build](https://github.com/pypa/build) to build your distributions,
+    note that its default behavior is to build the wheel from the contents of the sdist.
+    It means that if you don't include your data files to the sdist, they won't be included in the wheel.
+    To disable this default mode of pyproject-build, explicitely pass it the `-w`, `--wheel` flag.
+    But to be safe, and allow others to build your project with `pyproject-build` or `python -m build`,
+    you should [include your data files to the sdist](#include-or-exclude-files), for example with:
+
+    ```toml
+    [tool.pdm.build]
+    package-dir = "src"
+    source-includes = ["share"]
+
+    [tool.pdm.build.wheel-data]
+    data = [
+        {path = "share/**/*", relative-to = "."},
+    ]
+    ```
+    
 
 ## Local build hooks
 
