@@ -1,4 +1,5 @@
 """A built-in hook to generate setup.py and run the script"""
+
 from __future__ import annotations
 
 import atexit
