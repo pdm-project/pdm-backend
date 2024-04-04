@@ -7,7 +7,16 @@ import sys
 import warnings
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Iterable, Literal, Mapping, TypeAlias, TypeVar, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Iterable,
+    Literal,
+    Mapping,
+    TypeAlias,
+    TypeVar,
+    cast,
+)
 
 from pdm.backend.config import Config
 from pdm.backend.exceptions import PDMWarning, ValidationError
