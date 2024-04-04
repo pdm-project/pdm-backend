@@ -13,7 +13,6 @@ from typing import (
     Iterable,
     Literal,
     Mapping,
-    TypeAlias,
     TypeVar,
     cast,
 )
@@ -90,7 +89,7 @@ def _find_top_packages(root: str) -> list[str]:
     return result
 
 
-Target: TypeAlias = Literal["sdist", "wheel", "editable"]
+Target = Literal["sdist", "wheel", "editable"]
 
 
 class Builder:
