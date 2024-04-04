@@ -83,6 +83,7 @@ def _find_top_packages(root: str) -> list[str]:
 
 Target: TypeAlias = Literal["sdist", "wheel", "editable"]
 
+
 class Builder:
     """Base class for building and distributing a package from given path."""
 
