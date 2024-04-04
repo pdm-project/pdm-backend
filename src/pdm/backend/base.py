@@ -7,7 +7,7 @@ import sys
 import warnings
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, TypeAlias, TypeVar, cast
 
 from pdm.backend.config import Config
 from pdm.backend.exceptions import PDMWarning, ValidationError
@@ -81,12 +81,14 @@ def _find_top_packages(root: str) -> list[str]:
     return result
 
 
+Target: TypeAlias = Literal["sdist", "wheel", "editable"]
+
 class Builder:
     """Base class for building and distributing a package from given path."""
 
     DEFAULT_EXCLUDES = [".pdm-build"]
 
-    target: str
+    target: Target
     hooks: list[BuildHookInterface] = [DynamicVersionBuildHook()]
 
     def __init__(
