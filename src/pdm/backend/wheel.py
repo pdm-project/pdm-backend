@@ -46,6 +46,10 @@ Root-Is-Purelib: {is_purelib}
 Tag: {tag}
 """
 
+BUILD_TAG_FORMAT = """\
+Build: {build}
+"""
+
 # Fix the date time for reproducible builds
 try:
     _env_date = time.gmtime(int(os.environ["SOURCE_DATE_EPOCH"]))[:6]
@@ -77,6 +81,7 @@ class WheelBuilder(Builder):
     ) -> None:
         super().__init__(location, config_settings)
         self.__tag: str | None = None
+        self.__build_tag: str | None = None
 
     def scheme_path(self, name: str, relative: str) -> str:
         if name not in SCHEME_NAMES:
@@ -156,6 +161,10 @@ class WheelBuilder(Builder):
                     records.append(self._add_file_to_zip(zf, rel_path, full_path))
                 self._write_record(zf, records)
 
+        name_version = self.name_version
+        if self.build_tag:
+            name_version = f"{name_version}-{self.build_tag}"
+
         target = context.dist_dir / f"{self.name_version}-{self.tag}.whl"
         if target.exists():
             target.unlink()
@@ -169,6 +178,12 @@ class WheelBuilder(Builder):
         return f"{name}-{version}"
 
     @property
+    def build_tag(self) -> str | None:
+        if not self.__build_tag:
+            self.__build_tag = self._get_build_tag()
+        return self.__build_tag
+
+    @property
     def dist_info_name(self) -> str:
         return f"{self.name_version}.dist-info"
 
@@ -177,6 +192,15 @@ class WheelBuilder(Builder):
         if self.__tag is None:
             self.__tag = self._get_tag()
         return self.__tag
+
+    def _get_build_tag(self) -> str | None:
+        build_tag: str | None = None
+        if not self.config_settings:
+            return build_tag
+        if "--build-tag" in self.config_settings:
+            build_tag = self.config_settings["--build-tag"]
+
+        return build_tag
 
     def _get_tag(self) -> str:
         impl, abi, platform = self._get_platform_tags()
@@ -276,11 +300,16 @@ class WheelBuilder(Builder):
         except ModuleNotFoundError:
             version = "0.0.0+local"
 
-        fp.write(
-            WHEEL_FILE_FORMAT.format(
-                is_purelib=str(is_purelib).lower(), tag=self.tag, version=version
-            )
+        wheel_metadata = WHEEL_FILE_FORMAT.format(
+            is_purelib=str(is_purelib).lower(), tag=self.tag, version=version
         )
+
+        if self.build_tag:
+            wheel_metadata = (
+                f"{wheel_metadata}\n{BUILD_TAG_FORMAT.format(build_tag=self.build_tag)}"
+            )
+
+        fp.write(wheel_metadata)
 
     def _write_entry_points(
         self, fp: IO[str], entry_points: dict[str, dict[str, str]]

@@ -68,6 +68,10 @@ class SdistBuilder(Builder):
         name = to_filename(canonicalize_name(context.config.metadata["name"]))
         dist_info = f"{name}-{version}"
 
+        if "--build-tag" in context.config_settings:
+            build_tag = context.config_settings["--build-tag"]
+            dist_info = f"{dist_info}-{build_tag}"
+
         target = context.dist_dir / f"{dist_info}.tar.gz"
 
         with tarfile.open(target, mode="w:gz", format=tarfile.PAX_FORMAT) as tar:
