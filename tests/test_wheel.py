@@ -19,12 +19,14 @@ def test_override_tags_in_wheel_filename(
     python_tag: str, py_limited_api: str, plat_name: str, tag: str
 ) -> None:
     project = FIXTURES / "projects/demo-cextension"
-    config_settings = {
-        "--python-tag": python_tag,
-        "--py-limited-api": py_limited_api,
-        "--plat-name": plat_name,
-    }
-    with wheel.WheelBuilder(project, config_settings=config_settings) as builder:
+    with wheel.WheelBuilder(
+        project,
+        config_settings={
+            "--python-tag": python_tag,
+            "--py-limited-api": py_limited_api,
+            "--plat-name": plat_name,
+        },
+    ) as builder:
         assert builder.tag == tag
 
 
