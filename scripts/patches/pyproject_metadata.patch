@@ -1,25 +1,30 @@
 diff --git a/src/pdm/backend/_vendor/pyproject_metadata/__init__.py b/src/pdm/backend/_vendor/pyproject_metadata/__init__.py
-index d792d06..0f6544b 100644
+index 796fa1e..e59e2d5 100644
 --- a/src/pdm/backend/_vendor/pyproject_metadata/__init__.py
 +++ b/src/pdm/backend/_vendor/pyproject_metadata/__init__.py
-@@ -13,10 +13,10 @@ import typing
- from collections.abc import Mapping
- from typing import Any
+@@ -16,13 +16,13 @@ if typing.TYPE_CHECKING:
+     from collections.abc import Mapping
+     from typing import Any
+ 
+-    from packaging.requirements import Requirement
++    from pdm.backend._vendor.packaging.requirements import Requirement
  
 -import packaging.markers
 -import packaging.requirements
 -import packaging.specifiers
+-import packaging.utils
 -import packaging.version
 +import pdm.backend._vendor.packaging.markers as pkg_markers
 +import pdm.backend._vendor.packaging.requirements as pkg_requirements
 +import pdm.backend._vendor.packaging.specifiers as pkg_specifiers
++import pdm.backend._vendor.packaging.utils as pkg_utils
 +import pdm.backend._vendor.packaging.version as pkg_version
  
  
- __version__ = '0.7.1'
-@@ -176,13 +176,13 @@ class Readme(typing.NamedTuple):
+ __version__ = '0.8.0rc1'
+@@ -169,11 +169,11 @@ class Readme(typing.NamedTuple):
  @dataclasses.dataclass
- class StandardMetadata():
+ class StandardMetadata:
      name: str
 -    version: packaging.version.Version | None = None
 +    version: pkg_version.Version | None = None
@@ -27,21 +32,30 @@ index d792d06..0f6544b 100644
      license: License | None = None
      readme: Readme | None = None
 -    requires_python: packaging.specifiers.SpecifierSet | None = None
--    dependencies: list[packaging.requirements.Requirement] = dataclasses.field(default_factory=list)
--    optional_dependencies: dict[str, list[packaging.requirements.Requirement]] = dataclasses.field(default_factory=dict)
 +    requires_python: pkg_specifiers.SpecifierSet | None = None
-+    dependencies: list[pkg_requirements.Requirement] = dataclasses.field(default_factory=list)
-+    optional_dependencies: dict[str, list[pkg_requirements.Requirement]] = dataclasses.field(default_factory=dict)
+     dependencies: list[Requirement] = dataclasses.field(default_factory=list)
+     optional_dependencies: dict[str, list[Requirement]] = dataclasses.field(default_factory=dict)
      entrypoints: dict[str, dict[str, str]] = dataclasses.field(default_factory=dict)
-     authors: list[tuple[str, str]] = dataclasses.field(default_factory=list)
-     maintainers: list[tuple[str, str]] = dataclasses.field(default_factory=list)
-@@ -228,11 +228,11 @@ class StandardMetadata():
+@@ -196,7 +196,7 @@ class StandardMetadata:
  
-         return cls(
-             name,
--            packaging.version.Version(version_string) if version_string else None,
-+            pkg_version.Version(version_string) if version_string else None,
-             fetcher.get_str('project.description'),
+     @property
+     def canonical_name(self) -> str:
+-        return packaging.utils.canonicalize_name(self.name)
++        return pkg_utils.canonicalize_name(self.name)
+ 
+     @classmethod
+     def from_pyproject(
+@@ -229,7 +229,7 @@ class StandardMetadata:
+ 
+         version_string = fetcher.get_str('project.version')
+         requires_python_string = fetcher.get_str('project.requires-python')
+-        version = packaging.version.Version(version_string) if version_string else None
++        version = pkg_version.Version(version_string) if version_string else None
+ 
+         if version is None and 'version' not in dynamic:
+             msg = 'Field "project.version" missing and "version" not specified in "project.dynamic"'
+@@ -251,7 +251,7 @@ class StandardMetadata:
+             description,
              cls._get_license(fetcher, project_dir),
              cls._get_readme(fetcher, project_dir),
 -            packaging.specifiers.SpecifierSet(requires_python_string) if requires_python_string else None,
@@ -49,71 +63,44 @@ index d792d06..0f6544b 100644
              cls._get_dependencies(fetcher),
              cls._get_optional_dependencies(fetcher),
              cls._get_entrypoints(fetcher),
-@@ -325,14 +325,14 @@ class StandardMetadata():
-     def _build_extra_req(
-         self,
-         extra: str,
--        requirement: packaging.requirements.Requirement,
--    ) -> packaging.requirements.Requirement:
-+        requirement: pkg_requirements.Requirement,
-+    ) -> pkg_requirements.Requirement:
-         if requirement.marker:  # append our extra to the marker
--            requirement.marker = packaging.markers.Marker(
-+            requirement.marker = pkg_markers.Marker(
-                 str(requirement.marker) + f' and extra == "{extra}"'
-             )
-         else:  # add our extra marker
+@@ -353,15 +353,15 @@ class StandardMetadata:
+         requirement = copy.copy(requirement)
+         if requirement.marker:
+             if 'or' in requirement.marker._markers:
+-                requirement.marker = packaging.markers.Marker(
++                requirement.marker = pkg_markers.Marker(
+                     f'({requirement.marker}) and extra == "{extra}"'
+                 )
+             else:
+-                requirement.marker = packaging.markers.Marker(
++                requirement.marker = pkg_markers.Marker(
+                     f'{requirement.marker} and extra == "{extra}"'
+                 )
+         else:
 -            requirement.marker = packaging.markers.Marker(f'extra == "{extra}"')
 +            requirement.marker = pkg_markers.Marker(f'extra == "{extra}"')
          return requirement
  
      @staticmethod
-@@ -435,17 +435,17 @@ class StandardMetadata():
-         return Readme(text, file, content_type)
- 
-     @staticmethod
--    def _get_dependencies(fetcher: DataFetcher) -> list[packaging.requirements.Requirement]:
-+    def _get_dependencies(fetcher: DataFetcher) -> list[pkg_requirements.Requirement]:
-         try:
-             requirement_strings = fetcher.get_list('project.dependencies')
-         except KeyError:
-             return []
- 
--        requirements: list[packaging.requirements.Requirement] = []
-+        requirements: list[pkg_requirements.Requirement] = []
+@@ -457,8 +457,8 @@ class StandardMetadata:
+         requirements: list[Requirement] = []
          for req in requirement_strings:
              try:
 -                requirements.append(packaging.requirements.Requirement(req))
 -            except packaging.requirements.InvalidRequirement as e:
 +                requirements.append(pkg_requirements.Requirement(req))
 +            except pkg_requirements.InvalidRequirement as e:
-                 raise ConfigurationError(
-                     'Field `project.dependencies` contains an invalid PEP 508 '
-                     f'requirement string `{req}` (`{str(e)}`)'
-@@ -453,13 +453,13 @@ class StandardMetadata():
-         return requirements
- 
-     @staticmethod
--    def _get_optional_dependencies(fetcher: DataFetcher) -> dict[str, list[packaging.requirements.Requirement]]:
-+    def _get_optional_dependencies(fetcher: DataFetcher) -> dict[str, list[pkg_requirements.Requirement]]:
-         try:
-             val = fetcher.get('project.optional-dependencies')
-         except KeyError:
-             return {}
- 
--        requirements_dict: collections.defaultdict[str, list[packaging.requirements.Requirement]] = collections.defaultdict(list)
-+        requirements_dict: collections.defaultdict[str, list[pkg_requirements.Requirement]] = collections.defaultdict(list)
-         if not isinstance(val, dict):
-             raise ConfigurationError(
-                 'Field `project.optional-dependencies` has an invalid type, expecting a '
-@@ -479,8 +479,8 @@ class StandardMetadata():
-                         f'expecting a PEP 508 requirement string (got `{req}`)'
+                 msg = (
+                     'Field "project.dependencies" contains an invalid PEP 508 '
+                     f'requirement string "{req}" ("{e}")'
+@@ -497,8 +497,8 @@ class StandardMetadata:
                      )
+                     raise ConfigurationError(msg)
                  try:
 -                    requirements_dict[extra].append(packaging.requirements.Requirement(req))
 -                except packaging.requirements.InvalidRequirement as e:
 +                    requirements_dict[extra].append(pkg_requirements.Requirement(req))
 +                except pkg_requirements.InvalidRequirement as e:
-                     raise ConfigurationError(
-                         f'Field `project.optional-dependencies.{extra}` contains '
-                         f'an invalid PEP 508 requirement string `{req}` (`{str(e)}`)'
+                     msg = (
+                         f'Field "project.optional-dependencies.{extra}" contains '
+                         f'an invalid PEP 508 requirement string "{req}" ("{e}")'
