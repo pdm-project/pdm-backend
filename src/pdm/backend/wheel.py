@@ -17,7 +17,7 @@ from typing import IO, Any, Iterable, Mapping, NamedTuple, cast
 
 from pdm.backend._vendor.packaging import tags
 from pdm.backend._vendor.packaging.specifiers import SpecifierSet
-from pdm.backend._vendor.packaging.utils import canonicalize_name
+from pdm.backend._vendor.packaging.utils import _build_tag_regex, canonicalize_name
 from pdm.backend.base import Builder
 from pdm.backend.hooks import Context
 from pdm.backend.hooks.setuptools import SetuptoolsBuildHook
@@ -46,9 +46,7 @@ Root-Is-Purelib: {is_purelib}
 Tag: {tag}
 """
 
-BUILD_TAG_FORMAT = """\
-Build: {build}
-"""
+BUILD_TAG_FORMAT = "Build: {build_number}"
 
 # Fix the date time for reproducible builds
 try:
@@ -81,7 +79,7 @@ class WheelBuilder(Builder):
     ) -> None:
         super().__init__(location, config_settings)
         self.__tag: str | None = None
-        self.__build_tag: str | None = None
+        self.__build_number: str | None = None
 
     def scheme_path(self, name: str, relative: str) -> str:
         if name not in SCHEME_NAMES:
@@ -162,10 +160,10 @@ class WheelBuilder(Builder):
                 self._write_record(zf, records)
 
         name_version = self.name_version
-        if self.build_tag:
-            name_version = f"{name_version}-{self.build_tag}"
+        if self.build_number:
+            name_version = f"{name_version}-{self.build_number}"
 
-        target = context.dist_dir / f"{self.name_version}-{self.tag}.whl"
+        target = context.dist_dir / f"{name_version}-{self.tag}.whl"
         if target.exists():
             target.unlink()
         shutil.move(temp_name, target)
@@ -178,10 +176,10 @@ class WheelBuilder(Builder):
         return f"{name}-{version}"
 
     @property
-    def build_tag(self) -> str | None:
-        if not self.__build_tag:
-            self.__build_tag = self._get_build_tag()
-        return self.__build_tag
+    def build_number(self) -> str | None:
+        if not self.__build_number:
+            self.__build_number = self._get_build_number()
+        return self.__build_number
 
     @property
     def dist_info_name(self) -> str:
@@ -193,14 +191,18 @@ class WheelBuilder(Builder):
             self.__tag = self._get_tag()
         return self.__tag
 
-    def _get_build_tag(self) -> str | None:
-        build_tag: str | None = None
+    def _get_build_number(self) -> str | None:
+        build_number: str | None = None
         if not self.config_settings:
-            return build_tag
-        if "--build-tag" in self.config_settings:
-            build_tag = self.config_settings["--build-tag"]
+            return build_number
+        if (cmd := "--build-number") in self.config_settings:
+            build_number = self.config_settings[cmd]
+            if not _build_tag_regex.match(build_number):
+                raise ValueError(
+                    f"Invalid build number: {build_number}, please refer to PEP 427"
+                )
 
-        return build_tag
+        return build_number
 
     def _get_tag(self) -> str:
         impl, abi, platform = self._get_platform_tags()
@@ -304,10 +306,8 @@ class WheelBuilder(Builder):
             is_purelib=str(is_purelib).lower(), tag=self.tag, version=version
         )
 
-        if self.build_tag:
-            wheel_metadata = (
-                f"{wheel_metadata}\n{BUILD_TAG_FORMAT.format(build_tag=self.build_tag)}"
-            )
+        if self.build_number:
+            wheel_metadata = f"{wheel_metadata}{BUILD_TAG_FORMAT.format(build_number=self.build_number)}"
 
         fp.write(wheel_metadata)
 

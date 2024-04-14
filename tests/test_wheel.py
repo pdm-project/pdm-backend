@@ -16,7 +16,7 @@ from tests import FIXTURES
     ],
 )
 def test_override_tags_in_wheel_filename(
-    python_tag: str, py_limited_api: str, plat_name: str, build_tag: str, tag: str
+    python_tag: str, py_limited_api: str, plat_name: str, tag: str
 ) -> None:
     project = FIXTURES / "projects/demo-cextension"
     config_settings = {

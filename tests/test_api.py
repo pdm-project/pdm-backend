@@ -42,6 +42,31 @@ def test_build_single_module(dist: Path) -> None:
     assert "demo_module-0.1.0.dist-info/licenses/LICENSE" in zip_names
 
 
+@pytest.mark.parametrize("name", ["demo-module"])
+def test_build_single_module_with_build_number(dist: Path) -> None:
+    wheel_name = api.build_wheel(
+        dist.as_posix(),
+        config_settings={"--build-number": (build_number := "20231241")},
+    )
+    assert wheel_name == f"demo_module-0.1.0-{build_number}-py3-none-any.whl"
+    with zipfile.ZipFile(dist / wheel_name) as zf:
+        wheel_metadata = email.message_from_bytes(
+            zf.read("demo_module-0.1.0.dist-info/WHEEL")
+        )
+        assert wheel_metadata["Build"] == build_number
+
+
+@pytest.mark.parametrize("name", ["demo-module"])
+def test_build_single_module_without_build_number(dist: Path) -> None:
+    wheel_name = api.build_wheel(dist.as_posix())
+    assert wheel_name == "demo_module-0.1.0-py3-none-any.whl"
+    with zipfile.ZipFile(dist / wheel_name) as zf:
+        wheel_metadata = email.message_from_bytes(
+            zf.read("demo_module-0.1.0.dist-info/WHEEL")
+        )
+        assert "Build" not in wheel_metadata
+
+
 @pytest.mark.parametrize("name", ["demo-package"])
 def test_build_package(dist: Path) -> None:
     wheel_name = api.build_wheel(dist.as_posix())
