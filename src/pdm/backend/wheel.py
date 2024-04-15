@@ -194,11 +194,11 @@ class WheelBuilder(Builder):
     def _get_build_number(self) -> str | None:
         if (cmd := "--build-number") not in self.config_settings:
             return None
-            build_number = self.config_settings[cmd]
-            if not _build_tag_regex.match(build_number):
-                raise ValueError(
-                    f"Invalid build number: {build_number}, please refer to PEP 427"
-                )
+        build_number = self.config_settings[cmd]
+        if not _build_tag_regex.match(build_number):
+            raise ValueError(
+                f"Invalid build number: {build_number}, please refer to PEP 427"
+            )
 
         return build_number
 
