@@ -44,9 +44,10 @@ def test_build_single_module(dist: Path) -> None:
 
 @pytest.mark.parametrize("name", ["demo-module"])
 def test_build_single_module_with_build_number(dist: Path) -> None:
+    build_number = "20231241"
     wheel_name = api.build_wheel(
         dist.as_posix(),
-        config_settings={"--build-number": (build_number := "20231241")},
+        config_settings={"--build-number": build_number},
     )
     assert wheel_name == f"demo_module-0.1.0-{build_number}-py3-none-any.whl"
     with zipfile.ZipFile(dist / wheel_name) as zf:

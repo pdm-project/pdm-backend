@@ -192,7 +192,8 @@ class WheelBuilder(Builder):
         return self.__tag
 
     def _get_build_number(self) -> str | None:
-        if (cmd := "--build-number") not in self.config_settings:
+        cmd = "--build-number"
+        if cmd not in self.config_settings:
             return None
         build_number = self.config_settings[cmd]
         if not _build_tag_regex.match(build_number):
