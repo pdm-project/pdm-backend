@@ -7,21 +7,17 @@ import importlib.util
 import os
 import re
 import sys
-import sysconfig
 import types
 import urllib.parse
-import warnings
 from contextlib import contextmanager
 from fnmatch import fnmatchcase
 from pathlib import Path
 from typing import Any, Callable, Generator, Iterable, Match
 
-from pdm.backend._vendor.packaging import tags
 from pdm.backend._vendor.packaging.markers import Marker
 from pdm.backend._vendor.packaging.requirements import Requirement
 from pdm.backend._vendor.packaging.version import InvalidVersion, Version
 from pdm.backend.exceptions import ConfigError
-from pdm.backend.macosx_platform import calculate_macosx_platform_tag
 
 
 def safe_version(version: str) -> str:
@@ -124,56 +120,6 @@ def normalize_path(filename: str | Path) -> str:
     """Normalize a file/dir name for comparison purposes"""
     filename = os.path.abspath(filename) if sys.platform == "cygwin" else filename
     return os.path.normcase(os.path.realpath(os.path.normpath(filename)))
-
-
-def get_platform(build_dir: str | Path) -> str:
-    """Return our platform name 'win32', 'linux_x86_64'"""
-    result = sysconfig.get_platform()
-    if result.startswith("macosx") and os.path.exists(build_dir):
-        result = calculate_macosx_platform_tag(build_dir, result)
-    if result in ("linux_x86_64", "linux-x86_64") and sys.maxsize == 2147483647:
-        # pip pull request #3497
-        result = "linux_i686"
-    return result
-
-
-def get_flag(
-    var: str, fallback: bool, expected: bool = True, warn: bool = True
-) -> bool:
-    """Use a fallback value for determining SOABI flags if the needed config
-    var is unset or unavailable."""
-    val = sysconfig.get_config_var(var)
-    if val is None:
-        if warn:
-            warnings.warn(
-                "Config variable '{}' is unset, Python ABI tag may "
-                "be incorrect".format(var),
-                RuntimeWarning,
-                2,
-            )
-        return fallback
-    return val == expected
-
-
-def get_abi_tag() -> str | None:
-    """Return the ABI tag based on SOABI (if available) or emulate SOABI
-    (CPython 2, PyPy)."""
-    soabi = sysconfig.get_config_var("SOABI")
-    impl = tags.interpreter_name()
-    is_cpython = impl == "cp"
-    if not soabi and impl in ("cp", "pp") and hasattr(sys, "maxunicode"):
-        d = ""
-        m = ""
-        u = ""
-        if get_flag("Py_DEBUG", hasattr(sys, "gettotalrefcount"), warn=is_cpython):
-            d = "d"
-        return f"{impl}{tags.interpreter_version()}{d}{m}{u}"
-    elif soabi and soabi.startswith("cpython-"):
-        return "cp" + soabi.split("-")[1]
-    elif soabi:
-        return soabi.replace(".", "_").replace("-", "_")
-    else:
-        return None
 
 
 def is_relative_path(target: Path, other: Path) -> bool:

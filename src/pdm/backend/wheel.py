@@ -7,7 +7,6 @@ import os
 import posixpath
 import shutil
 import stat
-import sysconfig
 import tempfile
 import time
 import zipfile
@@ -24,8 +23,6 @@ from pdm.backend.hooks import Context
 from pdm.backend.hooks.setuptools import SetuptoolsBuildHook
 from pdm.backend.structures import FileMap
 from pdm.backend.utils import (
-    get_abi_tag,
-    get_platform,
     normalize_file_permissions,
     safe_version,
     to_filename,
@@ -204,16 +201,18 @@ class WheelBuilder(Builder):
         impl, abi, platform = self._get_platform_tags()
         is_purelib = self.config.build_config.is_purelib
         if not is_purelib:
+            sys_tag = next(tags.sys_tags())
             if not platform:
-                platform = get_platform(self.location / "build")
+                platform = sys_tag.platform
             if not impl:
-                impl = tags.interpreter_name() + tags.interpreter_version()
+                impl = sys_tag.interpreter
             if not abi:
-                abi = str(get_abi_tag()).lower()
+                abi = sys_tag.abi
         else:
             if not platform:
                 platform = "any"
-            abi = "none"
+            if not abi:
+                abi = "none"
             if not impl:
                 requires_python = self.config.metadata.get("requires-python", "")
                 if SpecifierSet(requires_python).contains("2.7"):
@@ -223,11 +222,6 @@ class WheelBuilder(Builder):
 
         platform = platform.lower().replace("-", "_").replace(".", "_")  # type: ignore
         tag = (impl, abi, platform)
-        if not is_purelib:
-            supported_tags = [(t.interpreter, t.abi, platform) for t in tags.sys_tags()]
-            assert (
-                tag in supported_tags
-            ), f"would build wheel with unsupported tag {tag}, abi: {get_abi_tag()}, soapi: {sysconfig.get_config_var('SOABI')}"
         return "-".join(tag)  # type: ignore[arg-type]
 
     def _write_dist_info(self, parent: Path) -> Path:
