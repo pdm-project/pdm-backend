@@ -7,11 +7,11 @@ import os
 import posixpath
 import shutil
 import stat
-import sys
 import tempfile
 import time
 import zipfile
 from base64 import urlsafe_b64encode
+from importlib.metadata import version as get_version
 from pathlib import Path
 from typing import IO, Any, Iterable, Mapping, NamedTuple, cast
 
@@ -23,8 +23,6 @@ from pdm.backend.hooks import Context
 from pdm.backend.hooks.setuptools import SetuptoolsBuildHook
 from pdm.backend.structures import FileMap
 from pdm.backend.utils import (
-    get_abi_tag,
-    get_platform,
     normalize_file_permissions,
     safe_version,
     to_filename,
@@ -34,10 +32,6 @@ SCHEME_NAMES = frozenset(
     ["purelib", "platlib", "include", "platinclude", "scripts", "data"]
 )
 
-if sys.version_info < (3, 8):
-    from importlib_metadata import version as get_version
-else:
-    from importlib.metadata import version as get_version
 
 WHEEL_FILE_FORMAT = """\
 Wheel-Version: 1.0
@@ -207,16 +201,18 @@ class WheelBuilder(Builder):
         impl, abi, platform = self._get_platform_tags()
         is_purelib = self.config.build_config.is_purelib
         if not is_purelib:
+            sys_tag = next(tags.sys_tags())
             if not platform:
-                platform = get_platform(self.location / "build")
+                platform = sys_tag.platform
             if not impl:
-                impl = tags.interpreter_name() + tags.interpreter_version()
+                impl = sys_tag.interpreter
             if not abi:
-                abi = str(get_abi_tag()).lower()
+                abi = sys_tag.abi
         else:
             if not platform:
                 platform = "any"
-            abi = "none"
+            if not abi:
+                abi = "none"
             if not impl:
                 requires_python = self.config.metadata.get("requires-python", "")
                 if SpecifierSet(requires_python).contains("2.7"):
@@ -226,11 +222,6 @@ class WheelBuilder(Builder):
 
         platform = platform.lower().replace("-", "_").replace(".", "_")  # type: ignore
         tag = (impl, abi, platform)
-        if not is_purelib:
-            supported_tags = [(t.interpreter, t.abi, platform) for t in tags.sys_tags()]
-            assert (
-                tag in supported_tags
-            ), f"would build wheel with unsupported tag {tag}"
         return "-".join(tag)  # type: ignore[arg-type]
 
     def _write_dist_info(self, parent: Path) -> Path:
