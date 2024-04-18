@@ -7,6 +7,7 @@ import os
 import posixpath
 import shutil
 import stat
+import sysconfig
 import tempfile
 import time
 import zipfile
@@ -226,7 +227,7 @@ class WheelBuilder(Builder):
             supported_tags = [(t.interpreter, t.abi, platform) for t in tags.sys_tags()]
             assert (
                 tag in supported_tags
-            ), f"would build wheel with unsupported tag {tag}, allowed: {supported_tags}"
+            ), f"would build wheel with unsupported tag {tag}, abi: {get_abi_tag()}, soapi: {sysconfig.get_config_var('SOABI')}"
         return "-".join(tag)  # type: ignore[arg-type]
 
     def _write_dist_info(self, parent: Path) -> Path:
