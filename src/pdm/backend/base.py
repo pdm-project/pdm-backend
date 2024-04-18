@@ -11,12 +11,11 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Iterable,
+    Literal,
     Mapping,
     TypeVar,
     cast,
 )
-
-from typing_extensions import Literal
 
 from pdm.backend.config import Config
 from pdm.backend.exceptions import PDMWarning, ValidationError
