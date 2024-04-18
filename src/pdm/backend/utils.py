@@ -167,14 +167,6 @@ def get_abi_tag() -> str | None:
         u = ""
         if get_flag("Py_DEBUG", hasattr(sys, "gettotalrefcount"), warn=is_cpython):
             d = "d"
-        if sys.version_info < (3, 8) and get_flag(
-            "WITH_PYMALLOC", is_cpython, warn=is_cpython
-        ):
-            m = "m"
-        if sys.version_info < (3, 3) and get_flag(
-            "Py_UNICODE_SIZE", sys.maxunicode == 0x10FFFF, expected=4, warn=is_cpython
-        ):
-            u = "u"
         return f"{impl}{tags.interpreter_version()}{d}{m}{u}"
     elif soabi and soabi.startswith("cpython-"):
         return "cp" + soabi.split("-")[1]

@@ -7,11 +7,11 @@ import os
 import posixpath
 import shutil
 import stat
-import sys
 import tempfile
 import time
 import zipfile
 from base64 import urlsafe_b64encode
+from importlib.metadata import version as get_version
 from pathlib import Path
 from typing import IO, Any, Iterable, Mapping, NamedTuple, cast
 
@@ -34,10 +34,6 @@ SCHEME_NAMES = frozenset(
     ["purelib", "platlib", "include", "platinclude", "scripts", "data"]
 )
 
-if sys.version_info < (3, 8):
-    from importlib_metadata import version as get_version
-else:
-    from importlib.metadata import version as get_version
 
 WHEEL_FILE_FORMAT = """\
 Wheel-Version: 1.0
