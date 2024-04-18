@@ -9,7 +9,7 @@ from pdm.backend.config import Config
 if TYPE_CHECKING:
     from typing import Protocol
 
-    from pdm.backend.base import Builder
+    from pdm.backend.base import Builder, Target
 else:
     Protocol = object
 
@@ -44,7 +44,7 @@ class Context:
         return self.builder.location
 
     @property
-    def target(self) -> str:
+    def target(self) -> Target:
         """The target to build, one of 'sdist', 'wheel', 'editable'"""
         return self.builder.target
 
