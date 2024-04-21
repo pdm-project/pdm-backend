@@ -215,7 +215,10 @@ def evaluate_module_attribute(
         obj: Any = functools.reduce(getattr, attrs, module)
         args_group = matched.group(3)
         if args_group:
+            # make tuple
+            args_group = args_group.strip()[:-1] + ",)"
             args = ast.literal_eval(args_group)
+
         else:
             args = ()
         return obj, args
