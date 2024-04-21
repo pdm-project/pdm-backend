@@ -87,13 +87,13 @@ def format_version(version: SCMVersion) -> str:
 ```toml
 [tool.pdm.version]
 source = "call"
-getter = "mypackage.version.get_version"
+getter = "mypackage.version:get_version"
 ```
 
 You can also supply it with literal arguments:
 
 ```toml
-getter = "mypackage.version.get_version('dev')"
+getter = "mypackage.version:get_version('dev')"
 ```
 
 ### Writing dynamic version to file
