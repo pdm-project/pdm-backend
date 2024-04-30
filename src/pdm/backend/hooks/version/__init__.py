@@ -75,6 +75,7 @@ class DynamicVersionBuildHook:
         write_to: str | None = None,
         write_template: str = "{}\n",
         tag_regex: str | None = None,
+        tag_filter: str | None = None,
         version_format: str | None = None,
         fallback_version: str | None = None,
     ) -> str:
@@ -88,7 +89,10 @@ class DynamicVersionBuildHook:
             else:
                 version_formatter = None
             version = get_version_from_scm(
-                context.root, tag_regex=tag_regex, version_formatter=version_formatter
+                context.root,
+                tag_regex=tag_regex,
+                version_formatter=version_formatter,
+                tag_filter=tag_filter,
             )
             if version is None:
                 if fallback_version is not None:

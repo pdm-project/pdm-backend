@@ -107,7 +107,7 @@ def find_packages_iter(
 
 
 @contextmanager
-def cd(path: str) -> Generator[None, None, None]:
+def cd(path: str | Path) -> Generator[None, None, None]:
     _old_cwd = os.getcwd()
     os.chdir(path)
     try:
