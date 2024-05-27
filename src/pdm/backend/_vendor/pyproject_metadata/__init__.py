@@ -417,6 +417,8 @@ class StandardMetadata:
                 content_type = 'text/markdown'
             elif filename.endswith('.rst'):
                 content_type = 'text/x-rst'
+            elif filename.endswith(('.adoc', '.asc', '.asciidoc')):
+                content_type = 'text/asciidoc'
             else:
                 msg = f'Could not infer content type for readme file "{filename}"'
                 raise ConfigurationError(msg, key='project.readme')

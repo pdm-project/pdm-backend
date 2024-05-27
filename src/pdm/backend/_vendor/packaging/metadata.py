@@ -575,7 +575,7 @@ class _Validator(Generic[T]):
         return value
 
     def _process_description_content_type(self, value: str) -> str:
-        content_types = {"text/plain", "text/x-rst", "text/markdown"}
+        content_types = {"text/plain", "text/x-rst", "text/markdown", "text/asciidoc"}
         message = email.message.EmailMessage()
         message["content-type"] = value
 
