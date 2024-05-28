@@ -79,7 +79,7 @@ class DynamicVersionBuildHook:
         version_format: str | None = None,
         fallback_version: str | None = None,
     ) -> str:
-        if "PDM_BUILD_SCM_VERSION" in os.environ:
+        if os.environ.get("PDM_BUILD_SCM_VERSION"):
             version = os.environ["PDM_BUILD_SCM_VERSION"]
         else:
             if version_format is not None:
