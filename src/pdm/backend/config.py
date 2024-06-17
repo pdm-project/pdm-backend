@@ -118,7 +118,12 @@ class Config:
                     dir_name = include.rstrip("/\\")
                     temp = list(find_packages_iter(dir_name, src=package_dir or "."))
                     if os.path.isfile(os.path.join(dir_name, "__init__.py")):
-                        temp.insert(0, dir_name)
+                        temp.insert(
+                            0,
+                            os.path.relpath(dir_name, package_dir or None)
+                            .replace("\\", ".")
+                            .replace("/", "."),
+                        )
                     packages_set.update(temp)
                     includes.remove(include)
             packages[:] = list(packages_set)

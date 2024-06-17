@@ -145,7 +145,8 @@ def scm_dir() -> Iterable:
 @pytest.fixture
 def git(scm_dir: Path) -> GitScm:
     git = shutil.which("git")
-    assert git is not None, "Cannot find git in path"
+    if git is None:
+        pytest.skip("Cannot find git in path")
 
     scm = GitScm(Path(git), scm_dir)
 
@@ -155,7 +156,8 @@ def git(scm_dir: Path) -> GitScm:
 @pytest.fixture
 def hg(scm_dir: Path) -> HgScm:
     hg = shutil.which("hg")
-    assert hg is not None, "Cannot find hg in path"
+    if hg is None:
+        pytest.skip("Cannot find hg in path")
 
     scm = HgScm(Path(hg), scm_dir)
 
