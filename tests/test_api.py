@@ -296,7 +296,7 @@ def test_build_with_cextension_in_src(dist: Path) -> None:
 @pytest.mark.parametrize("name", ["demo-package"])
 def test_build_editable(dist: Path, fixture_project: Path) -> None:
     wheel_name = api.build_editable(dist.as_posix())
-    assert api.get_requires_for_build_editable() == ["editables"]
+    assert api.get_requires_for_build_editable() == []
     with zipfile.ZipFile(dist / wheel_name) as zf:
         namelist = zf.namelist()
         assert "demo_package.pth" in namelist

@@ -4,8 +4,7 @@ import os
 import warnings
 from pathlib import Path
 
-from editables import EditableProject
-
+from pdm.backend._vendor.editables import EditableProject
 from pdm.backend._vendor.packaging.utils import canonicalize_name
 from pdm.backend.exceptions import ConfigError, PDMWarning
 from pdm.backend.hooks.base import Context

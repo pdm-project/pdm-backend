@@ -77,7 +77,7 @@ def get_requires_for_build_editable(
     When C-extension build is needed, setuptools should be required, otherwise
     just return an empty list.
     """
-    return get_requires_for_build_wheel(config_settings) + ["editables"]
+    return get_requires_for_build_wheel(config_settings)
 
 
 def prepare_metadata_for_build_editable(
