@@ -152,14 +152,18 @@ def expand_vars(line: str, root: str) -> str:
 
 
 def import_module_at_path(
-    src_path: str | Path, module_name: str = "_local"
+    src_path: str | Path, module_name: str = "_local", context: Path | None = None
 ) -> types.ModuleType:
     """Import a module from a given path."""
     spec = importlib.util.spec_from_file_location(module_name, src_path)
     if spec is None:
         raise ValueError(f"Could not import module {module_name} from {src_path}")
+    if context is not None:
+        sys.path.insert(0, str(context.absolute()))
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)  # type: ignore
+    if context is not None:
+        sys.path.pop(0)
     return module
 
 

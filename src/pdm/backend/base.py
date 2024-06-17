@@ -134,7 +134,10 @@ class Builder:
         local_hook = self.config.build_config.custom_hook
         if local_hook is not None:
             yield cast(
-                BuildHookInterface, import_module_at_path(self.location / local_hook)
+                BuildHookInterface,
+                import_module_at_path(
+                    self.location / local_hook, context=self.location
+                ),
             )
 
     def call_hook(
