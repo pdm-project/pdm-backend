@@ -287,7 +287,10 @@ def hg_parse_version(root: StrPath, config: Config) -> SCMVersion | None:
         root,
     )
     tag: str | None
-    tag, node, branch = output.rsplit("-", 2)
+    try:
+        tag, node, branch = output.rsplit("-", 2)
+    except ValueError:
+        return None  # unpacking failed, unexpected hg repo
     # If no tag exists passes the tag filter.
     if tag == "null":
         tag = None
