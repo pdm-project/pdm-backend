@@ -21,8 +21,8 @@ theme:
   font:
     text: Open Sans
     code: Fira Code
-  logo: https://cdn.jsdelivr.net/gh/pdm-project/pdm@gh-pages/latest/assets/logo.svg
-  favicon: https://cdn.jsdelivr.net/gh/pdm-project/pdm@gh-pages/latest/assets/logo.svg
+  logo: https://cdn.jsdelivr.net/gh/pdm-project/pdm@main/docs/assets/logo.svg
+  favicon: https://cdn.jsdelivr.net/gh/pdm-project/pdm@main/docs/assets/logo.svg
 
 plugins:
   - search
