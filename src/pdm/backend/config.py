@@ -10,7 +10,7 @@ from pdm.backend._vendor import tomli_w
 from pdm.backend._vendor.pyproject_metadata import ConfigurationError, StandardMetadata
 from pdm.backend.exceptions import ConfigError, ValidationError
 from pdm.backend.structures import Table
-from pdm.backend.utils import find_packages_iter
+from pdm.backend.utils import find_packages_iter, is_relative_path
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -257,7 +257,7 @@ class BuildConfig(Table):
             self.root.joinpath("src").is_dir()
             and not self.includes
             # the first path part must not be a wildcard
-            or any(Path(p).is_relative_to("src") for p in self.includes)
+            or any(is_relative_path(Path(p), Path("src")) for p in self.includes)
             and "src" not in self.excludes
             and "src/" not in self.excludes
         ):
