@@ -252,11 +252,24 @@ class BuildConfig(Table):
         """Whether to run setuptools"""
         return self.get("run-setuptools", False)
 
+    def _get_default_package_dir(self) -> str:
+        if (
+            self.root.joinpath("src").is_dir()
+            and not self.includes
+            # the first path part must not be a wildcard
+            or any(Path(p).is_relative_to("src") for p in self.includes)
+            and "src" not in self.excludes
+            and "src/" not in self.excludes
+        ):
+            return "src"
+        return ""
+
     @property
     def package_dir(self) -> str:
         """A directory that will be used to looking for packages."""
-        default = "src" if self.root.joinpath("src").exists() else ""
-        return self.get("package-dir", default)
+        if "package-dir" in self:
+            return self["package-dir"]
+        return self._get_default_package_dir()
 
     @property
     def is_purelib(self) -> bool:
