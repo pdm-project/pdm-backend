@@ -42,14 +42,14 @@ class SdistBuilder(Builder):
     target = "sdist"
 
     def get_files(self, context: Context) -> Iterable[tuple[str, Path]]:
-        yield from super().get_files(context)
+        collected = dict(super().get_files(context))
         local_hook = self.config.build_config.custom_hook
         context.ensure_build_dir()
         context.config.write_to(context.build_dir / "pyproject.toml")
-        yield "pyproject.toml", context.build_dir / "pyproject.toml"
+        collected["pyproject.toml"] = context.build_dir / "pyproject.toml"
 
         additional_files: Iterable[str] = filter(
-            None,
+            lambda f: f is not None and f not in collected,
             (
                 local_hook,
                 self.config.metadata.readme_file,
@@ -59,7 +59,8 @@ class SdistBuilder(Builder):
         root = self.location
         for file in additional_files:
             if root.joinpath(file).exists():
-                yield file, root / file
+                collected[file] = root / file
+        return collected.items()
 
     def build_artifact(
         self, context: Context, files: Iterable[tuple[str, Path]]
