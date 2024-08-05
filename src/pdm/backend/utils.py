@@ -107,7 +107,7 @@ def find_packages_iter(
 
 
 @contextmanager
-def cd(path: str | Path) -> Generator[None, None, None]:
+def cd(path: str | Path) -> Generator[None]:
     _old_cwd = os.getcwd()
     os.chdir(path)
     try:
@@ -183,7 +183,7 @@ def normalize_file_permissions(st_mode: int) -> int:
 
 
 @contextlib.contextmanager
-def patch_sys_path(path: str | Path) -> Generator[None, None, None]:
+def patch_sys_path(path: str | Path) -> Generator[None]:
     old_path = sys.path[:]
     sys.path.insert(0, str(path))
     try:
