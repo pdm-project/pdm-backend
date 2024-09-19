@@ -155,7 +155,7 @@ class HgScm(Scm):
 
     @property
     def current_hash(self) -> str:
-        return self.run("id", "-i").strip("+")
+        return self.run("id", "-i").strip().rstrip("+")
 
 
 @pytest.fixture
