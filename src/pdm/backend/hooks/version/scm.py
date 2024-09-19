@@ -14,7 +14,7 @@ import warnings
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
 from pdm.backend._vendor.packaging.version import Version
 
@@ -311,7 +311,7 @@ def hg_parse_version(root: StrPath, config: Config) -> SCMVersion | None:
         return None  # unpacking failed, old hg
 
 
-def format_version(version: SCMVersion) -> str:
+def default_version_formatter(version: SCMVersion) -> str:
     if version.distance is None:
         main_version = str(version.version)
     else:
@@ -330,12 +330,8 @@ def format_version(version: SCMVersion) -> str:
 
 
 def get_version_from_scm(
-    root: str | Path,
-    *,
-    tag_regex: str | None = None,
-    tag_filter: str | None = None,
-    version_formatter: Callable[[SCMVersion], str] | None = None,
-) -> str | None:
+    root: str | Path, *, tag_regex: str | None = None, tag_filter: str | None = None
+) -> SCMVersion | None:
     config = Config(
         tag_regex=re.compile(tag_regex) if tag_regex else DEFAULT_TAG_REGEX,
         tag_filter=tag_filter,
@@ -343,7 +339,5 @@ def get_version_from_scm(
     for func in (git_parse_version, hg_parse_version):
         version = func(root, config)
         if version:
-            if version_formatter is None:
-                version_formatter = format_version
-            return version_formatter(version)
+            return version
     return None

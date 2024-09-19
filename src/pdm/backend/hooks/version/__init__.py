@@ -1,14 +1,19 @@
 from __future__ import annotations
 
+import inspect
 import os
 import re
 import warnings
 from pathlib import Path
+from typing import Callable
 
 from pdm.backend.exceptions import ConfigError, PDMWarning, ValidationError
 from pdm.backend.hooks.base import Context
 from pdm.backend.hooks.version.scm import SCMVersion as SCMVersion
-from pdm.backend.hooks.version.scm import get_version_from_scm
+from pdm.backend.hooks.version.scm import (
+    default_version_formatter,
+    get_version_from_scm,
+)
 from pdm.backend.utils import evaluate_module_attribute
 
 
@@ -82,19 +87,19 @@ class DynamicVersionBuildHook:
         if os.environ.get("PDM_BUILD_SCM_VERSION"):
             version = os.environ["PDM_BUILD_SCM_VERSION"]
         else:
+            version_formatter: (
+                Callable[[SCMVersion, Context], str] | Callable[[SCMVersion], str]
+            )
             if version_format is not None:
                 version_formatter, _ = evaluate_module_attribute(
                     version_format, context.root
                 )
             else:
-                version_formatter = None
-            version = get_version_from_scm(
-                context.root,
-                tag_regex=tag_regex,
-                version_formatter=version_formatter,
-                tag_filter=tag_filter,
+                version_formatter = default_version_formatter
+            scm_version = get_version_from_scm(
+                context.root, tag_regex=tag_regex, tag_filter=tag_filter
             )
-            if version is None:
+            if scm_version is None:
                 if fallback_version is not None:
                     version = fallback_version
                 else:
@@ -103,6 +108,12 @@ class DynamicVersionBuildHook:
                         "You can still specify the version via environment variable "
                         "`PDM_BUILD_SCM_VERSION`, or specify `fallback_version` config."
                     )
+            else:
+                params = inspect.signature(version_formatter).parameters
+                if len(params) > 1:
+                    version = version_formatter(scm_version, context)  # type: ignore[call-arg]
+                else:
+                    version = version_formatter(scm_version)  # type: ignore[call-arg]
 
         self._write_version(context, version, write_to, write_template)
         return version
