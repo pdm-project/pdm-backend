@@ -219,28 +219,15 @@ def hg_get_graph_distance(root: StrPath, tag: str | None) -> int:
 
 def _hg_tagdist_normalize_tagcommit(
     config: Config,
-    root: StrPath,
     tag: str,
     dist: int,
     node: str,
     branch: str,
     dirty: bool,
 ) -> SCMVersion:
-    # Detect changes since the specified tag
-    if tag != "0.0":
-        _, commits, _ = _subprocess_call(
-            ["hg", "log", "-r", get_distance_revset(tag), "--template", "{node|short}"],
-            root,
-        )
-    else:
-        commits = "True"
-
-    if commits or dirty:
-        return meta(
-            config, tag, distance=dist or None, node=node, dirty=dirty, branch=branch
-        )
-    else:
-        return meta(config, tag)
+    return meta(
+        config, tag, distance=dist or None, node=node, dirty=dirty, branch=branch
+    )
 
 
 def guess_next_version(tag_version: Version) -> str:
@@ -305,7 +292,7 @@ def hg_parse_version(root: StrPath, config: Config) -> SCMVersion | None:
         if tag is None:
             tag = "0.0"
         return _hg_tagdist_normalize_tagcommit(
-            config, root, tag, dist, node, branch, dirty=dirty
+            config, tag, dist, node, branch, dirty=dirty
         )
     except ValueError:
         return None  # unpacking failed, old hg
