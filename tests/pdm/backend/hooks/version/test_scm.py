@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 import shutil
 import subprocess
@@ -6,7 +8,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Union, cast
+from typing import cast
 
 import pytest
 
@@ -81,7 +83,7 @@ class Scm(ABC):
 
         self._init()
 
-    def run(self, *args: Union[str, Path]):
+    def run(self, *args: str | Path):
         result = subprocess.run(
             [self._cmd, *args],
             capture_output=True,
@@ -97,7 +99,7 @@ class Scm(ABC):
         ...
 
     @abstractmethod
-    def commit(self, commit_message: str, files: List[Path]):
+    def commit(self, commit_message: str, files: list[Path]):
         """Creates a commit
 
         Args:
@@ -128,7 +130,7 @@ class GitScm(Scm):
     def _init(self):
         self.run("init")
 
-    def commit(self, commit_message: str, files: List[Path]):
+    def commit(self, commit_message: str, files: list[Path]):
         self.run("add", *files)
         self.run("commit", "-m", commit_message)
 
@@ -144,7 +146,7 @@ class HgScm(Scm):
     def _init(self):
         self.run("init")
 
-    def commit(self, commit_message: str, files: List[Path]):
+    def commit(self, commit_message: str, files: list[Path]):
         self.run("add", *files)
         self.run("commit", "-m", commit_message, *files)
 
