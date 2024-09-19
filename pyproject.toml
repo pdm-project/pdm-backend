@@ -48,6 +48,8 @@ extend-select = [
   "C4",   # flake8-comprehensions
   "W",    # pycodestyle
   "YTT",  # flake8-2020
+  "UP",   # pyupgrade
+  "FA",   # flake8-annotations
 ]
 
 [tool.ruff.lint.mccabe]

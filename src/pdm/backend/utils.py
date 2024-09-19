@@ -9,7 +9,6 @@ import re
 import sys
 import types
 import urllib.parse
-from contextlib import contextmanager
 from fnmatch import fnmatchcase
 from pathlib import Path
 from typing import Any, Callable, Generator, Iterable, Match
@@ -104,16 +103,6 @@ def find_packages_iter(
             # Keep searching subdirectories, as there may be more packages
             # down there, even if the parent was excluded.
             dirs.append(dir)
-
-
-@contextmanager
-def cd(path: str | Path) -> Generator[None]:
-    _old_cwd = os.getcwd()
-    os.chdir(path)
-    try:
-        yield
-    finally:
-        os.chdir(_old_cwd)
 
 
 def normalize_path(filename: str | Path) -> str:

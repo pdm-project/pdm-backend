@@ -3,13 +3,6 @@ ci:
 
 exclude: ^src/pdm/backend/_vendor
 repos:
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.17.0
-    hooks:
-      - id: pyupgrade
-        args:
-          - --py38-plus
-
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: 'v0.6.3'
     hooks:

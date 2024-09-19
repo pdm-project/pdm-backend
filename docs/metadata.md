@@ -93,6 +93,10 @@ def format_version(version: SCMVersion) -> str:
         return f"{version.version}.post{version.distance}"
 ```
 
++++ 2.4.0
+
+    From 2.4.0, the `version_format` function **can** take `context` as the second argument.
+
 ### Get with a specific function
 
 ```toml

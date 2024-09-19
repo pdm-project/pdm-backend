@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 import shutil
 import subprocess
@@ -6,11 +8,16 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Union, cast
+from typing import cast
 
 import pytest
 
-from pdm.backend.hooks.version.scm import get_version_from_scm
+from pdm.backend._vendor.packaging.version import Version
+from pdm.backend.hooks.version.scm import (
+    SCMVersion,
+    default_version_formatter,
+    get_version_from_scm,
+)
 
 # Copied from https://semver.org/
 # fmt: off
@@ -41,6 +48,21 @@ def increment_patch(version: str) -> str:
     return "".join(result)
 
 
+def compare_version(
+    version: SCMVersion,
+    main_version: str,
+    distance: int | None = None,
+    dirty: bool = False,
+    node: str | None = None,
+) -> None:
+    assert (version.version, version.distance, version.dirty, version.node) == (
+        Version(main_version),
+        distance,
+        dirty,
+        node,
+    )
+
+
 class Scm(ABC):
     """Common interface for different source code management solutions"""
 
@@ -61,7 +83,7 @@ class Scm(ABC):
 
         self._init()
 
-    def run(self, *args: Union[str, Path]):
+    def run(self, *args: str | Path):
         result = subprocess.run(
             [self._cmd, *args],
             capture_output=True,
@@ -77,7 +99,7 @@ class Scm(ABC):
         ...
 
     @abstractmethod
-    def commit(self, commit_message: str, files: List[Path]):
+    def commit(self, commit_message: str, files: list[Path]):
         """Creates a commit
 
         Args:
@@ -108,7 +130,7 @@ class GitScm(Scm):
     def _init(self):
         self.run("init")
 
-    def commit(self, commit_message: str, files: List[Path]):
+    def commit(self, commit_message: str, files: list[Path]):
         self.run("add", *files)
         self.run("commit", "-m", commit_message)
 
@@ -124,7 +146,7 @@ class HgScm(Scm):
     def _init(self):
         self.run("init")
 
-    def commit(self, commit_message: str, files: List[Path]):
+    def commit(self, commit_message: str, files: list[Path]):
         self.run("add", *files)
         self.run("commit", "-m", commit_message, *files)
 
@@ -133,7 +155,7 @@ class HgScm(Scm):
 
     @property
     def current_hash(self) -> str:
-        return self.run("id", "-i").strip()
+        return self.run("id", "-i").strip().rstrip("+")
 
 
 @pytest.fixture
@@ -186,7 +208,7 @@ def test__get_version_from_scm__returns_tag_if_method_unspecified(
     version = get_version_from_scm(scm_dir)
 
     assert version is not None
-    assert version == expected_tag
+    compare_version(version, expected_tag, node=scm.current_hash)
 
 
 def test__get_version_from_scm__adds_details_if_project_is_dirty(
@@ -205,7 +227,7 @@ def test__get_version_from_scm__adds_details_if_project_is_dirty(
     version = get_version_from_scm(scm_dir)
 
     assert version is not None
-    assert version == f"{expected_tag}+d{datetime.now(timezone.utc).strftime('%Y%m%d')}"
+    compare_version(version, expected_tag, dirty=True, node=scm.current_hash)
 
 
 def test__get_version_from_scm__returns_version_if_tag_has_v(scm_dir: Path, scm: Scm):
@@ -215,7 +237,7 @@ def test__get_version_from_scm__returns_version_if_tag_has_v(scm_dir: Path, scm:
     version = get_version_from_scm(scm_dir)
 
     assert version is not None
-    assert version == expected_tag
+    compare_version(version, expected_tag, node=scm.current_hash)
 
 
 def test__get_version_from_scm__returns_default_if_tag_cannot_be_parsed(
@@ -226,7 +248,7 @@ def test__get_version_from_scm__returns_default_if_tag_cannot_be_parsed(
     version = get_version_from_scm(scm_dir)
 
     assert version is not None
-    assert version == f"0.1.dev1+{scm.current_hash}"
+    compare_version(version, "0.0", distance=1, node=scm.current_hash)
 
 
 def test__get_version_from_scm__tag_regex(scm_dir: Path, scm: Scm):
@@ -237,7 +259,7 @@ def test__get_version_from_scm__tag_regex(scm_dir: Path, scm: Scm):
     version = get_version_from_scm(scm_dir, tag_regex=tag_regex)
 
     assert version is not None
-    assert version == expected_version
+    compare_version(version, expected_version, node=scm.current_hash)
 
 
 @pytest.mark.parametrize("index", [0, 1])
@@ -254,7 +276,7 @@ def test__get_version_from_scm__selects_by_tag_filter_on_same_commit(
     )
 
     assert version is not None
-    assert version == expected_versions[index]
+    compare_version(version, expected_versions[index], node=scm.current_hash)
 
 
 @pytest.mark.parametrize("index", [0, 1])
@@ -280,6 +302,26 @@ def test__get_version_from_scm__selects_by_tag_filter_on_different_commits(
     )
 
     num_patches = len(expected_versions) - index
-    next_version = increment_patch(expected_versions[index])
-    assert version is not None
-    assert version == f"{next_version}.dev{num_patches}+{scm.current_hash}"
+    compare_version(
+        version, expected_versions[index], num_patches, node=scm.current_hash
+    )
+
+
+@pytest.mark.parametrize(
+    "distance,expected", [(None, "1.0.0"), (1, "1.0.1.dev1+g1234567")]
+)
+def test_default_version_formatter_distance(distance: int | None, expected: str):
+    version = SCMVersion(Version("1.0.0"), distance, False, "g1234567", branch="main")
+    assert default_version_formatter(version) == expected
+
+
+TODAY = datetime.now(timezone.utc).strftime("%Y%m%d")
+
+
+@pytest.mark.parametrize(
+    "distance,expected",
+    [(None, f"1.0.0+d{TODAY}"), (1, f"1.0.1.dev1+g1234567.d{TODAY}")],
+)
+def test_default_version_formatter_dirty(distance: int | None, expected: str):
+    version = SCMVersion(Version("1.0.0"), distance, True, "g1234567", branch="main")
+    assert default_version_formatter(version) == expected

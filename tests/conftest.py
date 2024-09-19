@@ -1,20 +1,18 @@
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Generator
 
 import pytest
 
-from pdm.backend import utils
 from tests import FIXTURES
 
 
 @pytest.fixture
-def fixture_project(tmp_path: Path, name: str) -> Generator[Path, None, None]:
+def fixture_project(tmp_path: Path, name: str, monkeypatch: pytest.MonkeyPatch) -> Path:
     project = FIXTURES / "projects" / name
     shutil.copytree(project, tmp_path / name)
-    with utils.cd(tmp_path / name):
-        yield tmp_path / name
+    monkeypatch.chdir(tmp_path / name)
+    return tmp_path / name
 
 
 @pytest.fixture
