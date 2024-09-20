@@ -161,12 +161,15 @@ class SetuptoolsBuildHook:
             )
 
         if meta.dependencies:
-            before.append(f"INSTALL_REQUIRES = {_format_list(meta.dependencies)}\n")
+            before.append(
+                f"INSTALL_REQUIRES = {_format_list([str(d) for d in meta.dependencies])}\n"
+            )
             extra.append("    'install_requires': INSTALL_REQUIRES,\n")
         if meta.optional_dependencies:
-            before.append(
-                f"EXTRAS_REQUIRE = {_format_dict_list(meta.optional_dependencies)}\n"
-            )
+            extras_require = {
+                k: [str(d) for d in v] for k, v in meta.optional_dependencies.items()
+            }
+            before.append(f"EXTRAS_REQUIRE = {_format_dict_list(extras_require)}\n")
             extra.append("    'extras_require': EXTRAS_REQUIRE,\n")
         if meta.requires_python is not None:
             extra.append(f"    'python_requires': '{meta.requires_python}',\n")
