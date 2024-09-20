@@ -3,6 +3,7 @@ from __future__ import annotations
 import glob
 import os
 import sys
+from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -41,28 +42,26 @@ class Config:
     """
 
     def __init__(self, root: Path, data: dict[str, Any]) -> None:
-        self.validate(data, root)
         self.root = root
         self.data = data
-        self.metadata = Metadata(data["project"])
-        self.build_config = BuildConfig(
-            root, data.setdefault("tool", {}).get("pdm", {}).get("build", {})
-        )
+        self.validate()
 
-    def to_coremetadata(self) -> str:
-        """Return the metadata as a Core Metadata string."""
-        metadata = StandardMetadata.from_pyproject(self.data, project_dir=self.root)
-        # Fix the name field to unnormalized form.
-        metadata.name = self.metadata["name"]
-        return str(metadata.as_rfc822())
-
-    @classmethod
-    def validate(cls, data: dict[str, Any], root: Path) -> None:
+    def validate(self) -> StandardMetadata:
         """Validate the pyproject.toml data."""
         try:
-            StandardMetadata.from_pyproject(data, project_dir=root)
+            return StandardMetadata.from_pyproject(self.data, project_dir=self.root)
         except ConfigurationError as e:
             raise ValidationError(e.args[0], e.key) from e
+
+    @property
+    def metadata(self) -> dict[str, Any]:
+        return self.data["project"]
+
+    @cached_property
+    def build_config(self) -> BuildConfig:
+        return BuildConfig(
+            self.root, self.data.setdefault("tool", {}).get("pdm", {}).get("build", {})
+        )
 
     @classmethod
     def from_pyproject(cls, root: str | Path) -> Config:
@@ -152,69 +151,6 @@ class Config:
             "package_data": package_data,
             "exclude_package_data": exclude_package_data,
         }
-
-
-class Metadata(Table):
-    """The project metadata table"""
-
-    @property
-    def readme_file(self) -> str | None:
-        """The readme file path, if not exists, returns None"""
-        readme = self.get("readme")
-        if not readme:
-            return None
-        if isinstance(readme, str):
-            return readme
-        if isinstance(readme, dict) and "file" in readme:
-            return readme["file"]
-        return None
-
-    @property
-    def license_files(self) -> dict[str, list[str]]:
-        """The license files configuration"""
-        subtable_files = None
-        if (
-            "license" in self
-            and isinstance(self["license"], dict)
-            and "files" in self["license"]
-        ):
-            subtable_files = self["license"]["files"]
-        if "license-files" not in self:
-            if subtable_files is not None:
-                return {"paths": [self["license"]["file"]]}
-            return {
-                "globs": [
-                    "LICENSES/*",
-                    "LICEN[CS]E*",
-                    "COPYING*",
-                    "NOTICE*",
-                    "AUTHORS*",
-                ]
-            }
-        if subtable_files is not None:
-            raise ValidationError(
-                "license-files",
-                "Can't specify both 'license.files' and 'license-files' fields",
-            )
-        rv = self["license-files"]
-        valid_keys = {"globs", "paths"} & set(rv)
-        if len(valid_keys) == 2:
-            raise ValidationError(
-                "license-files", "Can't specify both 'paths' and 'globs'"
-            )
-        if not valid_keys:
-            raise ValidationError("license-files", "Must specify 'paths' or 'globs'")
-        return rv
-
-    @property
-    def entry_points(self) -> dict[str, dict[str, str]]:
-        """The entry points mapping"""
-        entry_points: dict[str, dict[str, str]] = self.get("entry-points", {})
-        if "scripts" in self:
-            entry_points["console_scripts"] = self["scripts"]
-        if "gui-scripts" in self:
-            entry_points["gui_scripts"] = self["gui-scripts"]
-        return entry_points
 
 
 class BuildConfig(Table):

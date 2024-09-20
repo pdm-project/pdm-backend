@@ -43,21 +43,22 @@ class SdistBuilder(Builder):
 
     def get_files(self, context: Context) -> Iterable[tuple[str, Path]]:
         collected = dict(super().get_files(context))
-        local_hook = self.config.build_config.custom_hook
         context.ensure_build_dir()
         context.config.write_to(context.build_dir / "pyproject.toml")
         collected["pyproject.toml"] = context.build_dir / "pyproject.toml"
+        metadata = self.config.validate()
 
-        additional_files: Iterable[str] = filter(
-            lambda f: f is not None and f not in collected,
-            (
-                local_hook,
-                self.config.metadata.readme_file,
-                *self.find_license_files(),
-            ),
-        )
+        def gen_additional_files() -> Iterable[str]:
+            if local_hook := self.config.build_config.custom_hook:
+                yield local_hook
+            if metadata.readme and metadata.readme.file:
+                yield metadata.readme.file.relative_to(self.location).as_posix()
+            yield from self.find_license_files(metadata)
+
         root = self.location
-        for file in additional_files:
+        for file in gen_additional_files():
+            if file in collected:
+                continue
             if root.joinpath(file).exists():
                 collected[file] = root / file
         return collected.items()
@@ -82,7 +83,7 @@ class SdistBuilder(Builder):
                     tar.addfile(tar_info)
                 self._show_add_file(relpath, path)
 
-            pkg_info = self.config.to_coremetadata().encode("utf-8")
+            pkg_info = str(self.config.validate().as_rfc822()).encode("utf-8")
             tar_info = tarfile.TarInfo(pjoin(dist_info, "PKG-INFO"))
             tar_info.size = len(pkg_info)
             tar_info = clean_tarinfo(tar_info)

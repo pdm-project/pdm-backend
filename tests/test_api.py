@@ -203,8 +203,8 @@ def test_demo_metadata_test__sdist__pkg_info(
         "Author-Email": '"Corporation, Inc." <corporation@example.com>, Example '
         "<example@example.com>",
         "Description-Content-Type": "text/markdown",
-        "License": "MIT",
-        "Metadata-Version": "2.1",
+        "License-Expression": "MIT",
+        "Metadata-Version": "2.4",
         "Name": name,
         "Requires-Python": ">=3.8",
         "Version": "3.2.1",
@@ -537,3 +537,18 @@ def test_clean_not_called_if_config_settings_exist(
             assert not os.path.exists(test_file)
         else:
             assert os.path.exists(test_file)
+
+
+@pytest.mark.parametrize("name", ["demo-licenses"])
+def test_build_wheel_with_license_file(fixture_project: Path, dist: Path) -> None:
+    wheel_name = api.build_wheel(dist.as_posix())
+    sdist_name = api.build_sdist(dist.as_posix())
+
+    tar_names = get_tarball_names(dist / sdist_name)
+    licenses = ["LICENSE", "licenses/LICENSE.MIT.md", "licenses/LICENSE.APACHE.md"]
+    for file in licenses:
+        assert f"demo_module-0.1.0/{file}" in tar_names
+
+    zip_names = get_wheel_names(dist / wheel_name)
+    for file in licenses:
+        assert f"demo_module-0.1.0.dist-info/licenses/{file}" in zip_names

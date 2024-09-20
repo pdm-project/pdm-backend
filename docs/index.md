@@ -40,7 +40,7 @@ authors = [{name = "John Doe", email="me@johndoe.org"}]
 dependencies = ["requests"]
 requires-python = ">=3.8"
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 ```
 
 Then run the build command to build the project as wheel and sdist:

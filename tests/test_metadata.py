@@ -1,6 +1,6 @@
 import pytest
 
-from pdm.backend.config import Config, Metadata
+from pdm.backend.config import Config
 from tests import FIXTURES
 
 
@@ -73,17 +73,3 @@ def test_src_dir_containing_modules(monkeypatch: pytest.MonkeyPatch) -> None:
     assert paths["package_dir"] == {"": "src"}
     assert not paths["packages"]
     assert paths["py_modules"] == ["foo_module"]
-
-
-def test_default_license_files() -> None:
-    metadata = Metadata(
-        {
-            "description": "test package",
-            "name": "demo",
-            "version": "0.1.0",
-            "license": "MIT",
-        }
-    )
-    assert metadata.license_files == {
-        "globs": ["LICENSES/*", "LICEN[CS]E*", "COPYING*", "NOTICE*", "AUTHORS*"]
-    }

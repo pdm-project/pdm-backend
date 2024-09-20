@@ -9,7 +9,7 @@ authors = [
 ]
 name = "demo-metadata-test"
 requires-python = ">=3.8"
-license = {text = "MIT"}
+license = "MIT"
 dependencies = []
 description = ""
 readme = "README.md"

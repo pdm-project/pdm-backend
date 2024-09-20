@@ -228,8 +228,11 @@ class WheelBuilder(Builder):
         """write the dist-info directory and return the path to it"""
         dist_info = parent / self.dist_info_name
         dist_info.mkdir(0o700, exist_ok=True)
-        meta = self.config.metadata
-        entry_points = meta.entry_points
+        meta = self.config.validate()
+        entry_points = meta.entrypoints.copy()
+        entry_points.update(
+            {"console_scripts": meta.scripts, "gui_scripts": meta.gui_scripts}
+        )
         if entry_points:
             with _open_for_write(dist_info / "entry_points.txt") as f:
                 self._write_entry_points(f, entry_points)
@@ -238,9 +241,9 @@ class WheelBuilder(Builder):
             self._write_wheel_file(f, is_purelib=self.config.build_config.is_purelib)
 
         with _open_for_write(dist_info / "METADATA") as f:
-            f.write(self.config.to_coremetadata())
+            f.write(str(meta.as_rfc822()))
 
-        for file in self.find_license_files():
+        for file in self.find_license_files(meta):
             target = dist_info / "licenses" / file
             target.parent.mkdir(0o700, parents=True, exist_ok=True)
             shutil.copy2(self.location / file, target)
