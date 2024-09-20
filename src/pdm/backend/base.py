@@ -286,7 +286,8 @@ class Builder:
         ):  # no license files specified, find from default patterns for backward compatibility
             for pattern in ["LICEN[CS]E*", "COPYING*", "NOTICE*"]:
                 for path in self.location.glob(pattern):
-                    result.append(path.relative_to(self.location).as_posix())
+                    if path.is_file():
+                        result.append(path.relative_to(self.location).as_posix())
         return result
 
     def _get_include_and_exclude(self) -> tuple[set[str], set[str]]:
