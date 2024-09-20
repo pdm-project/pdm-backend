@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from pdm.backend.base import Builder, is_same_or_descendant_path
+from pdm.backend.exceptions import ValidationError
 from pdm.backend.sdist import SdistBuilder
 from pdm.backend.wheel import WheelBuilder
 from tests import FIXTURES
@@ -104,42 +105,46 @@ def test_merge_includes_and_excludes(
         assert (data_b in include_files) == data_b_exist
 
 
-def test_license_file_globs_no_matching() -> None:
-    builder = WheelBuilder(FIXTURES / "projects/demo-no-license")
+def test_license_file_matching() -> None:
+    builder = WheelBuilder(FIXTURES / "projects/demo-licenses")
+    builder.config.metadata["license-files"] = ["LICENSE"]
     with builder:
-        with pytest.warns(UserWarning) as warns:
-            license_files = builder.find_license_files()
+        license_files = builder.find_license_files(builder.config.validate())
+    assert license_files == ["LICENSE"]
 
-    assert not license_files
-    assert len(warns) == 1
-    assert str(warns.pop(UserWarning).message).startswith(
-        "No license files are matched with glob patterns"
-    )
+
+def test_license_file_glob_matching() -> None:
+    builder = WheelBuilder(FIXTURES / "projects/demo-licenses")
+    with builder:
+        license_files = sorted(builder.find_license_files(builder.config.validate()))
+    assert license_files == [
+        "LICENSE",
+        "licenses/LICENSE.APACHE.md",
+        "licenses/LICENSE.MIT.md",
+    ]
+
+
+def test_default_license_files() -> None:
+    builder = WheelBuilder(FIXTURES / "projects/demo-licenses")
+    del builder.config.metadata["license-files"]
+    with builder:
+        license_files = builder.find_license_files(builder.config.validate())
+    assert license_files == ["LICENSE"]
 
 
 def test_license_file_paths_no_matching() -> None:
-    builder = WheelBuilder(FIXTURES / "projects/demo-no-license")
-    builder.config.metadata["license-files"] = {"paths": ["LICENSE"]}
-    with builder:
-        with pytest.raises(ValueError, match="License files not found"):
-            builder.find_license_files()
+    builder = WheelBuilder(FIXTURES / "projects/demo-licenses")
+    builder.config.metadata["license-files"] = ["LICENSE.md"]
+    with pytest.raises(ValidationError, match=".*must match at least one file"):
+        builder.config.validate()
 
 
-@pytest.mark.parametrize("key", ["paths", "globs"])
-def test_license_file_explicit_empty(recwarn, key) -> None:
-    builder = WheelBuilder(FIXTURES / "projects/demo-no-license")
-    builder.config.metadata["license-files"] = {key: []}
+def test_license_file_explicit_empty() -> None:
+    builder = WheelBuilder(FIXTURES / "projects/demo-licenses")
+    builder.config.metadata["license-files"] = []
     with builder:
-        license_files = builder.find_license_files()
+        license_files = list(builder.find_license_files(builder.config.validate()))
     assert not license_files
-    assert len(recwarn) == 0
-
-
-def test_reuse_spec_licenses_dir() -> None:
-    builder = WheelBuilder(FIXTURES / "projects/demo-reuse-spec")
-    with builder:
-        license_files = builder.find_license_files()
-    assert license_files == ["LICENSES/MPL-2.0.txt"]
 
 
 def test_collect_build_files_with_src_layout(tmp_path) -> None:

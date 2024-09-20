@@ -8,7 +8,7 @@ authors = [
 ]
 dynamic = ["version"]
 requires-python = ">=3.5"
-license = {text = "MPL-2.0"}
+license = "MPL-2.0"
 dependencies = []
 description = ""
 name = "demo-module"

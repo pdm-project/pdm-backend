@@ -4,7 +4,6 @@ import glob
 import os
 import shutil
 import sys
-import warnings
 from fnmatch import fnmatch
 from pathlib import Path
 from typing import (
@@ -17,8 +16,8 @@ from typing import (
     cast,
 )
 
+from pdm.backend._vendor.pyproject_metadata import StandardMetadata
 from pdm.backend.config import Config
-from pdm.backend.exceptions import PDMWarning, ValidationError
 from pdm.backend.hooks import BuildHookInterface, Context
 from pdm.backend.hooks.version import DynamicVersionBuildHook
 from pdm.backend.structures import FileMap
@@ -275,34 +274,20 @@ class Builder:
                 files[rel_path] = p
         return files
 
-    def find_license_files(self) -> list[str]:
-        """Return a list of license files from the PEP 639 metadata."""
-        root = self.location
-        license_files = self.config.metadata.license_files
-        if "paths" in license_files:
-            invalid_paths = [
-                p for p in license_files["paths"] if not (root / p).is_file()
-            ]
-            if invalid_paths:
-                raise ValidationError(
-                    "license-files", f"License files not found: {invalid_paths}"
-                )
-            return license_files["paths"]
-        else:
-            paths = [
-                p.relative_to(root).as_posix()
-                for pattern in license_files["globs"]
-                for p in root.glob(pattern)
-                if (root / p).is_file()
-            ]
-            if license_files["globs"] and not paths:
-                warnings.warn(
-                    f"No license files are matched with glob patterns "
-                    f"{license_files['globs']}.",
-                    PDMWarning,
-                    stacklevel=2,
-                )
-            return paths
+    def find_license_files(self, metadata: StandardMetadata) -> list[str]:
+        result: list[str] = []
+        if file := getattr(metadata.license, "file", None):
+            result.append(file.relative_to(self.location).as_posix())
+        if metadata.license_files:
+            for file in metadata.license_files:
+                result.append(file.as_posix())
+        if (
+            not result and metadata.license_files is None
+        ):  # no license files specified, find from default patterns for backward compatibility
+            for pattern in ["LICEN[CS]E*", "COPYING*", "NOTICE*"]:
+                for path in self.location.glob(pattern):
+                    result.append(path.relative_to(self.location).as_posix())
+        return result
 
     def _get_include_and_exclude(self) -> tuple[set[str], set[str]]:
         includes = set()

@@ -137,7 +137,7 @@ pdm-build-mypyc
     version = "0.1.0"
     description = "A pdm build hook to compile Python code with mypyc"
     authors = [{name = "...", email = "..."}]
-    license = {text = "MIT"}
+    license = "MIT"
     readme = "README.md"
 
     [project.entry-points."pdm.build.hook"]
@@ -155,7 +155,6 @@ pdm-build-mypyc
             context.ensure_build_dir()
             mypyc_build(context.build_dir)
     ```
-
 
 The plugin must be distributed with an entry point under `pdm.build.hook` group. The entry point value can be any of the following:
 

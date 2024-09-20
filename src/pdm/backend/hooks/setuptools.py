@@ -127,12 +127,12 @@ class SetuptoolsBuildHook:
 
     def format_setup_py(self, context: Context) -> str:
         before, extra, after = [], [], []
-        meta = context.config.metadata
+        meta = context.config.validate()
         kwargs = {
-            "name": meta["name"],
-            "version": meta.get("version", "0.0.0"),
-            "description": meta.get("description", "UNKNOWN"),
-            "url": (meta.get("project-urls", {})).get("homepage", ""),
+            "name": meta.name,
+            "version": str(meta.version or "0.0.0"),
+            "description": meta.description or "UNKNOWN",
+            "url": meta.urls.get("homepage", ""),
         }
 
         # Run the pdm_build_update_setup_kwargs hook to update the kwargs
@@ -160,19 +160,20 @@ class SetuptoolsBuildHook:
                 )
             )
 
-        if meta.get("dependencies"):
-            before.append(f"INSTALL_REQUIRES = {_format_list(meta['dependencies'])}\n")
+        if meta.dependencies:
+            before.append(f"INSTALL_REQUIRES = {_format_list(meta.dependencies)}\n")
             extra.append("    'install_requires': INSTALL_REQUIRES,\n")
-        if meta.get("optional-dependencies"):
+        if meta.optional_dependencies:
             before.append(
-                "EXTRAS_REQUIRE = {}\n".format(
-                    _format_dict_list(meta["optional-dependencies"])
-                )
+                f"EXTRAS_REQUIRE = {_format_dict_list(meta.optional_dependencies)}\n"
             )
             extra.append("    'extras_require': EXTRAS_REQUIRE,\n")
-        if meta.get("requires-python"):
-            extra.append(f"    'python_requires': {meta['requires-python']!r},\n")
-        entry_points = meta.entry_points
+        if meta.requires_python is not None:
+            extra.append(f"    'python_requires': '{meta.requires_python}',\n")
+        entry_points = meta.entrypoints.copy()
+        entry_points.update(
+            {"console_scripts": meta.scripts, "gui_scripts": meta.gui_scripts}
+        )
         if entry_points:
             entry_points_list = {
                 group: [f"{k} = {v}" for k, v in values.items()]
