@@ -27,39 +27,74 @@ if typing.TYPE_CHECKING:
     else:
         from typing import Self
 
-import pdm.backend._vendor.packaging.markers as pkg_markers
-import pdm.backend._vendor.packaging.requirements as pkg_requirements
-import pdm.backend._vendor.packaging.specifiers as pkg_specifiers
-import pdm.backend._vendor.packaging.utils as pkg_utils
-import pdm.backend._vendor.packaging.version as pkg_version
+import pdm.backend._vendor.packaging.markers as pkg_markers 
+import pdm.backend._vendor.packaging.requirements as pkg_requirements 
+import pdm.backend._vendor.packaging.specifiers as pkg_specifiers 
+import pdm.backend._vendor.packaging.utils as pkg_utils 
+import pdm.backend._vendor.packaging.version as pkg_version 
 
 
-__version__ = '0.9.0b3'
+__version__ = '0.9.0b4'
 
 KNOWN_METADATA_VERSIONS = {'2.1', '2.2', '2.3', '2.4'}
 PRE_SPDX_METADATA_VERSIONS = {'2.1', '2.2', '2.3'}
 
+PROJECT_TO_METADATA = {
+    'authors': frozenset(['Author', 'Author-Email']),
+    'classifiers': frozenset(['Classifier']),
+    'dependencies': frozenset(['Requires-Dist']),
+    'description': frozenset(['Summary']),
+    'dynamic': frozenset(),
+    'entry-points': frozenset(),
+    'gui-scripts': frozenset(),
+    'keywords': frozenset(['Keywords']),
+    'license': frozenset(['License', 'License-Expression']),
+    'license-files': frozenset(['License-File']),
+    'maintainers': frozenset(['Maintainer', 'Maintainer-Email']),
+    'name': frozenset(['Name']),
+    'optional-dependencies': frozenset(['Provides-Extra', 'Requires-Dist']),
+    'readme': frozenset(['Description', 'Description-Content-Type']),
+    'requires-python': frozenset(['Requires-Python']),
+    'scripts': frozenset(),
+    'urls': frozenset(['Project-URL']),
+    'version': frozenset(['Version']),
+}
+
 KNOWN_TOPLEVEL_FIELDS = {'build-system', 'project', 'tool'}
 KNOWN_BUILD_SYSTEM_FIELDS = {'backend-path', 'build-backend', 'requires'}
-KNOWN_PROJECT_FIELDS = {
-    'authors',
-    'classifiers',
-    'dependencies',
+KNOWN_PROJECT_FIELDS = set(PROJECT_TO_METADATA)
+
+KNOWN_METADATA_FIELDS = {
+    'author',
+    'author-email',
+    'classifier',
     'description',
-    'dynamic',
-    'entry-points',
-    'gui-scripts',
+    'description-content-type',
+    'download-urL',  # Not specified via pyproject standards
+    'dynamic',  # Can't be in dynamic
+    'home-page',  # Not specified via pyproject standards
     'keywords',
     'license',
-    'license-files',
-    'maintainers',
-    'name',
-    'optional-dependencies',
-    'readme',
+    'license-expression',
+    'license-file',
+    'maintainer',
+    'maintainer-email',
+    'metadata-version',
+    'name',  # Can't be in dynamic
+    'obsoletes',  # Deprecated
+    'obsoletes-dist',  # Rarly used
+    'platform',  # Not specified via pyproject standards
+    'project-url',
+    'provides',  # Deprecated
+    'provides-dist',  # Rarly used
+    'provides-extra',
+    'requires',  # Deprecated
+    'requires-dist',
+    'requires-external',  # Not specified via pyproject standards
     'requires-python',
-    'scripts',
-    'urls',
-    'version',
+    'summary',
+    'supported-platform',  # Not specified via pyproject standards
+    'version',  # Can't be in dynamic
 }
 
 
@@ -71,6 +106,7 @@ __all__ = [
     'RFC822Policy',
     'Readme',
     'StandardMetadata',
+    'field_to_metadata',
     'validate_build_system',
     'validate_project',
     'validate_top_level',
@@ -79,6 +115,13 @@ __all__ = [
 
 def __dir__() -> list[str]:
     return __all__
+
+
+def field_to_metadata(field: str) -> frozenset[str]:
+    """
+    Return the METADATA fields that correspond to a project field.
+    """
+    return frozenset(PROJECT_TO_METADATA[field])
 
 
 def validate_top_level(pyproject: Mapping[str, Any]) -> None:
@@ -147,6 +190,9 @@ class RFC822Policy(email.policy.EmailPolicy):
     max_line_length = 0
 
     def header_store_parse(self, name: str, value: str) -> tuple[str, str]:
+        if name.lower() not in KNOWN_METADATA_FIELDS:
+            msg = f'Unknown field "{name}"'
+            raise ConfigurationError(msg, key=name)
         size = len(name) + 2
         value = value.replace('\n', '\n' + ' ' * size)
         return (name, value)
@@ -292,7 +338,7 @@ class ProjectFetcher(DataFetcher):
 
         return list(_get_files_from_globs(project_dir, license_files))
 
-    def get_readme(self, project_dir: pathlib.Path) -> Readme | None:  # noqa: C901
+    def get_readme(self, project_dir: pathlib.Path) -> Readme | None:  # noqa: C901, PLR0912
         if 'project.readme' not in self:
             return None
 
@@ -439,12 +485,14 @@ class ProjectFetcher(DataFetcher):
         return val
 
 
-class License(typing.NamedTuple):
+@dataclasses.dataclass(frozen=True)
+class License:
     text: str
     file: pathlib.Path | None
 
 
-class Readme(typing.NamedTuple):
+@dataclasses.dataclass(frozen=True)
+class Readme:
     text: str
     file: pathlib.Path | None
     content_type: str
@@ -472,17 +520,31 @@ class StandardMetadata:
     scripts: dict[str, str] = dataclasses.field(default_factory=dict)
     gui_scripts: dict[str, str] = dataclasses.field(default_factory=dict)
     dynamic: list[str] = dataclasses.field(default_factory=list)
+    """
+    This field is used to track dynamic fields. You can't set a field not in this list.
+    """
+    dynamic_metadata: list[str] = dataclasses.field(default_factory=list)
+    """
+    This is a list of METADATA fields that can change inbetween SDist and wheel. Requires metadata_version 2.2+.
+    """
 
-    _metadata_version: str | None = None
+    metadata_version: str | None = None
+    _locked_metadata: bool = False
 
     def __post_init__(self) -> None:
         self.validate()
 
-    def validate(self, *, warn: bool = True) -> None:
-        if (
-            self._metadata_version
-            and self._metadata_version not in KNOWN_METADATA_VERSIONS
-        ):
+    def __setattr__(self, name: str, value: Any) -> None:
+        if self._locked_metadata and name.replace('_', '-') not in set(self.dynamic) | {
+            'metadata-version',
+            'dynamic-metadata',
+        }:
+            msg = f'Field "{name}" is not dynamic'
+            raise AttributeError(msg)
+        super().__setattr__(name, value)
+
+    def validate(self, *, warn: bool = True) -> None:  # noqa: C901
+        if self.auto_metadata_version not in KNOWN_METADATA_VERSIONS:
             msg = f'The metadata_version must be one of {KNOWN_METADATA_VERSIONS} or None (default)'
             raise ConfigurationError(msg)
 
@@ -507,43 +569,51 @@ class StandardMetadata:
             msg = 'Setting "project.license" to an SPDX license expression is not compatible with "License ::" classifiers'
             raise ConfigurationError(msg)
 
-        if warn and self.metadata_version not in PRE_SPDX_METADATA_VERSIONS:
-            if isinstance(self.license, License):
+        if warn:
+            if self.description and '\n' in self.description:
                 warnings.warn(
-                    'Set "project.license" to an SPDX license expression for metadata >= 2.4',
+                    'The one-line summary "project.description" should not contain more than one line. Readers might merge or truncate newlines.',
                     ConfigurationWarning,
                     stacklevel=2,
                 )
-            elif any(c.startswith('License ::') for c in self.classifiers):
-                warnings.warn(
-                    '"License ::" classifiers are deprecated for metadata >= 2.4, use a SPDX license expression for "project.license" instead',
-                    ConfigurationWarning,
-                    stacklevel=2,
-                )
+            if self.auto_metadata_version not in PRE_SPDX_METADATA_VERSIONS:
+                if isinstance(self.license, License):
+                    warnings.warn(
+                        'Set "project.license" to an SPDX license expression for metadata >= 2.4',
+                        ConfigurationWarning,
+                        stacklevel=2,
+                    )
+                elif any(c.startswith('License ::') for c in self.classifiers):
+                    warnings.warn(
+                        '"License ::" classifiers are deprecated for metadata >= 2.4, use a SPDX license expression for "project.license" instead',
+                        ConfigurationWarning,
+                        stacklevel=2,
+                    )
 
         if (
             isinstance(self.license, str)
-            and self._metadata_version in PRE_SPDX_METADATA_VERSIONS
+            and self.auto_metadata_version in PRE_SPDX_METADATA_VERSIONS
         ):
             msg = 'Setting "project.license" to an SPDX license expression is supported only when emitting metadata version >= 2.4'
             raise ConfigurationError(msg)
 
         if (
             self.license_files is not None
-            and self._metadata_version in PRE_SPDX_METADATA_VERSIONS
+            and self.auto_metadata_version in PRE_SPDX_METADATA_VERSIONS
         ):
             msg = '"project.license-files" is supported only when emitting metadata version >= 2.4'
             raise ConfigurationError(msg)
 
     @property
-    def metadata_version(self) -> str:
-        if self._metadata_version is None:
-            if isinstance(self.license, str) or self.license_files is not None:
-                return '2.4'
-            if self.dynamic:
-                return '2.2'
-            return '2.1'
-        return self._metadata_version
+    def auto_metadata_version(self) -> str:
+        if self.metadata_version is not None:
+            return self.metadata_version
+
+        if isinstance(self.license, str) or self.license_files is not None:
+            return '2.4'
+        if self.dynamic_metadata:
+            return '2.2'
+        return '2.1'
 
     @property
     def canonical_name(self) -> str:
@@ -555,6 +625,7 @@ class StandardMetadata:
         data: Mapping[str, Any],
         project_dir: str | os.PathLike[str] = os.path.curdir,
         metadata_version: str | None = None,
+        dynamic_metadata: list[str] | None = None,
         *,
         allow_extra_keys: bool | None = None,
     ) -> Self:
@@ -601,51 +672,48 @@ class StandardMetadata:
         # so leave it up to the users for now.
         description = fetcher.get_str('project.description')
 
-        return cls(
-            name,
-            version,
-            description,
-            fetcher.get_license(project_dir),
-            fetcher.get_license_files(project_dir),
-            fetcher.get_readme(project_dir),
+        requires_python = (
             pkg_specifiers.SpecifierSet(requires_python_string)
             if requires_python_string
-            else None,
-            fetcher.get_dependencies(),
-            fetcher.get_optional_dependencies(),
-            fetcher.get_entrypoints(),
-            fetcher.get_people('project.authors'),
-            fetcher.get_people('project.maintainers'),
-            fetcher.get_dict('project.urls'),
-            fetcher.get_list('project.classifiers') or [],
-            fetcher.get_list('project.keywords') or [],
-            fetcher.get_dict('project.scripts'),
-            fetcher.get_dict('project.gui-scripts'),
-            dynamic,
-            metadata_version,
+            else None
         )
 
-    def _update_dynamic(self, value: Any) -> None:
-        if value and 'version' in self.dynamic:
-            self.dynamic.remove('version')
-
-    def __setattr__(self, name: str, value: Any) -> None:
-        # update dynamic when version is set
-        if name == 'version' and hasattr(self, 'dynamic'):
-            self._update_dynamic(value)
-        super().__setattr__(name, value)
+        self = cls(
+            name=name,
+            version=version,
+            description=description,
+            license=fetcher.get_license(project_dir),
+            license_files=fetcher.get_license_files(project_dir),
+            readme=fetcher.get_readme(project_dir),
+            requires_python=requires_python,
+            dependencies=fetcher.get_dependencies(),
+            optional_dependencies=fetcher.get_optional_dependencies(),
+            entrypoints=fetcher.get_entrypoints(),
+            authors=fetcher.get_people('project.authors'),
+            maintainers=fetcher.get_people('project.maintainers'),
+            urls=fetcher.get_dict('project.urls'),
+            classifiers=fetcher.get_list('project.classifiers') or [],
+            keywords=fetcher.get_list('project.keywords') or [],
+            scripts=fetcher.get_dict('project.scripts'),
+            gui_scripts=fetcher.get_dict('project.gui-scripts'),
+            dynamic=dynamic,
+            dynamic_metadata=dynamic_metadata or [],
+            metadata_version=metadata_version,
+        )
+        self._locked_metadata = True
+        return self
 
     def as_rfc822(self) -> RFC822Message:
         message = RFC822Message()
         self.write_to_rfc822(message)
         return message
 
-    def write_to_rfc822(self, message: email.message.Message) -> None:  # noqa: C901
+    def write_to_rfc822(self, message: email.message.Message) -> None:  # noqa: C901, PLR0912
         self.validate(warn=False)
 
         smart_message = _SmartMessageSetter(message)
 
-        smart_message['Metadata-Version'] = self.metadata_version
+        smart_message['Metadata-Version'] = self.auto_metadata_version
         smart_message['Name'] = self.name
         if not self.version:
             msg = 'Missing version field'
@@ -696,10 +764,13 @@ class StandardMetadata:
                 smart_message['Description-Content-Type'] = self.readme.content_type
             message.set_payload(self.readme.text)
         # Core Metadata 2.2
-        if self.metadata_version != '2.1':
-            for field in self.dynamic:
-                if field in ('name', 'version'):
-                    msg = f'Field cannot be dynamic: {field}'
+        if self.auto_metadata_version != '2.1':
+            for field in self.dynamic_metadata:
+                if field.lower() in {'name', 'version', 'dynamic'}:
+                    msg = f'Field cannot be set as dynamic metadata: {field}'
+                    raise ConfigurationError(msg)
+                if field.lower() not in KNOWN_METADATA_FIELDS:
+                    msg = f'Field is not known: {field}'
                     raise ConfigurationError(msg)
                 smart_message['Dynamic'] = field
 
