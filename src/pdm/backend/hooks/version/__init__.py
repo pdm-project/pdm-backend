@@ -7,6 +7,7 @@ import warnings
 from pathlib import Path
 from typing import Callable
 
+from pdm.backend._vendor.packaging.version import Version
 from pdm.backend.exceptions import ConfigError, PDMWarning, ValidationError
 from pdm.backend.hooks.base import Context
 from pdm.backend.hooks.version.scm import SCMVersion as SCMVersion
@@ -55,12 +56,12 @@ class DynamicVersionBuildHook:
             )
             return
         options = {k: v for k, v in version_config.items() if k != "source"}
-        metadata["version"] = getattr(self, f"resolve_version_from_{source}")(
-            context, **options
+        metadata["version"] = str(
+            getattr(self, f"resolve_version_from_{source}")(context, **options)
         )
         metadata["dynamic"].remove("version")
 
-    def resolve_version_from_file(self, context: Context, path: str) -> str:
+    def resolve_version_from_file(self, context: Context, path: str) -> Version:
         """Resolve version from a file."""
         version_source = context.root / path
         with open(version_source, encoding="utf-8") as fp:
@@ -72,7 +73,7 @@ class DynamicVersionBuildHook:
                 f"Couldn't find version in file {version_source!r}, "
                 "it should appear as `__version__ = 'a.b.c'`.",
             )
-        return match.group(1)
+        return Version(match.group(1))
 
     def resolve_version_from_scm(
         self,
@@ -83,7 +84,7 @@ class DynamicVersionBuildHook:
         tag_filter: str | None = None,
         version_format: str | None = None,
         fallback_version: str | None = None,
-    ) -> str:
+    ) -> Version:
         if os.environ.get("PDM_BUILD_SCM_VERSION"):
             version = os.environ["PDM_BUILD_SCM_VERSION"]
         else:
@@ -114,9 +115,18 @@ class DynamicVersionBuildHook:
                     version = version_formatter(scm_version, context)  # type: ignore[call-arg]
                 else:
                     version = version_formatter(scm_version)  # type: ignore[call-arg]
-
+        try:
+            parsed_version = Version(version)
+        except ValueError:
+            if fallback_version is not None:
+                return Version(fallback_version)
+            raise ConfigError(
+                f"Invalid version {version}, it must comply with PEP 440. \n"
+                "You can still specify the version via environment variable "
+                "`PDM_BUILD_SCM_VERSION`, or specify `fallback_version` config."
+            )
         self._write_version(context, version, write_to, write_template)
-        return version
+        return parsed_version
 
     def _write_version(
         self,
@@ -146,8 +156,17 @@ class DynamicVersionBuildHook:
         getter: str,
         write_to: str | None = None,
         write_template: str = "{}\n",
-    ) -> str:
+        fallback_version: str | None = None,
+    ) -> Version:
         version_getter, args = evaluate_module_attribute(getter, context.root)
         version = version_getter(*args)
+        if version is None:
+            if fallback_version is not None:
+                return Version(fallback_version)
+            else:
+                raise ConfigError(
+                    "Cannot get version from the call, you can specify fallback version via `fallback_version` config."
+                )
+        parsed_version = Version(version)
         self._write_version(context, version, write_to, write_template)
-        return version
+        return parsed_version
