@@ -1,50 +1,24 @@
 diff --git a/src/pdm/backend/_vendor/pyproject_metadata/__init__.py b/src/pdm/backend/_vendor/pyproject_metadata/__init__.py
-index a818824..d8f5966 100644
+index 39ae6e4..283264b 100644
 --- a/src/pdm/backend/_vendor/pyproject_metadata/__init__.py
 +++ b/src/pdm/backend/_vendor/pyproject_metadata/__init__.py
-@@ -33,10 +33,11 @@ if typing.TYPE_CHECKING:
+@@ -63,6 +63,7 @@ if typing.TYPE_CHECKING:
 
-     from .project_table import PyProjectTable
+     from .project_table import Dynamic, PyProjectTable
 
--import packaging.markers
--import packaging.specifiers
--import packaging.utils
--import packaging.version
 +import pdm.backend._vendor.packaging as packaging
-+import pdm.backend._vendor.packaging.markers
-+import pdm.backend._vendor.packaging.specifiers
-+import pdm.backend._vendor.packaging.utils
-+import pdm.backend._vendor.packaging.version
-
-
- __version__ = '0.9.0b5'
-diff --git a/src/pdm/backend/_vendor/pyproject_metadata/errors.py b/src/pdm/backend/_vendor/pyproject_metadata/errors.py
-index 79d5705..c45d565 100644
---- a/src/pdm/backend/_vendor/pyproject_metadata/errors.py
-+++ b/src/pdm/backend/_vendor/pyproject_metadata/errors.py
-@@ -6,8 +6,9 @@ import dataclasses
- import sys
- import typing
-
--import packaging.specifiers
--import packaging.version
-+import pdm.backend._vendor.packaging as packaging
-+import pdm.backend._vendor.packaging.specifiers
-+import pdm.backend._vendor.packaging.version
-
-
- __all__ = [
+ import packaging.markers
+ import packaging.specifiers
+ import packaging.utils
 diff --git a/src/pdm/backend/_vendor/pyproject_metadata/pyproject.py b/src/pdm/backend/_vendor/pyproject_metadata/pyproject.py
-index ef29afd..be122f8 100644
+index d1822e1..a85f9a1 100644
 --- a/src/pdm/backend/_vendor/pyproject_metadata/pyproject.py
 +++ b/src/pdm/backend/_vendor/pyproject_metadata/pyproject.py
-@@ -5,7 +5,8 @@ import pathlib
+@@ -13,6 +13,7 @@ import pathlib
  import re
  import typing
 
--import packaging.requirements
 +import pdm.backend._vendor.packaging as packaging
-+import pdm.backend._vendor.packaging.requirements
+ import packaging.requirements
 
  from .errors import ErrorCollector
-
