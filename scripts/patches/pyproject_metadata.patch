@@ -1,113 +1,24 @@
 diff --git a/src/pdm/backend/_vendor/pyproject_metadata/__init__.py b/src/pdm/backend/_vendor/pyproject_metadata/__init__.py
-index 70c452b..6a3af49 100644
+index 39ae6e4..283264b 100644
 --- a/src/pdm/backend/_vendor/pyproject_metadata/__init__.py
 +++ b/src/pdm/backend/_vendor/pyproject_metadata/__init__.py
-@@ -20,18 +20,18 @@ if typing.TYPE_CHECKING:
-     from collections.abc import Generator, Iterable, Mapping
-     from typing import Any
- 
--    from packaging.requirements import Requirement
-+    from pdm.backend._vendor.packaging.requirements import Requirement
- 
-     if sys.version_info < (3, 11):
-         from typing_extensions import Self
-     else:
-         from typing import Self
- 
--import packaging.markers
--import packaging.requirements
--import packaging.specifiers
--import packaging.utils
--import packaging.version
-+import pdm.backend._vendor.packaging.markers as pkg_markers 
-+import pdm.backend._vendor.packaging.requirements as pkg_requirements 
-+import pdm.backend._vendor.packaging.specifiers as pkg_specifiers 
-+import pdm.backend._vendor.packaging.utils as pkg_utils 
-+import pdm.backend._vendor.packaging.version as pkg_version 
- 
- 
- __version__ = '0.9.0b4'
-@@ -397,8 +397,8 @@ class ProjectFetcher(DataFetcher):
-         requirements: list[Requirement] = []
-         for req in requirement_strings:
-             try:
--                requirements.append(packaging.requirements.Requirement(req))
--            except packaging.requirements.InvalidRequirement as e:
-+                requirements.append(pkg_requirements.Requirement(req))
-+            except pkg_requirements.InvalidRequirement as e:
-                 msg = (
-                     'Field "project.dependencies" contains an invalid PEP 508 '
-                     f'requirement string "{req}" ("{e}")'
-@@ -439,9 +439,9 @@ class ProjectFetcher(DataFetcher):
-                     raise ConfigurationError(msg)
-                 try:
-                     requirements_dict[extra].append(
--                        packaging.requirements.Requirement(req)
-+                        pkg_requirements.Requirement(req)
-                     )
--                except packaging.requirements.InvalidRequirement as e:
-+                except pkg_requirements.InvalidRequirement as e:
-                     msg = (
-                         f'Field "project.optional-dependencies.{extra}" contains '
-                         f'an invalid PEP 508 requirement string "{req}" ("{e}")'
-@@ -501,12 +501,12 @@ class Readme:
- @dataclasses.dataclass
- class StandardMetadata:
-     name: str
--    version: packaging.version.Version | None = None
-+    version: pkg_version.Version | None = None
-     description: str | None = None
-     license: License | str | None = None
-     license_files: list[pathlib.Path] | None = None
-     readme: Readme | None = None
--    requires_python: packaging.specifiers.SpecifierSet | None = None
-+    requires_python: pkg_specifiers.SpecifierSet | None = None
-     dependencies: list[Requirement] = dataclasses.field(default_factory=list)
-     optional_dependencies: dict[str, list[Requirement]] = dataclasses.field(
-         default_factory=dict
-@@ -617,7 +617,7 @@ class StandardMetadata:
- 
-     @property
-     def canonical_name(self) -> str:
--        return packaging.utils.canonicalize_name(self.name)
-+        return pkg_utils.canonicalize_name(self.name)
- 
-     @classmethod
-     def from_pyproject(
-@@ -661,7 +661,7 @@ class StandardMetadata:
- 
-         version_string = fetcher.get_str('project.version')
-         requires_python_string = fetcher.get_str('project.requires-python')
--        version = packaging.version.Version(version_string) if version_string else None
-+        version = pkg_version.Version(version_string) if version_string else None
- 
-         if version is None and 'version' not in dynamic:
-             msg = 'Field "project.version" missing and "version" not specified in "project.dynamic"'
-@@ -673,7 +673,7 @@ class StandardMetadata:
-         description = fetcher.get_str('project.description')
- 
-         requires_python = (
--            packaging.specifiers.SpecifierSet(requires_python_string)
-+            pkg_specifiers.SpecifierSet(requires_python_string)
-             if requires_python_string
-             else None
-         )
-@@ -791,15 +791,15 @@ class StandardMetadata:
-         requirement = copy.copy(requirement)
-         if requirement.marker:
-             if 'or' in requirement.marker._markers:
--                requirement.marker = packaging.markers.Marker(
-+                requirement.marker = pkg_markers.Marker(
-                     f'({requirement.marker}) and extra == "{extra}"'
-                 )
-             else:
--                requirement.marker = packaging.markers.Marker(
-+                requirement.marker = pkg_markers.Marker(
-                     f'{requirement.marker} and extra == "{extra}"'
-                 )
-         else:
--            requirement.marker = packaging.markers.Marker(f'extra == "{extra}"')
-+            requirement.marker = pkg_markers.Marker(f'extra == "{extra}"')
-         return requirement
- 
- 
+@@ -63,6 +63,7 @@ if typing.TYPE_CHECKING:
+
+     from .project_table import Dynamic, PyProjectTable
+
++import pdm.backend._vendor.packaging as packaging
+ import packaging.markers
+ import packaging.specifiers
+ import packaging.utils
+diff --git a/src/pdm/backend/_vendor/pyproject_metadata/pyproject.py b/src/pdm/backend/_vendor/pyproject_metadata/pyproject.py
+index d1822e1..a85f9a1 100644
+--- a/src/pdm/backend/_vendor/pyproject_metadata/pyproject.py
++++ b/src/pdm/backend/_vendor/pyproject_metadata/pyproject.py
+@@ -13,6 +13,7 @@ import pathlib
+ import re
+ import typing
+
++import pdm.backend._vendor.packaging as packaging
+ import packaging.requirements
+
+ from .errors import ErrorCollector

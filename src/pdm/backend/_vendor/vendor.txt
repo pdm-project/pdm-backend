@@ -1,5 +1,5 @@
 packaging==24.1
 tomli==2.0.1
 tomli_w==1.0.0
-pyproject-metadata==0.9.0b4
+pyproject-metadata==0.9.0b7
 editables==0.5
