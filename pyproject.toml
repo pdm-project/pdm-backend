@@ -109,3 +109,28 @@ docs = [
 [tool.pdm.scripts]
 build = "python scripts/build.py"
 docs = "mkdocs serve"
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+ignore_errors = true
+
+[tool.mypy]
+ignore_missing_imports = true
+disallow_incomplete_defs = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_untyped_decorators = true
+explicit_package_bases = true
+namespace_packages = true
+
+[[tool.mypy.overrides]]
+module = "pdm.backend._vendor.*"
+ignore_errors = true
