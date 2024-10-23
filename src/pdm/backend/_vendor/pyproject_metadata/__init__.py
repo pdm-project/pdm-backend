@@ -69,7 +69,7 @@ import pdm.backend._vendor.packaging.specifiers
 import pdm.backend._vendor.packaging.utils
 import pdm.backend._vendor.packaging.version
 
-__version__ = "0.9.0rc1"
+__version__ = "0.9.0"
 
 __all__ = [
     "ConfigurationError",
