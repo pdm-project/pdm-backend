@@ -61,6 +61,7 @@ def _subprocess_call(
             # https://github.com/pdm-project/pdm-backend/issues/197
             # More helpful diagnostic.
             import textwrap
+
             err_msg = f"""\
                        The above error is most likely caused by an unsupported
                        MSYS2 git binary at {cmd[0]}. Please point your PATH to
