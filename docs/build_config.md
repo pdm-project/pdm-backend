@@ -188,10 +188,10 @@ If neither `includes` and `excludes` is specified, the backend can determine the
 
 - If top-level packages are found under `package-dir`, they will be included, together with any data files inside.
 - Otherwise, all top-level `*.py` files under `package-dir` will be included.
-- Test files under `tests`, if found, are included by sdist and excluded by other formats.
+- See `source-includes` for further includes.
 
 !!! note
-    Specifying `includes` and `excludes` will **override** the default values, so you need to include the package directories manually.
+    Specifying `includes` and `excludes` will **override** their default values, so you need to include the package directories manually.
     `*.pyc`, `__pycache__/` and `build/` are always excluded.
 
 
