@@ -23,8 +23,6 @@ def dist(tmp_path: Path) -> Path:
 @pytest.fixture
 def scm(fixture_project: Path) -> None:
     subprocess.check_call(["git", "init"])
-    subprocess.check_call(["git", "config", "user.email", "you@any.com"])
-    subprocess.check_call(["git", "config", "user.name", "Name"])
     subprocess.check_call(["git", "add", "."])
     subprocess.check_call(["git", "commit", "-m", "initial commit"])
     subprocess.check_call(["git", "tag", "-a", "0.1.0", "-m", "version 0.1.0"])

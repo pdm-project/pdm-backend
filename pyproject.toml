@@ -90,6 +90,7 @@ source-includes = ["tests"]
 test = [
     "pytest",
     "pytest-cov",
+    "pytest-gitconfig",
     "pytest-xdist",
     "setuptools",
 ]
@@ -109,6 +110,7 @@ docs = [
 [tool.pdm.scripts]
 build = "python scripts/build.py"
 docs = "mkdocs serve"
+test = "pytest"
 
 [tool.coverage.report]
 exclude_lines = [
