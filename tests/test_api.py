@@ -206,7 +206,7 @@ def test_demo_metadata_test__sdist__pkg_info(
         "License-Expression": "MIT",
         "Metadata-Version": "2.4",
         "Name": name,
-        "Requires-Python": ">=3.8",
+        "Requires-Python": ">=3.9",
         "Version": "3.2.1",
     }
 
