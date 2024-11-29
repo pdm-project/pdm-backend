@@ -7,7 +7,7 @@ authors = [
   { name = "Frost Ming", email = "me@frostming.com" }
 ]
 license = {text = "MIT"}
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 readme = "README.md"
 keywords = ["packaging", "PEP 517", "build"]
 dynamic = ["version"]
@@ -16,11 +16,11 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Topic :: Software Development :: Build Tools",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 
 dependencies = [
@@ -90,6 +90,7 @@ source-includes = ["tests"]
 test = [
     "pytest",
     "pytest-cov",
+    "pytest-gitconfig",
     "pytest-xdist",
     "setuptools",
 ]
@@ -109,6 +110,7 @@ docs = [
 [tool.pdm.scripts]
 build = "python scripts/build.py"
 docs = "mkdocs serve"
+test = "pytest"
 
 [tool.coverage.report]
 exclude_lines = [

@@ -38,7 +38,7 @@ version = "0.1.0"
 description = "A project built with PDM-Backend"
 authors = [{name = "John Doe", email="me@johndoe.org"}]
 dependencies = ["requests"]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 readme = "README.md"
 license = "MIT"
 ```
