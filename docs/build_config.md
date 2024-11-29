@@ -77,7 +77,7 @@ The project layout can be like the following:
 
 ### Include or exclude files
 
-By default, python files under the project root will be included only when there is no package found. You can change this by
+By default, Python files under the project root will be included only when there is no package found. You can change this by
 specifying the `includes` and `excludes` settings.
 
 ```toml
@@ -85,7 +85,7 @@ specifying the `includes` and `excludes` settings.
 includes = ["mypackage/", "script.py"]
 ```
 
-Note that this is uncommon because it will place both `mypackage/` and `script.py` under site-packages directory when installed.
+Note that this is uncommon because it will place both `mypackage/` and `script.py` under the `site-packages` directory when installed.
 However, the build scripts are required by a source distribution to build the package, and you don't want them to be installed.
 In this case, use the `source-includes` setting instead:
 
@@ -93,8 +93,8 @@ In this case, use the `source-includes` setting instead:
 [tool.pdm.build]
 source-includes = ["scripts/", "tests/"]
 ```
-
-The patterns in `source-includes` will be automatically excluded by the wheel distribution.
+By default, test files under `tests`, if found, are included by sdist and excluded by other formats.
+These paths can be overridden by specifying `source-includes` manually.
 
 Similarly, the `excludes` config also accepts a list of relative paths or glob patterns, and the matched files will not be packaged
 in to the distribution.
@@ -188,10 +188,10 @@ If neither `includes` and `excludes` is specified, the backend can determine the
 
 - If top-level packages are found under `package-dir`, they will be included, together with any data files inside.
 - Otherwise, all top-level `*.py` files under `package-dir` will be included.
-- Test files under `tests`, if found, are included by sdist and excluded by other formats.
+- See `source-includes` for further includes.
 
 !!! note
-    Specifying `includes` and `excludes` will **override** the default values, so you need to include the package directories manually.
+    Specifying `includes` and `excludes` will **override** their default values, so you need to include the package directories manually.
     `*.pyc`, `__pycache__/` and `build/` are always excluded.
 
 
