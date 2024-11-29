@@ -51,10 +51,25 @@ def _subprocess_call(
         env.update(extra_env)
     if isinstance(cmd, str):
         cmd = shlex.split(cmd)
-    proc = subprocess.Popen(
-        cmd, cwd=cwd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-    out, err = proc.communicate()
+    try:
+        proc = subprocess.Popen(
+            cmd, cwd=cwd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        out, err = proc.communicate()
+    except NotADirectoryError as e:
+        if hasattr(e, "winerror") and e.winerror == 267:
+            # https://github.com/pdm-project/pdm-backend/issues/197
+            # More helpful diagnostic.
+            import textwrap
+
+            err_msg = f"""\
+                       The above error is most likely caused by an unsupported
+                       MSYS2 git binary at {cmd[0]}. Please point your PATH to
+                       a different git binary such as Git For Windows.
+                       """
+            raise subprocess.SubprocessError(textwrap.dedent(err_msg)) from e
+        else:
+            raise e
     return (
         proc.returncode,
         out.decode("utf-8", "surrogateescape").strip(),
