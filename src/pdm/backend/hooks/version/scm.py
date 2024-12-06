@@ -268,7 +268,7 @@ def _bump_regex(version: str) -> str:
     match = re.match(r"(.*?)(\d+)$", version)
     assert match is not None
     prefix, tail = match.groups()
-    return "%s%d" % (prefix, int(tail) + 1)
+    return f"{prefix}{int(tail) + 1}"
 
 
 def hg_parse_version(root: StrPath, config: Config) -> SCMVersion | None:
