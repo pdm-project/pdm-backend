@@ -203,7 +203,7 @@ You can include additional files that are not normally installed inside site-pac
 [tool.pdm.build.wheel-data]
 # Install all files under scripts/ to the $prefix/bin directory.
 scripts = ["scripts/*"]
-# Install all *.h files under headers/ (recursively) to the $prefix/include directory,
+# Recursively install all *.h files from headers/ to the $prefix/include directory,
 # flattening all files into one directory:
 # headers/folder1/file1.h -> $prefix/include/file1.h
 # headers/folder2/file2.h -> $prefix/include/file2.h
@@ -225,17 +225,17 @@ Advanced examples:
 
 ```toml
 [tool.pdm.build.wheel-data]
-# Install all *.h files under headers/ (recursively) to the $prefix/include directory,
-# keeping the directory structure (thanks to relative-to).
+# Recursively install all *.h files under headers/ to the $prefix/include directory,
+# while preserving the directory structure (thanks to relative-to).
 # We make the destination paths relative to "headers"
 # so that "headers" does not appear in the destination paths:
 # headers/folder1/file1.h -> $prefix/include/folder1/file1.h
 include = [{path = "headers/**/*.h", relative-to = "headers/"}]
-# Install all files under share/ (recursively) to the $prefix/data directory,
-# keeping the directory structure (thanks to relative-to).
+# Recursively install all files from share/ to the $prefix/data directory,
+# while preserving the directory structure (thanks to relative-to).
 # We make the destination paths relative to "."
 # to preserve the exact same directory structure in the destination:
-# share/man/man1/project.1 -> $prefix/data/share/man/man1/project.1
+# share/man/man1/project.1 -> $prefix/share/man/man1/project.1
 data = [{path = "share/**/*", relative-to = "."}]
 ```
 
