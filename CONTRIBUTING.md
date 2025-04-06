@@ -47,7 +47,7 @@ this section.
 Following [the guide][pdm-install] to install PDM on your machine, then install the development dependencies:
 
 ```bash
-$ pdm install
+$ pdm sync
 ```
 
 It will create a virtualenv at `$PWD/.venv` and install all dependencies into it.
