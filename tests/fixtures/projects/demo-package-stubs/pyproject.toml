@@ -1,7 +1,6 @@
 [build-system]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
-backend-path = ['../../../']
 
 [project]
 authors = [
