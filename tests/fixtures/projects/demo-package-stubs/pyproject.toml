@@ -1,0 +1,16 @@
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+backend-path = ['../../../']
+
+[project]
+authors = [
+    {name = "frostming", email = "mianghong@gmail.com"},
+]
+version = '0.0.0'
+requires-python = ">=2.7"
+license = "MIT"
+dependencies = ["flask"]
+description = ""
+name = "demo-package-stubs"
+readme = "README.md"
