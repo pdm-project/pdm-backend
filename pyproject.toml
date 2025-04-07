@@ -87,13 +87,6 @@ package-dir = "src"
 source-includes = ["tests"]
 
 [tool.pdm.dev-dependencies]
-test = [
-    "pytest",
-    "pytest-cov",
-    "pytest-gitconfig",
-    "pytest-xdist",
-    "setuptools",
-]
 
 dev = [
     "editables>=0.3",
@@ -110,7 +103,7 @@ docs = [
 [tool.pdm.scripts]
 build = "python scripts/build.py"
 docs = "mkdocs serve"
-test = "pytest"
+test = "pytest -vv -ra {args}"
 
 [tool.coverage.report]
 exclude_lines = [
@@ -136,3 +129,12 @@ namespace_packages = true
 [[tool.mypy.overrides]]
 module = "pdm.backend._vendor.*"
 ignore_errors = true
+
+[dependency-groups]
+test = [
+    "pytest",
+    "pytest-cov",
+    "pytest-gitconfig",
+    "pytest-xdist",
+    "setuptools>=78.1.0",
+]
