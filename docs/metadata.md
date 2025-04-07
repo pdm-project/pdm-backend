@@ -111,6 +111,22 @@ You can also supply it with literal arguments:
 getter = "mypackage.version:get_version('dev')"
 ```
 
+!!! note
+
+    The module that the version getter function is in 
+    [must be importable *before* installation](https://github.com/pdm-project/pdm/issues/3385#issuecomment-2632705361).
+    If you are using a `src` layout, you must specify the function like this:
+
+    ```toml
+    getter = "src.mypackage.version:get_version"
+    ```
+
+    Or put it in a package outside the target package, e.g. in a `scripts/` directory in the repository root.
+
+    ```toml
+    getter = "scripts.version:get_version"
+    ```
+
 ### Writing dynamic version to file
 
 You can instruct `pdm-backend` to write back the dynamic version to a file. It is supported for all sources but `file`.
