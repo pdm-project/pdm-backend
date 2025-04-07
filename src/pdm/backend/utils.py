@@ -44,7 +44,12 @@ def is_python_package(fullpath: str) -> bool:
         return False
     if os.path.basename(fullpath.rstrip("/")) in ("__pycache__", "__pypackages__"):
         return False
-    return os.path.isfile(os.path.join(fullpath, "__init__.py"))
+    if os.path.isfile(os.path.join(fullpath, "__init__.py")):
+        return True
+    # stubs
+    return os.path.basename(fullpath).endswith("-stubs") and os.path.isfile(
+        os.path.join(fullpath, "__init__.pyi")
+    )
 
 
 def merge_marker(requirement: Requirement, marker: str) -> None:
