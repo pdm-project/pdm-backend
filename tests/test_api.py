@@ -254,20 +254,20 @@ def test_build_with_cextension(dist: Path) -> None:
 
     zip_names = get_wheel_names(dist / wheel_name)
     assert "my_package/__init__.py" in zip_names
-    assert (
-        "my_package/hellomodule.c" not in zip_names
-    ), "Not collect c files while building wheel"
+    assert "my_package/hellomodule.c" not in zip_names, (
+        "Not collect c files while building wheel"
+    )
     extension_suffix = ".pyd" if sys.platform == "win32" else ".so"
     assert any(name.endswith(extension_suffix) for name in zip_names)
 
     tar_names = get_tarball_names(dist / sdist_name)
     assert "demo_package-0.1.0/my_package/__init__.py" in tar_names
-    assert (
-        "demo_package-0.1.0/my_package/hellomodule.c" in tar_names
-    ), "Collect c files while building sdist"
-    assert not any(
-        path.startswith("build") for path in tar_names
-    ), 'Not collect c files in temporary directory "./build"'
+    assert "demo_package-0.1.0/my_package/hellomodule.c" in tar_names, (
+        "Collect c files while building sdist"
+    )
+    assert not any(path.startswith("build") for path in tar_names), (
+        'Not collect c files in temporary directory "./build"'
+    )
 
 
 @pytest.mark.parametrize("name", ["demo-cextension-in-src"])
@@ -277,20 +277,20 @@ def test_build_with_cextension_in_src(dist: Path) -> None:
 
     zip_names = get_wheel_names(dist / wheel_name)
     assert "my_package/__init__.py" in zip_names
-    assert (
-        "my_package/hellomodule.c" not in zip_names
-    ), "Not collect c files while building wheel"
+    assert "my_package/hellomodule.c" not in zip_names, (
+        "Not collect c files while building wheel"
+    )
     extension_suffix = ".pyd" if sys.platform == "win32" else ".so"
     assert any(name.endswith(extension_suffix) for name in zip_names)
 
     tar_names = get_tarball_names(dist / sdist_name)
     assert "demo_package-0.1.0/src/my_package/__init__.py" in tar_names
-    assert (
-        "demo_package-0.1.0/src/my_package/hellomodule.c" in tar_names
-    ), "Collect c files while building sdist"
-    assert not any(
-        path.startswith("build") for path in tar_names
-    ), 'Not collect c files in temporary directory "./build"'
+    assert "demo_package-0.1.0/src/my_package/hellomodule.c" in tar_names, (
+        "Collect c files while building sdist"
+    )
+    assert not any(path.startswith("build") for path in tar_names), (
+        'Not collect c files in temporary directory "./build"'
+    )
 
 
 @pytest.mark.parametrize("name", ["demo-package"])
@@ -329,9 +329,9 @@ def test_build_editable_src(dist: Path, fixture_project: Path) -> None:
         namelist = zf.namelist()
         assert "demo_package.pth" in namelist
         assert "_editable_impl_demo_package.py" in namelist
-        assert (
-            "my_package/data.json" not in namelist
-        ), "data files in proxy modules are excluded"
+        assert "my_package/data.json" not in namelist, (
+            "data files in proxy modules are excluded"
+        )
         assert "data_out.json" in namelist
 
         pth_content = zf.read("demo_package.pth").decode("utf-8").strip()

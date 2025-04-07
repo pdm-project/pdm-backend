@@ -4,14 +4,14 @@ ci:
 exclude: ^src/pdm/backend/_vendor
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 'v0.8.1'
+    rev: 'v0.9.9'
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix, --show-fixes]
       - id: ruff-format
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.13.0
+    rev: v1.15.0
     hooks:
       - id: mypy
         exclude: ^(src/pdm/backend/_vendor|tests|scripts)

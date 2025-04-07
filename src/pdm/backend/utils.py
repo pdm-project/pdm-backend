@@ -205,7 +205,7 @@ def evaluate_module_attribute(
     matched = _attr_regex.match(expression)
     if matched is None:
         raise ConfigError(
-            "Invalid expression, must be in the format of " "`module:attribute`."
+            "Invalid expression, must be in the format of `module:attribute`."
         )
     with cm:
         module = importlib.import_module(matched.group(1))
