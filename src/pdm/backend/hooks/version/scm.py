@@ -193,6 +193,8 @@ def git_parse_version(root: StrPath, config: Config) -> SCMVersion | None:
         warnings.warn(f"{repo!r} is shallow and may cause errors")
     describe_cmd = [
         git,
+        "-c",
+        "core.abbrev=auto",
         "describe",
         "--dirty",
         "--tags",
