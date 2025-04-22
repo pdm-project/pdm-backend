@@ -139,8 +139,10 @@ class GitScm(Scm):
 
     @property
     def current_hash(self) -> str:
-        return "g" + self.run("-c", "core.abbrev=auto",
-                              "rev-parse", "--short", "HEAD").strip()
+        return (
+            "g"
+            + self.run("-c", "core.abbrev=auto", "rev-parse", "--short", "HEAD").strip()
+        )
 
 
 class HgScm(Scm):
