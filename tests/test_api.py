@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import email
+import importlib
 import os
 import sys
 import tarfile
@@ -402,6 +405,31 @@ def test_build_wheel_preserve_permission(dist: Path) -> None:
         info = zf.getinfo("my_package/executable")
         filemode = info.external_attr >> 16
         assert filemode & 0o111
+
+
+@pytest.mark.parametrize("name", ["demo-package"])
+@pytest.mark.parametrize(
+    ("epoch", "expected_date_time"),
+    [
+        ("0", (1980, 1, 1, 0, 0, 0)),
+        ("nan", (2016, 1, 1, 0, 0, 0)),
+        ("1580601700", (2020, 2, 2, 0, 1, 40)),
+    ],
+)
+def test_build_wheel_respects_source_date_epoch(
+    monkeypatch: pytest.MonkeyPatch,
+    dist: Path,
+    epoch: str,
+    expected_date_time: tuple[int, ...],
+) -> None:
+    monkeypatch.setenv("SOURCE_DATE_EPOCH", epoch)
+    from pdm.backend import wheel
+
+    importlib.reload(wheel)
+    wheel_name = api.build_wheel(dist.as_posix())
+    with zipfile.ZipFile(dist / wheel_name) as zf:
+        zip_info = zf.getinfo("demo_package-0.1.0.dist-info/WHEEL")
+        assert zip_info.date_time == expected_date_time
 
 
 @pytest.mark.usefixtures("scm")

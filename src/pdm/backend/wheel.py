@@ -48,9 +48,8 @@ try:
 except (ValueError, KeyError):
     ZIPINFO_DATE_TIME = (2016, 1, 1, 0, 0, 0)
 else:
-    if _env_date[0] < 1980:
-        raise ValueError("zipinfo date can't be earlier than 1980")
-    ZIPINFO_DATE_TIME = _env_date
+    # `zipfile.ZipInfo` does not support timestamps before 1980
+    ZIPINFO_DATE_TIME = max(_env_date, (1980, 1, 1, 0, 0, 0))
 
 
 def _open_for_write(path: str | Path) -> IO[str]:
