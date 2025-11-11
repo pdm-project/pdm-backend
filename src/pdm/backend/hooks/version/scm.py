@@ -46,6 +46,14 @@ def _subprocess_call(
         if not k.startswith("GIT_")
         or k in ("GIT_EXEC_PATH", "GIT_SSH", "GIT_SSH_COMMAND")
     }
+    # adapted from setuptools-scm
+    # PYTHONPATH can break Python applications installed with Pipx, UV, etc.
+    if "PYTHONPATH" in env:
+        env["PYTHONPATH"] = os.pathsep.join(
+            path
+            for path in env["PYTHONPATH"].split(os.pathsep)
+            if "-build-env-" not in path
+        )
     env.update({"LC_ALL": "C", "LANG": "", "HGPLAIN": "1"})
     if extra_env:
         env.update(extra_env)
