@@ -90,8 +90,10 @@ class DynamicVersionBuildHook:
         fallback_version: str | None = None,
     ) -> Version:
         if os.environ.get("PDM_BUILD_SCM_VERSION"):
+            source = "environment variable"
             version = os.environ["PDM_BUILD_SCM_VERSION"]
         else:
+            source = "scm"
             version_formatter: (
                 Callable[[SCMVersion, Context], str] | Callable[[SCMVersion], str]
             )
@@ -106,7 +108,7 @@ class DynamicVersionBuildHook:
             )
             if scm_version is None:
                 if fallback_version is not None:
-                    warnings.warn(_fallback_version_warning.format("scm"), PDMWarning)
+                    warnings.warn(_fallback_version_warning.format(source), PDMWarning)
                     version = fallback_version
                 else:
                     raise ConfigError(
@@ -124,7 +126,7 @@ class DynamicVersionBuildHook:
             parsed_version = Version(version)
         except ValueError:
             if fallback_version is not None:
-                warnings.warn(_fallback_version_warning.format("scm"), PDMWarning)
+                warnings.warn(_fallback_version_warning.format(source), PDMWarning)
                 return Version(fallback_version)
             raise ConfigError(
                 f"Invalid version {version}, it must comply with PEP 440. \n"
