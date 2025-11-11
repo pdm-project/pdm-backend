@@ -17,6 +17,10 @@ from pdm.backend.hooks.version.scm import (
 )
 from pdm.backend.utils import evaluate_module_attribute
 
+_fallback_version_warning = (
+    "Can't get a valid version from {}, use fallback_version instead."
+)
+
 
 class DynamicVersionBuildHook:
     """Dynamic version implementation.
@@ -102,6 +106,7 @@ class DynamicVersionBuildHook:
             )
             if scm_version is None:
                 if fallback_version is not None:
+                    warnings.warn(_fallback_version_warning.format("scm"), PDMWarning)
                     version = fallback_version
                 else:
                     raise ConfigError(
@@ -119,6 +124,7 @@ class DynamicVersionBuildHook:
             parsed_version = Version(version)
         except ValueError:
             if fallback_version is not None:
+                warnings.warn(_fallback_version_warning.format("scm"), PDMWarning)
                 return Version(fallback_version)
             raise ConfigError(
                 f"Invalid version {version}, it must comply with PEP 440. \n"
@@ -162,6 +168,7 @@ class DynamicVersionBuildHook:
         version = version_getter(*args)
         if version is None:
             if fallback_version is not None:
+                warnings.warn(_fallback_version_warning.format("call"), PDMWarning)
                 return Version(fallback_version)
             else:
                 raise ConfigError(
