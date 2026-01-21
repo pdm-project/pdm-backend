@@ -89,7 +89,7 @@ includes = ["src"]
 package-dir = "src"
 source-includes = ["tests"]
 
-[tool.pdm.dev-dependencies]
+[dependency-groups]
 test = [
     "pytest",
     "pytest-cov",
