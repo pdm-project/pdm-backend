@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 
@@ -13,10 +15,16 @@ from tests import FIXTURES
     [
         ("cp36", "abi3", "win_amd64", "cp36-abi3-win_amd64"),
         ("py3", "none", "win_amd64", "py3-none-win_amd64"),
+        (
+            "py3",
+            "none",
+            ["manylinux_2_12_x86", "musllinux_1_1_x86"],
+            "py3-none-manylinux_2_12_x86.musllinux_1_1_x86",
+        ),
     ],
 )
 def test_override_tags_in_wheel_filename(
-    python_tag: str, py_limited_api: str, plat_name: str, tag: str
+    python_tag: str, py_limited_api: str, plat_name: str | list[str], tag: str
 ) -> None:
     project = FIXTURES / "projects/demo-cextension"
     with wheel.WheelBuilder(

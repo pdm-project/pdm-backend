@@ -81,7 +81,9 @@ class WheelBuilder(Builder):
             )
         return f"{self.name_version}.data/{name}/{relative}"
 
-    def _get_platform_tags(self) -> tuple[str | None, str | None, str | None]:
+    def _get_platform_tags(
+        self,
+    ) -> tuple[str | None, str | None, list[str] | str | None]:
         python_tag: str | None = None
         py_limited_api: str | None = None
         plat_name: str | None = None
@@ -219,9 +221,14 @@ class WheelBuilder(Builder):
                 else:
                     impl = "py3"
 
-        platform = platform.lower().replace("-", "_").replace(".", "_")  # type: ignore
+        if isinstance(platform, str):
+            platform = [platform]
+
+        platform = ".".join(
+            x.lower().replace("-", "_").replace(".", "_") for x in platform
+        )
         tag = (impl, abi, platform)
-        return "-".join(tag)  # type: ignore[arg-type]
+        return "-".join(tag)
 
     def _write_dist_info(self, parent: Path) -> Path:
         """write the dist-info directory and return the path to it"""
