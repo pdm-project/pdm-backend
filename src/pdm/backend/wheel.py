@@ -11,9 +11,10 @@ import tempfile
 import time
 import zipfile
 from base64 import urlsafe_b64encode
+from collections.abc import Iterable, Mapping
 from importlib.metadata import version as get_version
 from pathlib import Path
-from typing import IO, Any, Iterable, Mapping, NamedTuple, cast
+from typing import IO, Any, NamedTuple, cast
 
 from pdm.backend._vendor.packaging import tags
 from pdm.backend._vendor.packaging.specifiers import SpecifierSet

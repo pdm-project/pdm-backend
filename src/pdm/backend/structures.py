@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Iterator, MutableMapping
 from pathlib import Path
-from typing import Any, Iterator, MutableMapping
+from typing import Any
 
 
 class Table(MutableMapping[str, Any]):

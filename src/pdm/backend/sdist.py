@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import os
 import tarfile
+from collections.abc import Iterable
 from copy import copy
 from io import BytesIO
 from pathlib import Path
 from posixpath import join as pjoin
-from typing import Iterable
 
 from pdm.backend._vendor.packaging.utils import canonicalize_name
 from pdm.backend.base import Builder
