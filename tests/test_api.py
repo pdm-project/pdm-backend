@@ -107,6 +107,21 @@ def test_build_src_package(dist: Path) -> None:
     assert "my_package/__init__.py" in zip_names
     assert "my_package/data.json" in zip_names
 
+    version_file = Path("src/my_package/__init__.py")
+    version_file.write_text('VERSION = "0.1.1"')
+    wheel_name = api.build_wheel(dist.as_posix())
+    sdist_name = api.build_sdist(dist.as_posix())
+    assert sdist_name == "demo_package-0.1.1.tar.gz"
+    assert wheel_name == "demo_package-0.1.1-py3-none-any.whl"
+
+    version_file.write_text('__VERSION__ = "0.1.2"')
+    with Path("pyproject.toml").open("a+") as f:
+        f.write('pattern = \'__VERSION__ = "([^"]+)"\'')
+    wheel_name = api.build_wheel(dist.as_posix())
+    sdist_name = api.build_sdist(dist.as_posix())
+    assert sdist_name == "demo_package-0.1.2.tar.gz"
+    assert wheel_name == "demo_package-0.1.2-py3-none-any.whl"
+
 
 @pytest.mark.parametrize("name", ["demo-package-include"])
 def test_build_package_include(dist: Path) -> None:

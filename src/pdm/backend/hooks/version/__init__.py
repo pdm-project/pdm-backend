@@ -51,8 +51,13 @@ class DynamicVersionBuildHook:
             )
         source: str = version_config.get("source")
         if not source:
-            raise ConfigError("tool.pdm.version.source is required")
-        if source not in self.supported_sources:
+            if (path := version_config.get("path", "")) and (
+                context.root.joinpath(path).exists()
+            ):
+                source = "file"
+            else:
+                raise ConfigError("tool.pdm.version.source is required")
+        elif source not in self.supported_sources:
             warnings.warn(
                 f"Invalid version source {source}, must be one of "
                 f"{', '.join(self.supported_sources)}",
@@ -65,17 +70,32 @@ class DynamicVersionBuildHook:
         )
         metadata["dynamic"].remove("version")
 
-    def resolve_version_from_file(self, context: Context, path: str) -> Version:
+    def resolve_version_from_file(
+        self, context: Context, path: str, pattern: str | None = None
+    ) -> Version:
         """Resolve version from a file."""
         version_source = context.root / path
-        with open(version_source, encoding="utf-8") as fp:
-            match = re.search(
-                r"^__version__\s*=\s*[\"'](.+?)[\"']\s*(?:#.*)?$", fp.read(), re.M
-            )
-        if not match:
+        text = version_source.read_text(encoding="utf-8")
+        if pattern is not None:
+            if not (match := re.search(pattern, text, re.M)):
+                raise ConfigError(
+                    f"Couldn't find version in file {version_source!r} by {pattern=}"
+                )
+            try:
+                value = match.group(1)
+            except IndexError as e:
+                raise ConfigError(
+                    f"Invalid version pattern ({pattern!r}), should contains '(' and ')'"
+                ) from e
+            return Version(value)
+        for key in ("__version__", "VERSION"):
+            pattern = rf"^{key}\s*=\s*[\"'](.+?)[\"']\s*(?:#.*)?$"
+            if match := re.search(pattern, text, re.M):
+                break
+        else:
             raise ConfigError(
                 f"Couldn't find version in file {version_source!r}, "
-                "it should appear as `__version__ = 'a.b.c'`.",
+                "it should appear as `__version__ = 'a.b.c'` or `VERSION = 'a.b.c'`.",
             )
         return Version(match.group(1))
 
