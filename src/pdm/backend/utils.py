@@ -9,9 +9,11 @@ import re
 import sys
 import types
 import urllib.parse
+from collections.abc import Generator, Iterable
 from fnmatch import fnmatchcase
 from pathlib import Path
-from typing import Any, Callable, Generator, Iterable, Match
+from re import Match
+from typing import Any, Callable
 
 from pdm.backend._vendor.packaging.markers import Marker
 from pdm.backend._vendor.packaging.requirements import Requirement

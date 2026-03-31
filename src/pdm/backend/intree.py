@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import sys
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 from pdm.backend import build_editable as build_editable
 from pdm.backend import build_sdist as build_sdist
