@@ -88,11 +88,8 @@ class DynamicVersionBuildHook:
                     f"Invalid version pattern ({pattern!r}), should contains '(' and ')'"
                 ) from e
             return Version(value)
-        for key in ("__version__", "VERSION"):
-            pattern = rf"^{key}\s*=\s*[\"'](.+?)[\"']\s*(?:#.*)?$"
-            if match := re.search(pattern, text, re.M):
-                break
-        else:
+        match = re.search(r"^(?:__version__|VERSION)\s*=\s*[\"'](.+?)[\"']\s*(?:#.*)?$", text, re.M)
+        if not match:
             raise ConfigError(
                 f"Couldn't find version in file {version_source!r}, "
                 "it should appear as `__version__ = 'a.b.c'` or `VERSION = 'a.b.c'`.",
