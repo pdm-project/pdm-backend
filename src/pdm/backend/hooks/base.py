@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import dataclasses
+from collections.abc import Iterable
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Iterable
+from typing import TYPE_CHECKING, Any
 
 from pdm.backend.config import Config
 
