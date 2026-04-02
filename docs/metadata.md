@@ -31,6 +31,21 @@ In this way, the file MUST contain a line like:
 __version__ = "0.1.0" # Single quotes and double quotes are both OK, comments are allowed.
 ```
 
+Or:
+
+```python
+VERSION = "0.1.0"
+```
+
+If this doesn't reflect how you store the version, you can define a different regular expression using the `pattern` option:
+
+```
+[tool.pdm.version]
+path = "pkg/__init__.py"
+pattern = '__VERSION__ = "([^"]+)"'
+```
+The pattern must have a group that represents the version.
+
 ### Read from SCM tag, supporting `git` and `hg`
 
 ```toml
