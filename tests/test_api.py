@@ -17,6 +17,14 @@ from tests.testutils import get_tarball_names, get_wheel_names
 pytestmark = pytest.mark.usefixtures("fixture_project")
 
 
+def find_pth_filename(filelist: list) -> str:
+    # editables 0.6 changed the pth filename to `_editable_impl_<foo>.pth`
+    possible_pth_filenames = {"demo_package.pth", "_editable_impl_demo_package.pth"}
+    found = possible_pth_filenames.intersection(filelist)
+    assert len(found) == 1
+    return found.pop()
+
+
 @pytest.mark.parametrize("name", ["demo-module"])
 def test_build_single_module(dist: Path) -> None:
     wheel_name = api.build_wheel(dist.as_posix())
@@ -317,7 +325,8 @@ def test_build_editable(dist: Path, fixture_project: Path) -> None:
     assert api.get_requires_for_build_editable() == []
     with zipfile.ZipFile(dist / wheel_name) as zf:
         namelist = zf.namelist()
-        assert "demo_package.pth" in namelist
+        pth_filename = find_pth_filename(namelist)
+        assert pth_filename in namelist
         assert "_editable_impl_demo_package.py" in namelist
         assert "demo_package-0.1.0.dist-info/licenses/LICENSE" in namelist
 
@@ -326,7 +335,7 @@ def test_build_editable(dist: Path, fixture_project: Path) -> None:
         )
         assert "editables" in metadata.get_all("Requires-Dist", [])
 
-        pth_content = zf.read("demo_package.pth").decode("utf-8").strip()
+        pth_content = zf.read(pth_filename).decode("utf-8").strip()
         assert pth_content == "import _editable_impl_demo_package"
 
         proxy_module = zf.read("_editable_impl_demo_package.py").decode("utf-8").strip()
@@ -345,14 +354,15 @@ def test_build_editable_src(dist: Path, fixture_project: Path) -> None:
 
     with zipfile.ZipFile(dist / wheel_name) as zf:
         namelist = zf.namelist()
-        assert "demo_package.pth" in namelist
+        pth_filename = find_pth_filename(namelist)
+        assert pth_filename in namelist
         assert "_editable_impl_demo_package.py" in namelist
         assert "my_package/data.json" not in namelist, (
             "data files in proxy modules are excluded"
         )
         assert "data_out.json" in namelist
 
-        pth_content = zf.read("demo_package.pth").decode("utf-8").strip()
+        pth_content = zf.read(pth_filename).decode("utf-8").strip()
         assert pth_content == "import _editable_impl_demo_package"
 
         proxy_module = zf.read("_editable_impl_demo_package.py").decode("utf-8").strip()
@@ -375,7 +385,8 @@ def test_build_editable_pep420(dist: Path, fixture_project: Path) -> None:
 
     with zipfile.ZipFile(dist / wheel_name) as zf:
         namelist = zf.namelist()
-        assert "demo_package.pth" in namelist
+        pth_filename = find_pth_filename(namelist)
+        assert pth_filename in namelist
         assert "__editables_demo_package.py" not in namelist
 
         metadata = email.message_from_bytes(
@@ -383,7 +394,7 @@ def test_build_editable_pep420(dist: Path, fixture_project: Path) -> None:
         )
         assert "editables" not in metadata.get_all("Requires-Dist", [])
 
-        pth_content = zf.read("demo_package.pth").decode("utf-8").strip()
+        pth_content = zf.read(pth_filename).decode("utf-8").strip()
         assert pth_content == str(fixture_project.resolve())
 
 
