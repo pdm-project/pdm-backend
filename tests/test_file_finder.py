@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import tarfile
 from pathlib import Path
 
 import pytest
 
 from pdm.backend.base import Builder, is_same_or_descendant_path
+from pdm.backend.config import tomllib
 from pdm.backend.exceptions import ValidationError
 from pdm.backend.sdist import SdistBuilder
 from pdm.backend.wheel import WheelBuilder
@@ -31,6 +33,64 @@ def test_auto_include_tests_for_sdist(
             assert file in files
         else:
             assert file not in files
+
+
+def test_sdist_rewrites_project_files_outside_project_root(tmp_path: Path) -> None:
+    repository = tmp_path / "repository"
+    project = repository / "packages" / "demo"
+    project.mkdir(parents=True)
+    readme = repository / "README.md"
+    license_file = repository / "LICENSE"
+    readme.write_text("# Demo\n")
+    license_file.write_text("MIT\n")
+    (project / "README.md").write_text("# Local demo\n")
+    (project / "LICENSE").write_text("Local license\n")
+    pyproject = project / "pyproject.toml"
+    pyproject.write_text(
+        """\
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[project]
+name = "demo"
+version = "0.1.0"
+readme = "../../README.md"
+license = {file = "../../LICENSE"}
+
+[tool.pdm.build]
+source-includes = ["README.md", "LICENSE"]
+"""
+    )
+    original_pyproject = pyproject.read_bytes()
+
+    with SdistBuilder(project) as builder:
+        artifact = builder.build(tmp_path / "dist")
+        assert builder.config.metadata["readme"] == ".pdm-external/README.md"
+        assert builder.config.metadata["license"]["file"] == ".pdm-external/LICENSE"
+
+    assert pyproject.read_bytes() == original_pyproject
+    assert readme.read_text() == "# Demo\n"
+    assert license_file.read_text() == "MIT\n"
+    with tarfile.open(artifact, "r:gz") as tar:
+        names = tar.getnames()
+        assert all(".." not in Path(name).parts for name in names)
+        assert "demo-0.1.0/README.md" in names
+        assert "demo-0.1.0/LICENSE" in names
+        assert "demo-0.1.0/.pdm-external/README.md" in names
+        assert "demo-0.1.0/.pdm-external/LICENSE" in names
+        packaged_readme = tar.extractfile("demo-0.1.0/.pdm-external/README.md")
+        assert packaged_readme is not None
+        assert packaged_readme.read() == b"# Demo\n"
+        packaged_license = tar.extractfile("demo-0.1.0/.pdm-external/LICENSE")
+        assert packaged_license is not None
+        assert packaged_license.read() == b"MIT\n"
+        packaged_pyproject = tar.extractfile("demo-0.1.0/pyproject.toml")
+        assert packaged_pyproject is not None
+        data = tomllib.loads(packaged_pyproject.read().decode())
+
+    assert data["project"]["readme"] == ".pdm-external/README.md"
+    assert data["project"]["license"]["file"] == ".pdm-external/LICENSE"
 
 
 @pytest.mark.parametrize(
