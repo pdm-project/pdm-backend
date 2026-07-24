@@ -73,21 +73,23 @@ source-includes = ["README.md", "LICENSE"]
     assert readme.read_text() == "# Demo\n"
     assert license_file.read_text() == "MIT\n"
     with tarfile.open(artifact, "r:gz") as tar:
+
+        def read_file(name: str) -> bytes:
+            file = tar.extractfile(name)
+            assert file is not None
+            return file.read()
+
         names = tar.getnames()
         assert all(".." not in Path(name).parts for name in names)
         assert "demo-0.1.0/README.md" in names
         assert "demo-0.1.0/LICENSE" in names
         assert "demo-0.1.0/.pdm-external/README.md" in names
         assert "demo-0.1.0/.pdm-external/LICENSE" in names
-        packaged_readme = tar.extractfile("demo-0.1.0/.pdm-external/README.md")
-        assert packaged_readme is not None
-        assert packaged_readme.read() == b"# Demo\n"
-        packaged_license = tar.extractfile("demo-0.1.0/.pdm-external/LICENSE")
-        assert packaged_license is not None
-        assert packaged_license.read() == b"MIT\n"
-        packaged_pyproject = tar.extractfile("demo-0.1.0/pyproject.toml")
-        assert packaged_pyproject is not None
-        data = tomllib.loads(packaged_pyproject.read().decode())
+        assert read_file("demo-0.1.0/README.md") == b"# Local demo\n"
+        assert read_file("demo-0.1.0/LICENSE") == b"Local license\n"
+        assert read_file("demo-0.1.0/.pdm-external/README.md") == b"# Demo\n"
+        assert read_file("demo-0.1.0/.pdm-external/LICENSE") == b"MIT\n"
+        data = tomllib.loads(read_file("demo-0.1.0/pyproject.toml").decode())
 
     assert data["project"]["readme"] == ".pdm-external/README.md"
     assert data["project"]["license"]["file"] == ".pdm-external/LICENSE"
