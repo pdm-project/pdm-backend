@@ -41,10 +41,10 @@ def test_sdist_rewrites_project_files_outside_project_root(tmp_path: Path) -> No
     project.mkdir(parents=True)
     readme = repository / "README.md"
     license_file = repository / "LICENSE"
-    readme.write_text("# Demo\n")
-    license_file.write_text("MIT\n")
-    (project / "README.md").write_text("# Local demo\n")
-    (project / "LICENSE").write_text("Local license\n")
+    readme.write_bytes(b"# Demo\n")
+    license_file.write_bytes(b"MIT\n")
+    (project / "README.md").write_bytes(b"# Local demo\n")
+    (project / "LICENSE").write_bytes(b"Local license\n")
     pyproject = project / "pyproject.toml"
     pyproject.write_text(
         """\
@@ -70,8 +70,8 @@ source-includes = ["README.md", "LICENSE"]
         assert builder.config.metadata["license"]["file"] == ".pdm-external/LICENSE"
 
     assert pyproject.read_bytes() == original_pyproject
-    assert readme.read_text() == "# Demo\n"
-    assert license_file.read_text() == "MIT\n"
+    assert readme.read_bytes() == b"# Demo\n"
+    assert license_file.read_bytes() == b"MIT\n"
     with tarfile.open(artifact, "r:gz") as tar:
 
         def read_file(name: str) -> bytes:
