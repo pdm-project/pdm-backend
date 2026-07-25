@@ -162,7 +162,7 @@ class Builder:
 
     def configure(self, context: Context) -> None:
         """Finalize and validate configuration, calling hooks"""
-        self.call_hook("pdm_configure", context)
+        self.call_hook("pdm_build_configure", context)
         self.config.validate()
 
     def clean(self, context: Context) -> None:

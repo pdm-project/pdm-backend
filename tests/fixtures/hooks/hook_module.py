@@ -8,8 +8,8 @@ from pdm.backend.hooks.base import Context
 logger = logging.getLogger("hooks")
 
 
-def pdm_configure(context: Context) -> None:
-    logger.info("Hook1 configure called")
+def pdm_build_configure(context: Context) -> None:
+    logger.info("Hook1 build configure called")
 
 
 def pdm_build_clean(context: Context) -> None:

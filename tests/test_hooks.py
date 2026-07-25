@@ -43,7 +43,7 @@ def test_load_hooks(project_with_hooks, caplog: pytest.LogCaptureFixture):
 
     messages = [record.message for record in caplog.records if record.name == "hooks"]
     for num in range(1, 5):
-        assert f"Hook{num} configure called" in messages
+        assert f"Hook{num} build configure called" in messages
         assert f"Hook{num} build clean called" in messages
         assert f"Hook{num} build initialize called" in messages
         assert f"Hook{num} build update files called" in messages
