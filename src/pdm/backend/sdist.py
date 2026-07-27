@@ -59,7 +59,7 @@ class SdistBuilder(Builder):
         collected = dict(super().get_files(context))
         context.ensure_build_dir()
         metadata = self.config.validate()
-        self._metadata = metadata
+        self._package_metadata = metadata
         project_data = context.config.data["project"]
 
         def set_file_reference(field: str, path: str) -> None:
@@ -115,7 +115,7 @@ class SdistBuilder(Builder):
                     tar.addfile(tar_info)
                 self._show_add_file(relpath, path)
 
-            pkg_info = str(self._metadata.as_rfc822()).encode("utf-8")
+            pkg_info = str(self._package_metadata.as_rfc822()).encode("utf-8")
             tar_info = tarfile.TarInfo(pjoin(dist_info, "PKG-INFO"))
             tar_info.size = len(pkg_info)
             tar_info = clean_tarinfo(tar_info)
