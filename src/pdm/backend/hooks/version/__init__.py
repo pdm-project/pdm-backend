@@ -77,7 +77,7 @@ class DynamicVersionBuildHook:
         version_source = context.root / path
         text = version_source.read_text(encoding="utf-8")
         if pattern is not None:
-            if not (match := re.search(pattern, text, re.M)):
+            if not (match := re.search(pattern, text, re.MULTILINE)):
                 raise ConfigError(
                     f"Couldn't find version in file {version_source!r} by {pattern=}"
                 )
@@ -89,7 +89,9 @@ class DynamicVersionBuildHook:
                 ) from e
             return Version(value)
         match = re.search(
-            r"^(?:__version__|VERSION)\s*=\s*[\"'](.+?)[\"']\s*(?:#.*)?$", text, re.M
+            r"^(?:__version__|VERSION)\s*=\s*[\"'](.+?)[\"']\s*(?:#.*)?$",
+            text,
+            re.MULTILINE,
         )
         if not match:
             raise ConfigError(
