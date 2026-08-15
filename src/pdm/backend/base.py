@@ -7,7 +7,7 @@ import sys
 from collections.abc import Iterable, Mapping
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar, cast
 
 from pdm.backend._vendor.pyproject_metadata import StandardMetadata
 from pdm.backend.config import Config
@@ -87,10 +87,10 @@ Target = Literal["sdist", "wheel", "editable"]
 class Builder:
     """Base class for building and distributing a package from given path."""
 
-    DEFAULT_EXCLUDES = [".pdm-build"]
+    DEFAULT_EXCLUDES: ClassVar[list[str]] = [".pdm-build"]
 
     target: Target
-    hooks: list[BuildHookInterface] = [DynamicVersionBuildHook()]
+    hooks: ClassVar[list[BuildHookInterface]] = [DynamicVersionBuildHook()]
 
     def __init__(
         self,
@@ -103,7 +103,7 @@ class Builder:
         self.config_settings = dict(config_settings or {})
         self._hooks = list(self.get_hooks())
 
-    def __reduce_ex__(self, __protocol: SupportsIndex = 3) -> str | tuple[Any, ...]:
+    def __reduce_ex__(self, protocol: SupportsIndex = 3, /) -> str | tuple[Any, ...]:
         return (
             self.__class__,
             (self.location, self.config_settings),
@@ -137,9 +137,10 @@ class Builder:
     ) -> None:
         """Call the hook on all registered hooks and skip if not implemented."""
         for hook in self._hooks:
-            if hasattr(hook, "pdm_build_hook_enabled"):
-                if not hook.pdm_build_hook_enabled(context):
-                    continue
+            if hasattr(
+                hook, "pdm_build_hook_enabled"
+            ) and not hook.pdm_build_hook_enabled(context):
+                continue
             if hasattr(hook, hook_name):
                 getattr(hook, hook_name)(context, *args, **kwargs)
 
@@ -156,7 +157,7 @@ class Builder:
         os.chdir(self.location)
         return self
 
-    def __exit__(self, *args: Any) -> None:
+    def __exit__(self, *args: object) -> None:
         assert self._old_cwd
         os.chdir(self._old_cwd)
 

@@ -86,7 +86,6 @@ class BuildHookInterface(Protocol):
         Parameters:
             context: The context for this build
         """
-        ...
 
     def pdm_build_clean(self, context: Context) -> None:
         """An optional clean step which will be called before the build starts
@@ -94,7 +93,6 @@ class BuildHookInterface(Protocol):
         Parameters:
             context: The context for this build
         """
-        ...
 
     def pdm_build_initialize(self, context: Context) -> None:
         """This hook will be called before the build starts,
@@ -104,7 +102,6 @@ class BuildHookInterface(Protocol):
         Parameters:
             context: The context for this build
         """
-        ...
 
     def pdm_build_update_files(self, context: Context, files: dict[str, Path]) -> None:
         """Passed in the current file mapping of {relpath: path}
@@ -116,7 +113,6 @@ class BuildHookInterface(Protocol):
                 is the relpath inside the artifact(wheel or tarball) and the value is
                 the local path to the file.
         """
-        ...
 
     def pdm_build_finalize(self, context: Context, artifact: Path) -> None:
         """This hook will be called after the build is done,
@@ -126,7 +122,6 @@ class BuildHookInterface(Protocol):
             context: The context for this build
             artifact: The path to the built artifact
         """
-        ...
 
     def pdm_build_update_setup_kwargs(
         self, context: Context, kwargs: dict[str, Any]
@@ -141,4 +136,3 @@ class BuildHookInterface(Protocol):
             This hook will be called in the subprocess of running setup.py.
             Any changes made to the context won't be written back.
         """
-        ...

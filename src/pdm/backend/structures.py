@@ -16,14 +16,14 @@ class Table(MutableMapping[str, Any]):
     def __iter__(self) -> Iterator[str]:
         return iter(self.__data)
 
-    def __getitem__(self, __key: str) -> Any:
-        return self.__data[__key]
+    def __getitem__(self, key: str, /) -> Any:
+        return self.__data[key]
 
-    def __setitem__(self, __key: str, __value: Any) -> None:
-        self.__data[__key] = __value
+    def __setitem__(self, key: str, value: Any, /) -> None:
+        self.__data[key] = value
 
-    def __delitem__(self, __key: str) -> None:
-        del self.__data[__key]
+    def __delitem__(self, key: str, /) -> None:
+        del self.__data[key]
 
 
 class FileMap(MutableMapping[str, Path]):
@@ -42,11 +42,11 @@ class FileMap(MutableMapping[str, Path]):
     def __iter__(self) -> Iterator[str]:
         return iter(self.__data)
 
-    def __getitem__(self, __key: str) -> Path:
-        return self.__data[self.__normalize_path(__key)]
+    def __getitem__(self, key: str, /) -> Path:
+        return self.__data[self.__normalize_path(key)]
 
-    def __setitem__(self, __key: str, __value: Path) -> None:
-        self.__data[self.__normalize_path(__key)] = __value
+    def __setitem__(self, key: str, value: Path, /) -> None:
+        self.__data[self.__normalize_path(key)] = value
 
-    def __delitem__(self, __key: str) -> None:
-        del self.__data[__key]
+    def __delitem__(self, key: str, /) -> None:
+        del self.__data[key]
