@@ -139,7 +139,9 @@ class Builder:
     ) -> None:
         """Call the hook on all registered hooks and skip if not implemented."""
         for hook in self._hooks:
-            if hasattr(hook, "pdm_build_hook_enabled") and not hook.pdm_build_hook_enabled(context):
+            if hasattr(
+                hook, "pdm_build_hook_enabled"
+            ) and not hook.pdm_build_hook_enabled(context):
                 continue
             if hasattr(hook, hook_name):
                 getattr(hook, hook_name)(context, *args, **kwargs)
