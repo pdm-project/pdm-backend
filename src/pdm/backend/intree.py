@@ -4,6 +4,16 @@ import sys
 from collections.abc import Mapping
 from typing import Any
 
+from pdm.backend import build_editable as build_editable
+from pdm.backend import build_sdist as build_sdist
+from pdm.backend import build_wheel as build_wheel
+from pdm.backend import (
+    prepare_metadata_for_build_editable as prepare_metadata_for_build_editable,
+)
+from pdm.backend import (
+    prepare_metadata_for_build_wheel as prepare_metadata_for_build_wheel,
+)
+
 if sys.version_info >= (3, 11):
     import tomllib
 else:
