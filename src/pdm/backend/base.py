@@ -9,8 +9,6 @@ from fnmatch import fnmatch
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar, cast
 
-from typing_extensions import Self
-
 from pdm.backend._vendor.pyproject_metadata import StandardMetadata
 from pdm.backend.config import Config
 from pdm.backend.hooks import BuildHookInterface, Context
@@ -154,7 +152,7 @@ class Builder:
             build_dir=build_dir, dist_dir=destination, kwargs=kwargs, builder=self
         )
 
-    def __enter__(self) -> Self:
+    def __enter__(self: T) -> T:
         self._old_cwd = os.getcwd()
         os.chdir(self.location)
         return self

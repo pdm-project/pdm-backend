@@ -55,7 +55,7 @@ extend-select = [
   "UP",   # pyupgrade
   "FA",   # flake8-annotations
 ]
-ignore = ["PLC0414"]
+ignore = ["PLC0414", "PYI019"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
