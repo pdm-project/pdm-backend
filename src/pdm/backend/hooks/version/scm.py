@@ -77,7 +77,7 @@ def _subprocess_call(
                        """
             raise subprocess.SubprocessError(textwrap.dedent(err_msg)) from e
         else:
-            raise e
+            raise
     return (
         proc.returncode,
         out.decode("utf-8", "surrogateescape").strip(),

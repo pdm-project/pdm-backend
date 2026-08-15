@@ -149,11 +149,10 @@ class WheelBuilder(Builder):
         new_mode = normalize_file_permissions(st_mode)
         os.chmod(temp_name, new_mode)
 
-        with os.fdopen(fd, "w+b") as fp:
-            with zipfile.ZipFile(fp, "w", compression=zipfile.ZIP_DEFLATED) as zf:
-                for rel_path, full_path in files:
-                    records.append(self._add_file_to_zip(zf, rel_path, full_path))
-                self._write_record(zf, records)
+        with os.fdopen(fd, "w+b") as fp, zipfile.ZipFile(fp, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+            for rel_path, full_path in files:
+                records.append(self._add_file_to_zip(zf, rel_path, full_path))
+            self._write_record(zf, records)
 
         name_version = self.name_version
         if self.build_number:
