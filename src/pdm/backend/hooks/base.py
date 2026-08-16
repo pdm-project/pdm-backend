@@ -87,6 +87,12 @@ class BuildHookInterface(Protocol):
             context: The context for this build
         """
 
+    def pdm_build_configure(self, context: Context) -> None:
+        """Wraps the pyproject.toml configuration loading and validation.
+        Modify values or prepare the build environment before the config is validated.
+        """
+        ...
+
     def pdm_build_clean(self, context: Context) -> None:
         """An optional clean step which will be called before the build starts
 

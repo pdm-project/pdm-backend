@@ -99,7 +99,7 @@ class Builder:
     ) -> None:
         self._old_cwd: str | None = None
         self.location = Path(location)
-        self.config = Config.from_pyproject(self.location)
+        self.config = Config.from_pyproject(self.location, validate=False)
         self.config_settings = dict(config_settings or {})
         self._hooks = list(self.get_hooks())
 
@@ -161,6 +161,11 @@ class Builder:
         assert self._old_cwd
         os.chdir(self._old_cwd)
 
+    def configure(self, context: Context) -> None:
+        """Finalize and validate configuration, calling hooks"""
+        self.call_hook("pdm_build_configure", context)
+        self.config.validate()
+
     def clean(self, context: Context) -> None:
         """Clean up the build directory."""
         self.call_hook("pdm_build_clean", context)
@@ -203,6 +208,8 @@ class Builder:
     def build(self, build_dir: str, **kwargs: Any) -> Path:
         """Build the package and return the path to the artifact."""
         context = self.build_context(Path(build_dir), **kwargs)
+        self.configure(context)
+
         should_clean = True
 
         if "no-clean-build" in self.config_settings:
