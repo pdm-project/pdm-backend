@@ -28,7 +28,9 @@ path = "mypackage/__init__.py"
 In this way, the file MUST contain a line like:
 
 ```python
-__version__ = "0.1.0" # Single quotes and double quotes are both OK, comments are allowed.
+__version__ = (
+    "0.1.0"  # Single quotes and double quotes are both OK, comments are allowed.
+)
 ```
 
 Or:
@@ -100,6 +102,7 @@ version_format = "mypackage.version:format_version"
 ```python
 # mypackage/version.py
 from pdm.backend.hooks.version import SCMVersion
+
 
 def format_version(version: SCMVersion) -> str:
     if version.distance is None:
