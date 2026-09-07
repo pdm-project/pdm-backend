@@ -70,7 +70,7 @@ And if `run-setuptools` is `true`, `pdm-pep517` will instead generate a `setup.p
     # build.py
     def build(setup_kwargs):
         # modify the setup_kwargs
-        setup_kwargs['extensions'] = [Extension(...)]
+        setup_kwargs["extensions"] = [Extension(...)]
     ```
 
 === "New"
@@ -84,7 +84,7 @@ And if `run-setuptools` is `true`, `pdm-pep517` will instead generate a `setup.p
     # pdm_build.py
     def pdm_build_update_setup_kwargs(context, setup_kwargs):
         # modify the setup_kwargs
-        setup_kwargs['extensions'] = [Extension(...)]
+        setup_kwargs["extensions"] = [Extension(...)]
     ```
 
 

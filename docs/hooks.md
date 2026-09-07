@@ -64,6 +64,7 @@ Or, you can generate it anywhere and include the path explicitly.
 
     ext_modules = [Extension("my_package.hello", ["my_package/hellomodule.c"])]
 
+
     def pdm_build_update_setup_kwargs(context, setup_kwargs):
         setup_kwargs.update(ext_modules=ext_modules)
     ```
