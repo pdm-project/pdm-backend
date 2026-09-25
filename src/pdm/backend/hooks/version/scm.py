@@ -223,6 +223,10 @@ def git_parse_version(root: StrPath, config: Config) -> SCMVersion | None:
         )
     else:
         tag, number, node, dirty = _git_parse_describe(output)
+        tag_cmd = (git, "tag", "--list", "--points-at", tag)
+        ret, output, _ = _subprocess_call(tag_cmd, repo)
+        if not ret and output:
+            tag = str(max(output.splitlines(), key=Version))
         return meta(config, tag, number or None, dirty, node, branch)
 
 
