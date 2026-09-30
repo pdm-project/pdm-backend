@@ -16,6 +16,7 @@ import pathlib
 import typing
 from typing import Any
 
+import pdm.backend._vendor.packaging as packaging
 import pdm.backend._vendor.packaging.requirements
 
 if typing.TYPE_CHECKING:

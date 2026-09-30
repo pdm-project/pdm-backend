@@ -23,6 +23,7 @@ from typing import (
     Union,
 )
 
+import pdm.backend._vendor.packaging as packaging
 import pdm.backend._vendor.packaging.requirements
 import pdm.backend._vendor.packaging.specifiers
 import pdm.backend._vendor.packaging.version

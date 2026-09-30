@@ -67,6 +67,7 @@ if typing.TYPE_CHECKING:
 
     from .project_table import Dynamic, ProjectTable
 
+import pdm.backend._vendor.packaging as packaging
 import pdm.backend._vendor.packaging.markers
 import pdm.backend._vendor.packaging.specifiers
 import pdm.backend._vendor.packaging.utils

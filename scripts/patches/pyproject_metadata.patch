@@ -1,0 +1,36 @@
+diff --git a/src/pdm/backend/_vendor/pyproject_metadata/__init__.py b/src/pdm/backend/_vendor/pyproject_metadata/__init__.py
+index f10f121..20c05cb 100644
+--- a/src/pdm/backend/_vendor/pyproject_metadata/__init__.py
++++ b/src/pdm/backend/_vendor/pyproject_metadata/__init__.py
+@@ -67,6 +67,7 @@ if typing.TYPE_CHECKING:
+ 
+     from .project_table import Dynamic, ProjectTable
+ 
++import pdm.backend._vendor.packaging as packaging
+ import packaging.markers
+ import packaging.specifiers
+ import packaging.utils
+diff --git a/src/pdm/backend/_vendor/pyproject_metadata/project_table.py b/src/pdm/backend/_vendor/pyproject_metadata/project_table.py
+index 38fbe50..83ece67 100644
+--- a/src/pdm/backend/_vendor/pyproject_metadata/project_table.py
++++ b/src/pdm/backend/_vendor/pyproject_metadata/project_table.py
+@@ -23,6 +23,7 @@ from typing import (
+     Union,
+ )
+ 
++import pdm.backend._vendor.packaging as packaging
+ import packaging.requirements
+ import packaging.specifiers
+ import packaging.version
+diff --git a/src/pdm/backend/_vendor/pyproject_metadata/pyproject.py b/src/pdm/backend/_vendor/pyproject_metadata/pyproject.py
+index 2e7f246..65bfa68 100644
+--- a/src/pdm/backend/_vendor/pyproject_metadata/pyproject.py
++++ b/src/pdm/backend/_vendor/pyproject_metadata/pyproject.py
+@@ -16,6 +16,7 @@ import pathlib
+ import typing
+ from typing import Any
+ 
++import pdm.backend._vendor.packaging as packaging
+ import packaging.requirements
+ 
+ if typing.TYPE_CHECKING:
