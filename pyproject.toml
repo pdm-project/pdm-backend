@@ -91,6 +91,11 @@ includes = ["src"]
 package-dir = "src"
 source-includes = ["tests"]
 
+[tool.pdm.scripts]
+build = "python scripts/build.py"
+docs = "mkdocs serve"
+test = "pytest"
+
 [dependency-groups]
 test = [
     "pytest",
@@ -102,7 +107,7 @@ test = [
 
 dev = [
     "editables>=0.3",
-    "pre-commit>=2.21.0",
+    "vendoring>=1.2.0",
 ]
 docs = [
     "mkdocs>=1.4.2",
@@ -110,11 +115,6 @@ docs = [
     "mkdocs-material>=8.5.10",
     "mkdocs-version-annotations>=1.0.0",
 ]
-
-[tool.pdm.scripts]
-build = "python scripts/build.py"
-docs = "mkdocs serve"
-test = "pytest"
 
 [tool.coverage.report]
 exclude_lines = [
