@@ -4,7 +4,6 @@ ELF file parser.
 This provides a class ``ELFFile`` that parses an ELF executable in a similar
 interface to ``ZipFile``. Only the read interface is implemented.
 
-Based on: https://gist.github.com/lyssdod/f51579ae8d93c8657a5564aefc2ffbca
 ELF header: https://refspecs.linuxfoundation.org/elf/gabi4+/ch4.eheader.html
 """
 
@@ -35,7 +34,7 @@ class EMachine(enum.IntEnum):
     S390 = 22
     Arm = 40
     X8664 = 62
-    AArc64 = 183
+    AArch64 = 183
 
 
 class ELFFile:
@@ -48,8 +47,8 @@ class ELFFile:
 
         try:
             ident = self._read("16B")
-        except struct.error:
-            raise ELFInvalid("unable to parse identification")
+        except struct.error as e:
+            raise ELFInvalid("unable to parse identification") from e
         magic = bytes(ident[:4])
         if magic != b"\x7fELF":
             raise ELFInvalid(f"invalid magic: {magic!r}")
@@ -58,8 +57,8 @@ class ELFFile:
         self.encoding = ident[5]  # Data structure encoding (endianness).
 
         try:
-            # e_fmt: Format for program header.
-            # p_fmt: Format for section header.
+            # e_fmt: Format for the ELF header.
+            # p_fmt: Format for a program header.
             # p_idx: Indexes to find p_type, p_offset, and p_filesz.
             e_fmt, self._p_fmt, self._p_idx = {
                 (1, 1): ("<HHIIIIIHHH", "<IIIIIIII", (0, 1, 4)),  # 32-bit LSB.
@@ -67,11 +66,10 @@ class ELFFile:
                 (2, 1): ("<HHIQQQIHHH", "<IIQQQQQQ", (0, 2, 5)),  # 64-bit LSB.
                 (2, 2): (">HHIQQQIHHH", ">IIQQQQQQ", (0, 2, 5)),  # 64-bit MSB.
             }[(self.capacity, self.encoding)]
-        except KeyError:
+        except KeyError as e:
             raise ELFInvalid(
-                f"unrecognized capacity ({self.capacity}) or "
-                f"encoding ({self.encoding})"
-            )
+                f"unrecognized capacity ({self.capacity}) or encoding ({self.encoding})"
+            ) from e
 
         try:
             (
@@ -83,8 +81,8 @@ class ELFFile:
                 _,
                 self.flags,  # Processor-specific flags.
                 _,
-                self._e_phentsize,  # Size of section.
-                self._e_phnum,  # Number of sections.
+                self._e_phentsize,  # Size of a program header entry.
+                self._e_phnum,  # Number of program headers.
             ) = self._read(e_fmt)
         except struct.error as e:
             raise ELFInvalid("unable to parse machine and section information") from e

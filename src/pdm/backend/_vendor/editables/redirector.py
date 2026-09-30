@@ -32,10 +32,7 @@ class RedirectingFinder(importlib.abc.MetaPathFinder):
 
     @classmethod
     def install(cls) -> None:
-        for f in sys.meta_path:
-            if f == cls:
-                break
-        else:
+        if cls not in sys.meta_path:
             sys.meta_path.append(cls)
 
     @classmethod
