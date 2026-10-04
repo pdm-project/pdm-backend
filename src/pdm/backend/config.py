@@ -35,16 +35,18 @@ class Config:
     Parameters:
         root: The root directory of the project
         data: The parsed pyproject.toml data
+        validate: Perform validation immediately on instantiation.
 
     Attributes:
         metadata (Metadata): The project metadata from the `project` table
         build_config (BuildConfig): The build config from the `tool.pdm.build` table
     """
 
-    def __init__(self, root: Path, data: dict[str, Any]) -> None:
+    def __init__(self, root: Path, data: dict[str, Any], validate: bool = True) -> None:
         self.root = root
         self.data = data
-        self.validate()
+        if validate:
+            self.validate()
 
     def validate(self) -> StandardMetadata:
         """Validate the pyproject.toml data."""
@@ -64,7 +66,7 @@ class Config:
         )
 
     @classmethod
-    def from_pyproject(cls, root: str | Path) -> Config:
+    def from_pyproject(cls, root: str | Path, validate: bool = True) -> Config:
         """Load the pyproject.toml file from the given project root."""
         root = Path(root)
         pyproject = root / "pyproject.toml"
@@ -75,7 +77,7 @@ class Config:
                 data = tomllib.load(fp)
             except tomllib.TOMLDecodeError as e:
                 raise ConfigError(f"Invalid pyproject.toml file: {e}") from e
-        return cls(root, data)
+        return cls(root, data, validate=validate)
 
     def write_to(self, path: str | Path) -> None:
         """Write the pyproject.toml file to the given path."""

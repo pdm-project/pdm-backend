@@ -13,6 +13,9 @@ class BuildHook:
     def __init__(self, name: str = "2") -> None:
         self.name = name
 
+    def pdm_build_configure(self, context: Context) -> None:
+        logger.info("Hook%s build configure called", self.name)
+
     def pdm_build_clean(self, context: Context) -> None:
         logger.info("Hook%s build clean called", self.name)
 
