@@ -199,6 +199,9 @@ def git_parse_version(root: StrPath, config: Config) -> SCMVersion | None:
 
     if os.path.isfile(os.path.join(repo, ".git/shallow")):
         warnings.warn(f"{repo!r} is shallow and may cause errors")
+    # MSYS Git may report a POSIX path that native Python cannot use as cwd.
+    # The caller's root already worked for rev-parse, even inside a subdirectory.
+    repo = os.fspath(root)
     describe_cmd = [
         git,
         "-c",

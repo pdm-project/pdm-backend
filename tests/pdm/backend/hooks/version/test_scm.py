@@ -12,7 +12,12 @@ from typing import cast
 
 import pytest
 
+from pdm.backend import (
+    prepare_metadata_for_build_editable,
+    prepare_metadata_for_build_wheel,
+)
 from pdm.backend._vendor.packaging.version import Version
+from pdm.backend.hooks.version import scm as scm_module
 from pdm.backend.hooks.version.scm import (
     SCMVersion,
     default_version_formatter,
@@ -328,3 +333,132 @@ TODAY = datetime.now(timezone.utc).strftime("%Y%m%d")
 def test_default_version_formatter_dirty(distance: int | None, expected: str):
     version = SCMVersion(Version("1.0.0"), distance, True, "g1234567", branch="main")
     assert default_version_formatter(version) == expected
+
+
+@pytest.fixture(params=["native", "msys"])
+def git_path_style(request, monkeypatch, scm_dir):
+    """Emulate only Git's MSYS path spelling; all subprocesses remain real."""
+    monkeypatch.delenv("PDM_BUILD_SCM_VERSION", raising=False)
+    if request.param == "msys":
+        original_call = scm_module._subprocess_call
+
+        def subprocess_call(cmd, cwd=None, extra_env=None):
+            ret, out, err = original_call(cmd, cwd, extra_env)
+            if (
+                not ret
+                and not isinstance(cmd, str)
+                and list(cmd[1:]) == ["rev-parse", "--show-toplevel"]
+            ):
+                out = f"/home/msys/{scm_dir.name}"
+            return ret, out, err
+
+        monkeypatch.setattr(scm_module, "_subprocess_call", subprocess_call)
+    return request.param
+
+
+@pytest.mark.parametrize("directory", ["root", "nested", "symlink"])
+@pytest.mark.parametrize("state", ["tagged", "untagged", "distance", "dirty"])
+def test_git_version_uses_native_working_directory(
+    scm_dir, git, git_path_style, tmp_path, directory, state
+):
+    tracked = scm_dir / "tracked.txt"
+    tracked.write_text("initial\n")
+    git.commit("initial", [tracked])
+    if state != "untagged":
+        git.tag("1.2.3")
+    if state in ("distance", "dirty"):
+        tracked.write_text("changed\n")
+    if state == "distance":
+        git.commit("second", [tracked])
+
+    nested = scm_dir / "project with spaces" / "nested"
+    nested.mkdir(parents=True)
+    root = scm_dir if directory == "root" else nested
+    if directory == "symlink":
+        alias = tmp_path / "project-link"
+        try:
+            alias.symlink_to(nested, target_is_directory=True)
+        except OSError:
+            pytest.skip("Creating directory symlinks is not supported")
+        root = alias
+
+    version = get_version_from_scm(root)
+
+    assert version is not None
+    compare_version(
+        version,
+        "0.0" if state == "untagged" else "1.2.3",
+        1 if state in ("untagged", "distance") else None,
+        state == "dirty",
+        git.current_hash,
+    )
+    assert version.branch == git.run("symbolic-ref", "--short", "HEAD").strip()
+
+
+@pytest.mark.parametrize(
+    "prepare_metadata",
+    [prepare_metadata_for_build_wheel, prepare_metadata_for_build_editable],
+)
+def test_metadata_with_msys_git(
+    scm_dir, git, git_path_style, tmp_path, monkeypatch, prepare_metadata
+):
+    project = scm_dir / "project with spaces"
+    project.mkdir()
+    pyproject = project / "pyproject.toml"
+    pyproject.write_text(
+        '[build-system]\nrequires = ["pdm-backend"]\nbuild-backend = "pdm.backend"\n'
+        '[project]\nname = "msys-repro"\ndynamic = ["version"]\n'
+        '[tool.pdm.version]\nsource = "scm"\n'
+        '[tool.pdm.build]\nincludes = ["demo.py"]\n'
+    )
+    module = project / "demo.py"
+    module.write_text("answer = 42\n")
+    git.commit("project", [pyproject, module])
+    git.tag("1.2.3")
+    monkeypatch.chdir(project)
+    metadata_dir = tmp_path / "metadata"
+    metadata_dir.mkdir()
+
+    name = prepare_metadata(str(metadata_dir))
+
+    assert "Version: 1.2.3\n" in (metadata_dir / name / "METADATA").read_text()
+
+
+@pytest.mark.parametrize("nested", [False, True])
+def test_shallow_git_native_working_directory(
+    scm_dir, git, git_path_style, tmp_path, nested
+):
+    tracked = scm_dir / "tracked.txt"
+    tracked.write_text("initial\n")
+    git.commit("initial", [tracked])
+    git.tag("1.2.3")
+    clone = tmp_path / "shallow clone"
+    git.run("clone", "--depth=1", scm_dir.as_uri(), clone)
+    root = clone
+    if nested:
+        root = clone / "nested"
+        root.mkdir()
+
+    if git_path_style == "native":
+        with pytest.warns(UserWarning, match="is shallow"):
+            version = get_version_from_scm(root)
+    else:
+        version = get_version_from_scm(root)
+
+    assert version is not None
+    compare_version(version, "1.2.3", node=git.current_hash)
+
+
+@pytest.mark.parametrize("bare", [False, True])
+def test_non_worktree_is_not_a_git_version(git_path_style, tmp_path, bare):
+    if bare:
+        subprocess.run(
+            ["git", "init", "--bare", str(tmp_path)], check=True, capture_output=True
+        )
+
+    assert (
+        scm_module.git_parse_version(
+            tmp_path, scm_module.Config(scm_module.DEFAULT_TAG_REGEX, None)
+        )
+        is None
+    )
